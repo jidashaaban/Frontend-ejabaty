@@ -1,0 +1,683 @@
+// src/services/adminService.js
+import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ========== بيانات وهمية (Mock Data) للاستخدام المؤقت ==========
+let announcements = [
+  { id: uuidv4(), title: 'إعلان عن دورة الرياضيات', description: 'سيتم افتتاح دورة رياضيات جديدة في الأسبوع القادم.', date: '2026-04-01', published: true },
+  { id: uuidv4(), title: 'مسابقة البرمجة', description: 'نعلن عن مسابقة برمجية لطلاب السنة الثانية.', date: '2026-03-15', published: false },
+];
+
+// ========== بيانات الاستبيانات (Polls) مع بيانات تجريبية ==========
+let polls = [
+  { 
+    id: uuidv4(), 
+    title: 'استبيان رضا الطلاب', 
+    description: 'ما مدى رضاك عن خدمات المعهد؟', 
+    date: '2026-04-01', 
+    questions: [
+      { id: 1, text: 'كيف تقيم جودة التدريس؟', options: ['ممتاز', 'جيد', 'متوسط', 'ضعيف'] },
+      { id: 2, text: 'كيف تقيم نظافة المرافق؟', options: ['ممتاز', 'جيد', 'متوسط', 'ضعيف'] },
+    ],
+    results: [] 
+  },
+  { 
+    id: uuidv4(), 
+    title: 'تقييم جودة التدريس', 
+    description: 'قيم مستوى التدريس في المعهد', 
+    date: '2026-04-05', 
+    questions: [
+      { id: 1, text: 'مدى فهم المادة؟', options: ['ممتاز', 'جيد', 'متوسط', 'ضعيف'] },
+      { id: 2, text: 'وضوح الشرح؟', options: ['ممتاز', 'جيد', 'متوسط', 'ضعيف'] },
+    ],
+    results: [] 
+  },
+  { 
+    id: uuidv4(), 
+    title: 'استبيان المرافق', 
+    description: 'تقييم نظافة وتجهيزات المعهد', 
+    date: '2026-04-10', 
+    questions: [
+      { id: 1, text: 'نظافة القاعات؟', options: ['ممتاز', 'جيد', 'متوسط', 'ضعيف'] },
+      { id: 2, text: 'جاهزية المختبرات؟', options: ['ممتاز', 'جيد', 'متوسط', 'ضعيف'] },
+    ],
+    results: [] 
+  },
+];
+
+let users = { teachers: [], students: [] };
+let points = [];
+
+// بيانات البرامج الأسبوعية والامتحانية
+let weeklyPrograms = [];
+let examPrograms = [];
+
+// بيانات الشكاوى (Complaints)
+let complaints = [
+  {
+    id: uuidv4(),
+    parentName: 'محمد أحمد',
+    studentName: 'أحمد محمد',
+    message: 'ابني يعاني من صعوبة في فهم مادة الرياضيات، هل هناك دعم إضافي؟',
+    date: new Date().toISOString(),
+    replied: false,
+    reply: '',
+    replyDate: null,
+  },
+  {
+    id: uuidv4(),
+    parentName: 'سارة خالد',
+    studentName: 'ليلى سارة',
+    message: 'المواصلات المدرسية تتأخر كثيراً عن موعدها المحدد',
+    date: new Date().toISOString(),
+    replied: true,
+    reply: 'تم التواصل مع شركة النقل لحل المشكلة',
+    replyDate: new Date().toISOString(),
+  },
+  {
+    id: uuidv4(),
+    parentName: 'نور علي',
+    studentName: 'عمر نور',
+    message: 'الكتب المدرسية غير متوفرة في المكتبة',
+    date: new Date().toISOString(),
+    replied: false,
+    reply: '',
+    replyDate: null,
+  },
+];
+
+// ========== بيانات القاعات الامتحانية (Exam Halls) ==========
+let examHalls = [
+  { id: 1, name: 'قاعة A' },
+  { id: 2, name: 'قاعة B' },
+  { id: 3, name: 'قاعة C' },
+];
+
+// تخزين سعات القاعات (منفصل عن القاعات لأن السعة غير موجودة في قاعدة البيانات)
+let examHallCapacities = {
+  1: 4,  // قاعة A
+  2: 4,  // قاعة B
+  3: 4,  // قاعة C
+};
+
+// محاولة تحميل السعات المحفوظة من localStorage
+try {
+  const savedCapacities = localStorage.getItem('examHallCapacities');
+  if (savedCapacities) {
+    examHallCapacities = JSON.parse(savedCapacities);
+  }
+} catch (e) {
+  console.error('خطأ في تحميل سعات القاعات:', e);
+}
+
+// ========== دوال الإعلانات ==========
+export const getAnnouncements = async () => {
+  return Promise.resolve([...announcements]);
+};
+
+export const createAnnouncement = async (data) => {
+  const newAnnouncement = { id: uuidv4(), ...data };
+  announcements.push(newAnnouncement);
+  return Promise.resolve(newAnnouncement);
+};
+
+export const updateAnnouncement = async (id, data) => {
+  announcements = announcements.map(ann => ann.id === id ? { ...ann, ...data } : ann);
+  return Promise.resolve(announcements.find(ann => ann.id === id));
+};
+
+export const deleteAnnouncement = async (id) => {
+  announcements = announcements.filter(ann => ann.id !== id);
+  return Promise.resolve();
+};
+
+// ========== دوال المستخدمين ==========
+export const getUsers = async () => {
+  return Promise.resolve({ ...users });
+};
+
+export const addTeacher = async (teacher) => {
+  const newTeacher = { id: uuidv4(), ...teacher };
+  users.teachers.push(newTeacher);
+  return Promise.resolve(newTeacher);
+};
+
+export const addStudent = async (student) => {
+  const newStudent = { id: uuidv4(), ...student };
+  users.students.push(newStudent);
+  return Promise.resolve(newStudent);
+};
+
+export const addParent = async (parent) => {
+  const newParent = { id: uuidv4(), ...parent };
+  return Promise.resolve(newParent);
+};
+
+// ========== دوال الاستبيانات (Polls) المتقدمة ==========
+export const getPolls = async () => {
+  console.log('📊 getPolls تم استدعاؤها, عدد الاستبيانات:', polls.length);
+  return Promise.resolve([...polls]);
+};
+
+export const createPoll = async (pollData) => {
+  const newPoll = {
+    id: uuidv4(),
+    title: pollData.title,
+    description: pollData.description,
+    questions: pollData.questions,
+    date: new Date().toISOString().split('T')[0],
+    results: [],
+  };
+  polls.push(newPoll);
+  console.log('✅ تم إضافة استبيان جديد:', newPoll);
+  return Promise.resolve(newPoll);
+};
+
+export const deletePoll = async (id) => {
+  polls = polls.filter(p => p.id !== id);
+  console.log('🗑️ تم حذف استبيان:', id);
+  return Promise.resolve();
+};
+
+export const getPollResults = async (pollId) => {
+  const poll = polls.find(p => p.id === pollId);
+  if (!poll) return Promise.resolve([]);
+  
+  // حساب النتائج (نسبة كل خيار)
+  const results = poll.questions.map(question => {
+    // محاكاة إجابات وهمية
+    const totalVotes = 100;
+    const optionsWithStats = question.options.map((option, idx) => {
+      const votes = Math.floor(Math.random() * 50) + 10;
+      return {
+        text: option,
+        votes: votes,
+        percentage: Math.floor((votes / totalVotes) * 100),
+      };
+    });
+    return {
+      question: question.text,
+      options: optionsWithStats,
+    };
+  });
+  
+  return Promise.resolve(results);
+};
+
+export const submitPollResponse = async (pollId, answers) => {
+  const poll = polls.find(p => p.id === pollId);
+  if (poll) {
+    poll.results.push({
+      id: uuidv4(),
+      answers,
+      submittedAt: new Date().toISOString(),
+    });
+  }
+  return Promise.resolve({ success: true });
+};
+
+// ========== دوال التقارير ==========
+export const getReports = async () => {
+  return Promise.resolve({
+    studentsCount: 350,
+    teachersCount: 25,
+    activeCoursesCount: 12,
+    surveyResults: [
+      {
+        title: 'تقييم جودة التدريس',
+        results: [
+          { question: 'مدى فهم المادة', averageRating: 4.5 },
+          { question: 'وضوح الشرح', averageRating: 4.2 },
+        ],
+      },
+      {
+        title: 'تقييم المرافق',
+        results: [
+          { question: 'نظافة القاعات', averageRating: 4.0 },
+          { question: 'جاهزية المختبرات', averageRating: 3.8 },
+        ],
+      },
+    ],
+    topStudents: {
+      grade9: [
+        { id: 1, name: 'أحمد محمد', points: 250 },
+        { id: 2, name: 'سارة خالد', points: 230 },
+        { id: 3, name: 'محمد علي', points: 210 },
+      ],
+      scientific: [
+        { id: 4, name: 'نور حسين', points: 280 },
+        { id: 5, name: 'عمر وائل', points: 260 },
+        { id: 6, name: 'ليلى كريم', points: 240 },
+      ],
+      literary: [
+        { id: 7, name: 'هدى سمير', points: 270 },
+        { id: 8, name: 'رامي نضال', points: 245 },
+        { id: 9, name: 'فاطمة زكي', points: 220 },
+      ],
+    },
+  });
+};
+
+// ========== دوال الشكاوى (Complaints) ==========
+export const getComplaints = async () => {
+  return Promise.resolve([...complaints]);
+};
+
+export const replyToComplaint = async (id, replyMessage) => {
+  complaints = complaints.map(complaint =>
+    complaint.id === id
+      ? {
+          ...complaint,
+          reply: replyMessage,
+          replied: true,
+          replyDate: new Date().toISOString(),
+        }
+      : complaint
+  );
+  return Promise.resolve(complaints.find(complaint => complaint.id === id));
+};
+
+export const addComplaint = async (complaint) => {
+  const newComplaint = {
+    id: uuidv4(),
+    ...complaint,
+    date: new Date().toISOString(),
+    replied: false,
+    reply: '',
+    replyDate: null,
+  };
+  complaints.push(newComplaint);
+  return Promise.resolve(newComplaint);
+};
+
+export const deleteComplaint = async (id) => {
+  complaints = complaints.filter(complaint => complaint.id !== id);
+  return Promise.resolve();
+};
+
+// ========== دوال الاستفسارات (للتوافق مع الكود القديم) ==========
+export const getInquiries = async () => {
+  return Promise.resolve([...complaints]);
+};
+
+export const replyToInquiry = async (id, replyMessage) => {
+  return replyToComplaint(id, replyMessage);
+};
+
+// ========== دوال النقاط ==========
+export const getPoints = async () => {
+  return Promise.resolve([...points]);
+};
+
+export const updatePoints = async (studentId, delta) => {
+  const existing = points.find(p => p.studentId === studentId);
+  if (existing) {
+    existing.points += delta;
+  } else {
+    points.push({ studentId, points: delta });
+  }
+  return Promise.resolve(points.find(p => p.studentId === studentId));
+};
+
+export const getTopStudents = async (category) => {
+  const reports = await getReports();
+  if (category === 'grade9') return reports.topStudents.grade9;
+  if (category === 'scientific') return reports.topStudents.scientific;
+  if (category === 'literary') return reports.topStudents.literary;
+  return reports.topStudents;
+};
+
+// ========== دوال المواد والقاعات والصفوف ==========
+export const getCourses = async () => {
+  return Promise.resolve([
+    { id: 1, name: 'الرياضيات' },
+    { id: 2, name: 'الفيزياء' },
+    { id: 3, name: 'الكيمياء' },
+    { id: 4, name: 'اللغة العربية' },
+    { id: 5, name: 'اللغة الإنجليزية' },
+    { id: 6, name: 'التاريخ' },
+    { id: 7, name: 'الجغرافيا' },
+  ]);
+};
+
+export const getRooms = async () => {
+  return Promise.resolve([
+    { id: 1, name: 'قاعة 101' },
+    { id: 2, name: 'قاعة 102' },
+    { id: 3, name: 'قاعة 103' },
+    { id: 4, name: 'قاعة 104' },
+    { id: 5, name: 'مختبر الفيزياء' },
+    { id: 6, name: 'مختبر الكيمياء' },
+  ]);
+};
+
+export const getClasses = async () => {
+  return Promise.resolve([
+    { id: 1, name: 'الصف التاسع' },
+    { id: 2, name: 'البكالوريا علمي' },
+    { id: 3, name: 'البكالوريا أدبي' },
+    { id: 4, name: 'الثاني علمي' },
+    { id: 5, name: 'الثالث علمي' },
+    { id: 6, name: 'الثاني أدبي' },
+  ]);
+};
+
+export const getTeachers = async () => {
+  return Promise.resolve(users.teachers || []);
+};
+
+// ========== دوال القاعات الامتحانية (Exam Halls) ==========
+export const getExamHall = async () => {
+  // Fetch halls from the backend.
+  // The Laravel API exposes halls at GET /halls (prefixed by /api via API_BASE_URL).
+  // Each hall object contains an id, name and capacity.
+  try {
+    const response = await apiClient.get('/halls');
+    return response.data;
+  } catch (error) {
+    // Fall back to local mock data if the API call fails.
+    const hallsWithCapacity = examHalls.map(hall => ({
+      ...hall,
+      capacity: examHallCapacities[hall.id] || 0,
+    }));
+    return hallsWithCapacity;
+  }
+};
+
+export const updateExamHallCapacity = async (hallId, capacity) => {
+  // To update a hall capacity in the backend we need to send the full list of halls
+  // because the Laravel endpoint '/setup-halls' truncates existing halls before inserting.
+  try {
+    // Fetch current halls from the API
+    const currentHalls = await getExamHall();
+    // Build new array with updated capacity
+    const updatedHalls = currentHalls.map(h =>
+      h.id === hallId ? { name: h.name, capacity } : { name: h.name, capacity: h.capacity || 0 }
+    );
+    await apiClient.post('/setup-halls', { halls: updatedHalls });
+    return { id: hallId, capacity, success: true };
+  } catch (error) {
+    // Fallback: update local mock data
+    examHallCapacities[hallId] = capacity;
+    localStorage.setItem('examHallCapacities', JSON.stringify(examHallCapacities));
+    return { id: hallId, capacity, success: true };
+  }
+};
+
+export const addExamHall = async (hallData) => {
+  // Add a new hall by sending the updated hall list to the backend.
+  try {
+    const currentHalls = await getExamHall();
+    const updatedHalls = [
+      ...currentHalls.map(h => ({ name: h.name, capacity: h.capacity || 0 })),
+      { name: hallData.name, capacity: hallData.capacity || 0 },
+    ];
+    await apiClient.post('/setup-halls', { halls: updatedHalls });
+    // Re-fetch halls to obtain ids and return the newly added hall
+    const hallsAfter = await getExamHall();
+    const addedHall = hallsAfter.find(h => h.name === hallData.name && h.capacity === (hallData.capacity || 0));
+    return addedHall || { name: hallData.name, capacity: hallData.capacity || 0 };
+  } catch (error) {
+    // Fallback to local mock addition
+    const newHall = {
+      id: Date.now(),
+      name: hallData.name,
+    };
+    examHalls.push(newHall);
+    examHallCapacities[newHall.id] = hallData.capacity || 0;
+    localStorage.setItem('examHallCapacities', JSON.stringify(examHallCapacities));
+    return { ...newHall, capacity: examHallCapacities[newHall.id] };
+  }
+};
+
+export const deleteExamHall = async (hallId) => {
+  examHalls = examHalls.filter(hall => hall.id !== hallId);
+  delete examHallCapacities[hallId];
+  localStorage.setItem('examHallCapacities', JSON.stringify(examHallCapacities));
+  return Promise.resolve({ success: true });
+};
+
+export const getExamHallCapacities = async () => {
+  return Promise.resolve({ ...examHallCapacities });
+};
+
+// ========== دوال توليد الجداول ==========
+export const generateWeeklySchedule = async () => {
+  // توليد جدول الدوام عبر الـ Backend
+  const response = await apiClient.post('/generate-schedule', { type: 'course' });
+  return response.data;
+};
+
+export const generateExamSchedule = async () => {
+  // توليد جدول الامتحانات عبر الـ Backend
+  const response = await apiClient.post('/generate-schedule', { type: 'exam' });
+  return response.data;
+};
+
+// ========== دوال البرنامج الأسبوعي (الدوام) ==========
+export const getWeeklyProgram = async () => {
+  // ✅ جلب الجدول مباشرة من الـ Backend بدل المتغير المحلي
+  try {
+    const response = await apiClient.get('/admin-schedule', { params: { type: 'course' } });
+
+    // The sessions field might be returned either as an array or an object
+    // (e.g. {"0": {...}, "1": {...}}) depending on how the backend
+    // collection was encoded. If it's an object, convert it to an array
+    // using Object.values() to avoid runtime errors when calling map().
+    const rawSessions = response.data?.sessions || [];
+    const sessions = Array.isArray(rawSessions) ? rawSessions : Object.values(rawSessions);
+
+    // تحويل البيانات للشكل المطلوب في الجدول
+    return sessions.map((session) => ({
+      id:         session.id,
+      day:        session.day,
+      start_time: session.start_time,
+      end_time:   session.end_time,
+      course:     session.course ?? null,
+      course_id:  session.course_id,
+      teacher_id: session.course?.teacher_id ?? null,
+      room_id:    session.hall?.id ?? session.hall_id ?? null,
+      class_id:   null,
+    }));
+  } catch (error) {
+    console.error('خطأ في جلب برنامج الدوام:', error);
+    return [...weeklyPrograms]; // fallback للبيانات المحلية
+  }
+};
+
+export const getExamProgram = async () => {
+  // ✅ جلب جدول الامتحانات مباشرة من الـ Backend
+  try {
+    const response = await apiClient.get('/admin-schedule', { params: { type: 'exam' } });
+
+    const rawSessions = response.data?.sessions || [];
+    const sessions = Array.isArray(rawSessions) ? rawSessions : Object.values(rawSessions);
+
+    return sessions.map((session) => ({
+      id:         session.id,
+      day:        session.day,
+      start_time: session.start_time,
+      end_time:   session.end_time,
+      course:     session.course ?? null,
+      course_id:  session.course_id,
+      hall_id:    session.hall?.id ?? session.hall_id ?? null,
+    }));
+  } catch (error) {
+    console.error('خطأ في جلب برنامج الامتحانات:', error);
+    return [...examPrograms]; // fallback للبيانات المحلية
+  }
+};
+
+export const addWeeklyProgram = async (program) => {
+  const newProgram = { id: uuidv4(), ...program };
+  weeklyPrograms.push(newProgram);
+  return Promise.resolve(newProgram);
+};
+
+export const addExamProgram = async (program) => {
+  const newExam = { id: uuidv4(), ...program };
+  examPrograms.push(newExam);
+  return Promise.resolve(newExam);
+};
+
+export const updateWeeklyProgram = async (id, data) => {
+  const index = weeklyPrograms.findIndex(p => p.id === id);
+  if (index !== -1) {
+    weeklyPrograms[index] = { ...weeklyPrograms[index], ...data };
+    return Promise.resolve(weeklyPrograms[index]);
+  }
+  return Promise.resolve(null);
+};
+
+export const updateExamProgram = async (id, data) => {
+  const index = examPrograms.findIndex(e => e.id === id);
+  if (index !== -1) {
+    examPrograms[index] = { ...examPrograms[index], ...data };
+    return Promise.resolve(examPrograms[index]);
+  }
+  return Promise.resolve(null);
+};
+
+export const deleteWeeklyProgram = async (id) => {
+  // ✅ حذف الجلسة من الـ Backend
+  try {
+    await apiClient.delete(`/sessions/${id}`);
+  } catch (error) {
+    // fallback: حذف من المتغير المحلي
+    weeklyPrograms = weeklyPrograms.filter(p => p.id !== id);
+  }
+  return Promise.resolve();
+};
+
+export const deleteExamProgram = async (id) => {
+  // ✅ حذف الجلسة من الـ Backend
+  try {
+    await apiClient.delete(`/sessions/${id}`);
+  } catch (error) {
+    examPrograms = examPrograms.filter(e => e.id !== id);
+  }
+  return Promise.resolve();
+};
+
+// ========== دوال جداول الأساتذة والطلاب ==========
+export const getTeacherSchedule = async (teacherId) => {
+  // Fetch the teacher's schedule from the backend.
+  try {
+    const response = await apiClient.get(`/my-schedule/${teacherId}`, {
+      params: { type: 'course' },
+    });
+    // The API returns {success, viewing_as, type, sessions}.
+    const sessions = response.data.sessions || [];
+    // Map API sessions to the front-end format.
+    return sessions.map((session) => ({
+      id: session.id,
+      day: session.day,
+      start_time: session.start_time,
+      end_time: session.end_time,
+      course: session.course,
+      course_id: session.course,
+      room_name: session.hall,
+      class_name: session.class_name || '', // not provided by API
+    }));
+  } catch (error) {
+    // Fallback: return mock data
+    const teacherSchedule = weeklyPrograms.filter(p => p.teacherId === teacherId);
+    return teacherSchedule;
+  }
+};
+
+export const getStudentSchedule = async (studentId) => {
+  // Fetch the student's weekly (course) schedule from the backend.
+  try {
+    const response = await apiClient.get(`/my-schedule/${studentId}`, {
+      params: { type: 'course' },
+    });
+    const sessions = response.data.sessions || [];
+    return sessions.map((session) => ({
+      id: session.id,
+      day: session.day,
+      start_time: session.start_time,
+      end_time: session.end_time,
+      course: session.course,
+      course_id: session.course,
+      room_name: session.hall,
+    }));
+  } catch (error) {
+    // Fallback to mock: filter weeklyPrograms by classId
+    const student = users.students.find(s => s.id === studentId);
+    if (!student) return [];
+    const studentSchedule = weeklyPrograms.filter(p => p.classId === student.classId);
+    return studentSchedule;
+  }
+};
+
+export const getStudentExams = async (studentId) => {
+  // Fetch the student's exam schedule from the backend.
+  try {
+    const response = await apiClient.get(`/my-schedule/${studentId}`, {
+      params: { type: 'exam' },
+    });
+    const sessions = response.data.sessions || [];
+    return sessions.map((session) => ({
+      id: session.id,
+      day: session.day,
+      start_time: session.start_time,
+      end_time: session.end_time,
+      course: session.course,
+      course_id: session.course,
+      room_name: session.hall,
+    }));
+  } catch (error) {
+    // Fallback to mock: compute exams based on examPrograms
+    const student = users.students.find(s => s.id === studentId);
+    if (!student) return [];
+    const studentCourses = weeklyPrograms
+      .filter(p => p.classId === student.classId)
+      .map(p => p.subject);
+    const studentExams = examPrograms.filter(e => studentCourses.includes(e.subject));
+    return studentExams;
+  }
+};
+
+// ========== دوال إضافية للاستعلامات السريعة ==========
+export const getAnnouncementsCount = async () => {
+  return Promise.resolve(announcements.length);
+};
+
+export const getStudentsCount = async () => {
+  return Promise.resolve(users.students.length);
+};
+
+export const getTeachersCount = async () => {
+  return Promise.resolve(users.teachers.length);
+};
+
+export const getActiveCoursesCount = async () => {
+  const courses = await getCourses();
+  return Promise.resolve(courses.length);
+};
+
+export const getComplaintsCount = async () => {
+  return Promise.resolve(complaints.length);
+};
+
+export const getUnrepliedComplaintsCount = async () => {
+  return Promise.resolve(complaints.filter(c => !c.replied).length);
+};
