@@ -6,9 +6,6 @@ import { loginSuccess } from '../redux/slices/authSlice';
 import { login } from '../services/authService';
 import Toast from '../components/common/Toast';
 
-/**
- * صفحة تسجيل الدخول
- */
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -20,7 +17,6 @@ const Login = () => {
     e.preventDefault();
     try {
       const response = await login({ username, password });
-      // حفظ الرمز في localStorage للمحافظة على الجلسة
       localStorage.setItem('token', response.token);
       dispatch(loginSuccess({ token: response.token, role: response.role, user: response.user }));
       navigate('/' + response.role);
@@ -58,7 +54,6 @@ const Login = () => {
           </Button>
         </form>
       </Paper>
-      {/* عرض رسالة خطأ */}
       <Toast
         open={Boolean(error)}
         onClose={() => setError('')}

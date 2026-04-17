@@ -1,4 +1,3 @@
-// src/pages/Admin/AdminNotifications.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -24,10 +23,10 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import {
-  getUnrepliedComplaintsCount,
   getComplaints,
   getReports,
 } from '../../services/adminService';
+import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
 function AdminNotifications() {
@@ -36,13 +35,11 @@ function AdminNotifications() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-  // جلب الإشعارات
   const fetchNotifications = async () => {
     setLoading(true);
     try {
       const notificationsList = [];
-      
-      // 1. الشكاوى الجديدة (غير مجاب عليها)
+
       const complaints = await getComplaints();
       const unreadComplaints = complaints.filter(c => !c.replied);
       if (unreadComplaints.length > 0) {
@@ -58,7 +55,6 @@ function AdminNotifications() {
         });
       }
 
-      // 2. نقاط جديدة (أفضل الطلاب)
       const reports = await getReports();
       const topStudents = reports.topStudents;
       const allTopStudents = [
@@ -80,7 +76,6 @@ function AdminNotifications() {
         });
       }
 
-      // 3. نتائج الاستبيان (إذا وجدت)
       const surveyResults = reports.surveyResults;
       if (surveyResults && surveyResults.length > 0) {
         notificationsList.push({
@@ -95,7 +90,6 @@ function AdminNotifications() {
         });
       }
 
-      // إذا لم توجد إشعارات
       if (notificationsList.length === 0) {
         notificationsList.push({
           id: 'empty',
@@ -120,7 +114,6 @@ function AdminNotifications() {
     fetchNotifications();
   }, []);
 
-  // معالجة الضغط على إشعار
   const handleNotificationClick = (notification) => {
     if (notification.action) {
       navigate(notification.action);
@@ -138,26 +131,46 @@ function AdminNotifications() {
 
   return (
     <Box>
-      <Box display="flex" alignItems="center" gap={1} mb={3}>
-        <Badge badgeContent={notifications.filter(n => n.type !== 'empty').length} color="error">
-          <NotificationsIcon sx={{ fontSize: 32 }} />
+      {/* Header موحد */}
+      <PageHeader 
+        title="الإشعارات"
+        subtitle="عرض آخر الإشعارات والتحديثات"
+        icon={<NotificationsIcon sx={{ fontSize: 20 }} />}
+      />
+
+      {/* عداد الإشعارات */}
+      <Box display="flex" justifyContent="flex-end" mb={2}>
+        <Badge 
+          badgeContent={notifications.filter(n => n.type !== 'empty').length} 
+          color="error"
+          sx={{
+            '& .MuiBadge-badge': {
+              fontSize: 12,
+              height: 20,
+              minWidth: 20,
+            }
+          }}
+        >
+          <Chip 
+            label={`${notifications.filter(n => n.type !== 'empty').length} إشعار جديد`}
+            size="small"
+            sx={{ bgcolor: '#e3f2fd', color: '#1976d2' }}
+          />
         </Badge>
-        <Typography variant="h4">
-          الإشعارات
-        </Typography>
       </Box>
 
-      <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
+      {/* قائمة الإشعارات */}
+      <Paper sx={{ borderRadius: 3, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
         <List>
           {notifications.map((notification, index) => (
             <React.Fragment key={notification.id}>
               <ListItem
                 disablePadding
                 sx={{
-                  backgroundColor: notification.type !== 'empty' ? '#fff8e1' : 'transparent',
+                  backgroundColor: notification.type !== 'empty' ? '#e3f2fd' : 'transparent',
                   transition: '0.3s',
                   '&:hover': notification.action ? {
-                    backgroundColor: '#f5f5f5',
+                    backgroundColor: '#bbdef5',
                     cursor: 'pointer',
                   } : {},
                 }}
@@ -165,14 +178,15 @@ function AdminNotifications() {
                 <ListItemButton
                   onClick={() => handleNotificationClick(notification)}
                   disabled={!notification.action}
+                  sx={{ py: 2 }}
                 >
                   <ListItemIcon>
                     {notification.icon}
                   </ListItemIcon>
                   <ListItemText
                     primary={
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <Typography variant="subtitle1" fontWeight="bold">
+                      <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                        <Typography variant="subtitle1" fontWeight="bold" sx={{ color: '#1565c0' }}>
                           {notification.title}
                         </Typography>
                         {notification.count && (
@@ -180,20 +194,25 @@ function AdminNotifications() {
                             label={notification.count}
                             size="small"
                             color="error"
+                            sx={{ height: 22, fontSize: '0.7rem' }}
                           />
                         )}
                       </Box>
                     }
                     secondary={
-                      <Box>
+                      <Box sx={{ mt: 0.5 }}>
                         <Typography variant="body2" color="text.secondary">
                           {notification.message}
                         </Typography>
                         {notification.action && (
                           <Typography
                             variant="caption"
-                            color="primary"
-                            sx={{ mt: 0.5, display: 'inline-block' }}
+                            sx={{ 
+                              mt: 1, 
+                              display: 'inline-block',
+                              color: '#1976d2',
+                              fontWeight: 500,
+                            }}
                           >
                             {notification.actionText} →
                           </Typography>
@@ -210,7 +229,10 @@ function AdminNotifications() {
       </Paper>
 
       {notifications.length === 1 && notifications[0].type === 'empty' && (
-        <Alert severity="info" sx={{ mt: 3, borderRadius: 2 }}>
+        <Alert 
+          severity="info" 
+          sx={{ mt: 3, borderRadius: 2, bgcolor: '#e3f2fd', color: '#1565c0' }}
+        >
           🎉 لا توجد إشعارات جديدة حالياً. سنخبرك عند ظهور أي تحديثات.
         </Alert>
       )}

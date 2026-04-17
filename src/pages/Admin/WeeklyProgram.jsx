@@ -1,4 +1,3 @@
-// src/pages/Admin/WeeklyProgram.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -28,6 +27,7 @@ import {
   AutoAwesome as AutoAwesomeIcon,
   Schedule as ScheduleIcon,
   Event as EventIcon,
+  CalendarMonth as CalendarMonthIcon,
 } from '@mui/icons-material';
 import {
   getWeeklyProgram,
@@ -40,6 +40,7 @@ import {
   getRooms,
   getClasses,
 } from '../../services/adminService';
+import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
 function WeeklyProgram() {
@@ -55,7 +56,6 @@ function WeeklyProgram() {
 
   const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
 
-  // جلب البيانات
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -83,13 +83,12 @@ function WeeklyProgram() {
     fetchData();
   }, []);
 
-  // توليد برنامج دوام تلقائي
   const handleGenerateWeekly = async () => {
     setGenerating(true);
     try {
       const result = await generateWeeklySchedule();
       setToast({ open: true, message: '✅ تم توليد برنامج الدوام بنجاح!', severity: 'success' });
-      fetchData(); // تحديث الجدول
+      fetchData(); 
     } catch (error) {
       setToast({ open: true, message: error.message || 'فشل في التوليد', severity: 'error' });
     } finally {
@@ -97,7 +96,6 @@ function WeeklyProgram() {
     }
   };
 
-  // توليد برنامج امتحانات تلقائي
   const handleGenerateExam = async () => {
     setGenerating(true);
     try {
@@ -111,7 +109,6 @@ function WeeklyProgram() {
     }
   };
 
-  // حذف جلسة دوام
   const handleScheduleDelete = async (id) => {
     if (window.confirm('⚠️ هل أنت متأكد من حذف هذه الجلسة؟')) {
       try {
@@ -124,7 +121,6 @@ function WeeklyProgram() {
     }
   };
 
-  // حذف امتحان
   const handleExamDelete = async (id) => {
     if (window.confirm('⚠️ هل أنت متأكد من حذف هذا الامتحان؟')) {
       try {
@@ -137,13 +133,11 @@ function WeeklyProgram() {
     }
   };
 
-  // جلب اسم القاعة
   const getRoomName = (id) => {
     const room = rooms.find(r => r.id === id);
     return room ? room.name : id;
   };
 
-  // جلب اسم الصف
   const getClassName = (id) => {
     const classItem = classes.find(c => c.id === id);
     return classItem ? classItem.name : id;
@@ -160,36 +154,53 @@ function WeeklyProgram() {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        📅 البرنامج الأسبوعي
-      </Typography>
+      {/* Header موحد */}
+      <PageHeader 
+        title="البرنامج الأسبوعي"
+        subtitle="إدارة جداول الدوام والامتحانات"
+        icon={<CalendarMonthIcon sx={{ fontSize: 20 }} />}
+      />
 
-      <Alert severity="info" sx={{ mb: 3 }}>
-        <strong>📌 آلية العمل:</strong>
-        <ul style={{ margin: '8px 0 0 20px' }}>
-          <li>يمكنك <strong>توليد برنامج تلقائي</strong> بالضغط على زر "توليد برنامج"</li>
-          <li>النظام سيوزع المواد على أيام الأسبوع (الأحد - الخميس) من 8 صباحاً إلى 3 ظهراً</li>
-          <li>سيتم تجنب التعارضات بحيث لا يكون للطالب مادتان في نفس الوقت</li>
-          <li>برنامج الدوام: يرسل للأستاذ والطالب</li>
-          <li>برنامج الامتحان: يرسل للطالب فقط</li>
-        </ul>
+      <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+        <strong>📌 ملاحظة:</strong> عند الضغط على زر التوليد، سيتم إنشاء جدول تلقائي مع تجنب التعارضات.
       </Alert>
 
-      <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }} centered>
-        <Tab label="📅 برنامج الدوام" />
-        <Tab label="📝 برنامج الامتحان" />
+      <Tabs 
+        value={tab} 
+        onChange={(e, v) => setTab(v)} 
+        sx={{ mb: 3 }} 
+        centered
+        TabIndicatorProps={{ sx: { bgcolor: '#1976d2' } }}
+      >
+        <Tab 
+          label="📅 برنامج الدوام" 
+          sx={{ '&.Mui-selected': { color: '#1976d2' } }}
+        />
+        <Tab 
+          label="📝 برنامج الامتحان" 
+          sx={{ '&.Mui-selected': { color: '#1976d2' } }}
+        />
       </Tabs>
 
-      {/* ========== تبويب برنامج الدوام ========== */}
       {tab === 0 && (
-        <Paper sx={{ p: 2 }}>
-          <Box display="flex" justifyContent="flex-end" mb={2} gap={2}>
+        <Paper sx={{ p: 3, borderRadius: 3 }}>
+          <Box display="flex" justifyContent="flex-end" mb={3}>
             <Button
               variant="contained"
               startIcon={<AutoAwesomeIcon />}
               onClick={handleGenerateWeekly}
               disabled={generating}
-              color="secondary"
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 0.8,
+                background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)',
+                  transform: 'translateY(-2px)',
+                },
+                transition: 'all 0.3s ease',
+              }}
             >
               {generating ? 'جاري التوليد...' : '🔄 توليد برنامج تلقائي'}
             </Button>
@@ -197,19 +208,18 @@ function WeeklyProgram() {
 
           <Table>
             <TableHead>
-              <TableRow>
-                <TableCell>اليوم</TableCell>
-                <TableCell>الوقت</TableCell>
-                <TableCell>المادة</TableCell>
-                <TableCell>معرف الأستاذ</TableCell>
-                <TableCell>القاعة</TableCell>
-                <TableCell>الصف</TableCell>
-                <TableCell align="center">إجراءات</TableCell>
+              <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
+                <TableCell sx={{ fontWeight: 'bold' }}>اليوم</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>الوقت</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>المادة</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>معرف الأستاذ</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>القاعة</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>الصف</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {scheduleList.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} hover>
                   <TableCell><Chip label={item.day} color="primary" size="small" /></TableCell>
                   <TableCell>{item.start_time} - {item.end_time}</TableCell>
                   <TableCell>{item.course?.name || item.course_id}</TableCell>
@@ -237,16 +247,25 @@ function WeeklyProgram() {
         </Paper>
       )}
 
-      {/* ========== تبويب برنامج الامتحان ========== */}
       {tab === 1 && (
-        <Paper sx={{ p: 2 }}>
-          <Box display="flex" justifyContent="flex-end" mb={2} gap={2}>
+        <Paper sx={{ p: 3, borderRadius: 3 }}>
+          <Box display="flex" justifyContent="flex-end" mb={3}>
             <Button
               variant="contained"
               startIcon={<AutoAwesomeIcon />}
               onClick={handleGenerateExam}
               disabled={generating}
-              color="secondary"
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 0.8,
+                background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)',
+                  transform: 'translateY(-2px)',
+                },
+                transition: 'all 0.3s ease',
+              }}
             >
               {generating ? 'جاري التوليد...' : '🔄 توليد امتحانات تلقائي'}
             </Button>
@@ -254,18 +273,17 @@ function WeeklyProgram() {
 
           <Table>
             <TableHead>
-              <TableRow>
-                <TableCell>المادة</TableCell>
-                <TableCell>اليوم</TableCell>
-                <TableCell>التاريخ</TableCell>
-                <TableCell>الوقت</TableCell>
-                <TableCell>القاعة</TableCell>
-                <TableCell align="center">إجراءات</TableCell>
+              <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
+                <TableCell sx={{ fontWeight: 'bold' }}>المادة</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>اليوم</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>التاريخ</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>الوقت</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>القاعة</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {examList.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} hover>
                   <TableCell>{item.course?.name || item.course_id}</TableCell>
                   <TableCell><Chip label={item.day} color="warning" size="small" /></TableCell>
                   <TableCell>{item.date}</TableCell>

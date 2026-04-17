@@ -2,7 +2,6 @@ import React from 'react';
 import { Snackbar, Alert } from '@mui/material';
 
 /**
- * مكون Toast لعرض رسائل قصيرة
  * @param {boolean} open - حالة فتح التوست
  * @param {function} onClose - دالة إغلاق التوست
  * @param {string} message - رسالة التوست

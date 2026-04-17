@@ -1,4 +1,3 @@
-// src/pages/Admin/Complaints.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Typography,
@@ -23,19 +22,15 @@ import {
   Pending as PendingIcon,
 } from '@mui/icons-material';
 import { getComplaints, replyToComplaint } from '../../services/adminService';
+import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
-/**
- * صفحة إدارة شكاوى أولياء الأمور
- * تعرض جميع الشكاوى مع إمكانية الرد عليها
- */
 const Complaints = () => {
   const [complaints, setComplaints] = useState([]);
   const [replyTexts, setReplyTexts] = useState({});
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-  // جلب الشكاوى
   const fetchComplaints = async () => {
     setLoading(true);
     try {
@@ -53,7 +48,6 @@ const Complaints = () => {
     fetchComplaints();
   }, []);
 
-  // الرد على شكوى
   const handleReply = async (id) => {
     const reply = replyTexts[id] || '';
     if (!reply.trim()) {
@@ -65,13 +59,12 @@ const Complaints = () => {
       await replyToComplaint(id, reply);
       setToast({ open: true, message: 'تم إرسال الرد بنجاح', severity: 'success' });
       setReplyTexts((prev) => ({ ...prev, [id]: '' }));
-      fetchComplaints(); // تحديث القائمة
+      fetchComplaints(); 
     } catch (error) {
       setToast({ open: true, message: error.message || 'فشل في إرسال الرد', severity: 'error' });
     }
   };
 
-  // تنسيق التاريخ
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -95,12 +88,12 @@ const Complaints = () => {
 
   return (
     <Box>
-      <Box display="flex" alignItems="center" gap={1} mb={3}>
-        <ReportProblemIcon color="error" sx={{ fontSize: 32 }} />
-        <Typography variant="h4">
-          إدارة شكاوى أولياء الأمور
-        </Typography>
-      </Box>
+      {/* Header موحد */}
+      <PageHeader 
+        title="إدارة الشكاوى"
+        subtitle="عرض والرد على شكاوى أولياء الأمور"
+        icon={<ReportProblemIcon sx={{ fontSize: 20 }} />}
+      />
 
       {complaints.length === 0 ? (
         <Alert severity="info" sx={{ borderRadius: 2 }}>
@@ -108,12 +101,21 @@ const Complaints = () => {
         </Alert>
       ) : (
         complaints.map((complaint) => (
-          <Accordion key={complaint.id} sx={{ mb: 2, borderRadius: 2, '&:before': { display: 'none' } }}>
+          <Accordion 
+            key={complaint.id} 
+            sx={{ 
+              mb: 2, 
+              borderRadius: 2, 
+              '&:before': { display: 'none' },
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            }}
+          >
             <AccordionSummary
               expandIcon={<ExpandMoreIcon />}
               sx={{
-                backgroundColor: complaint.replied ? '#f5f5f5' : '#fff3e0',
+                backgroundColor: complaint.replied ? '#f5f5f5' : '#e3f2fd',
                 borderRadius: 2,
+                '&:hover': { backgroundColor: complaint.replied ? '#eeeeee' : '#bbdef5' },
               }}
             >
               <Box display="flex" alignItems="center" justifyContent="space-between" width="100%">
@@ -124,7 +126,7 @@ const Complaints = () => {
                     size="small"
                     icon={complaint.replied ? <CheckCircleIcon /> : <PendingIcon />}
                   />
-                  <Typography variant="subtitle1" fontWeight="bold">
+                  <Typography variant="subtitle1" fontWeight="bold" sx={{ color: '#1565c0' }}>
                     {complaint.parentName || 'ولي أمر'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -137,8 +139,8 @@ const Complaints = () => {
               </Box>
             </AccordionSummary>
             <AccordionDetails>
-              <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: '#fafafa' }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: '#fafafa', borderRadius: 2 }}>
+                <Typography variant="subtitle2" color="#1565c0" gutterBottom>
                   نص الشكوى:
                 </Typography>
                 <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -147,7 +149,7 @@ const Complaints = () => {
               </Paper>
 
               {complaint.replied ? (
-                <Paper variant="outlined" sx={{ p: 2, bgcolor: '#e8f5e9' }}>
+                <Paper variant="outlined" sx={{ p: 2, bgcolor: '#e8f5e9', borderRadius: 2 }}>
                   <Typography variant="subtitle2" color="success.main" gutterBottom>
                     الرد:
                   </Typography>
@@ -161,7 +163,7 @@ const Complaints = () => {
               ) : (
                 <Box>
                   <Divider sx={{ my: 2 }} />
-                  <Typography variant="subtitle2" gutterBottom>
+                  <Typography variant="subtitle2" gutterBottom sx={{ color: '#1976d2' }}>
                     الرد على الشكوى:
                   </Typography>
                   <TextField
@@ -181,7 +183,11 @@ const Complaints = () => {
                     variant="contained"
                     onClick={() => handleReply(complaint.id)}
                     startIcon={<ReplyIcon />}
-                    sx={{ borderRadius: 2 }}
+                    sx={{ 
+                      borderRadius: 2,
+                      bgcolor: '#1976d2',
+                      '&:hover': { bgcolor: '#1565c0' },
+                    }}
                   >
                     إرسال الرد
                   </Button>

@@ -1,4 +1,3 @@
-// src/pages/Student/StudentSchedule.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -18,7 +17,6 @@ import {
 import { useSelector } from 'react-redux';
 import { getStudentSchedule, getStudentExams } from '../../services/adminService';
 
-// Map Arabic day names to the English names returned by the backend API
 const dayMapToEnglish = {
   'الأحد': 'Sunday',
   'الإثنين': 'Monday',
@@ -27,7 +25,6 @@ const dayMapToEnglish = {
   'الخميس': 'Thursday',
 };
 
-// Map English day names returned by the backend to Arabic for display
 const dayMapToArabic = {
   Sunday: 'الأحد',
   Monday: 'الإثنين',
@@ -91,7 +88,6 @@ function StudentSchedule() {
         <Tab label="📝 جدول الامتحانات" />
       </Tabs>
 
-      {/* جدول الدوام */}
       {tab === 0 && (
         <Paper sx={{ p: 2, overflowX: 'auto' }}>
           <Alert severity="info" sx={{ mb: 2 }}>
@@ -136,7 +132,6 @@ function StudentSchedule() {
         </Paper>
       )}
 
-      {/* جدول الامتحانات */}
       {tab === 1 && (
         <Paper sx={{ p: 2 }}>
           <Alert severity="warning" sx={{ mb: 2 }}>

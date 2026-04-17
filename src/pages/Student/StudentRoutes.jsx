@@ -12,9 +12,6 @@ import Surveys from './Surveys';
 import Points from './Points';
 import Notifications from './Notifications';
 
-/**
- * تعريف مسارات الطالب
- */
 const StudentRoutes = () => {
   return (
     <Routes>

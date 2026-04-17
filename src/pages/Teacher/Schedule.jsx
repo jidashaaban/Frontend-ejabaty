@@ -1,4 +1,3 @@
-// src/pages/Teacher/TeacherSchedule.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -16,7 +15,6 @@ import {
 import { useSelector } from 'react-redux';
 import { getTeacherSchedule } from '../../services/adminService';
 
-// Map Arabic day names to English names returned by the backend API
 const dayMapToEnglish = {
   'الأحد': 'Sunday',
   'الإثنين': 'Monday',

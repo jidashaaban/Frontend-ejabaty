@@ -3,9 +3,6 @@ import { Typography } from '@mui/material';
 import DashboardSummary from '../../components/layout/DashboardSummary';
 import { getStudents, getAnnouncedTests, getExamModels } from '../../services/teacherService';
 
-/**
- * لوحة تحكم الأستاذ
- */
 const Dashboard = () => {
   const [summary, setSummary] = useState([]);
 

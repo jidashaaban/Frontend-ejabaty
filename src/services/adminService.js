@@ -1,4 +1,3 @@
-// src/services/adminService.js
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -19,13 +18,11 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// ========== بيانات وهمية (Mock Data) للاستخدام المؤقت ==========
 let announcements = [
   { id: uuidv4(), title: 'إعلان عن دورة الرياضيات', description: 'سيتم افتتاح دورة رياضيات جديدة في الأسبوع القادم.', date: '2026-04-01', published: true },
   { id: uuidv4(), title: 'مسابقة البرمجة', description: 'نعلن عن مسابقة برمجية لطلاب السنة الثانية.', date: '2026-03-15', published: false },
 ];
 
-// ========== بيانات الاستبيانات (Polls) مع بيانات تجريبية ==========
 let polls = [
   { 
     id: uuidv4(), 
@@ -64,12 +61,8 @@ let polls = [
 
 let users = { teachers: [], students: [] };
 let points = [];
-
-// بيانات البرامج الأسبوعية والامتحانية
 let weeklyPrograms = [];
 let examPrograms = [];
-
-// بيانات الشكاوى (Complaints)
 let complaints = [
   {
     id: uuidv4(),
@@ -102,22 +95,17 @@ let complaints = [
     replyDate: null,
   },
 ];
-
-// ========== بيانات القاعات الامتحانية (Exam Halls) ==========
 let examHalls = [
   { id: 1, name: 'قاعة A' },
   { id: 2, name: 'قاعة B' },
   { id: 3, name: 'قاعة C' },
 ];
-
-// تخزين سعات القاعات (منفصل عن القاعات لأن السعة غير موجودة في قاعدة البيانات)
 let examHallCapacities = {
-  1: 4,  // قاعة A
-  2: 4,  // قاعة B
-  3: 4,  // قاعة C
+  1: 4,  
+  2: 4,  
+  3: 4,  
 };
 
-// محاولة تحميل السعات المحفوظة من localStorage
 try {
   const savedCapacities = localStorage.getItem('examHallCapacities');
   if (savedCapacities) {
@@ -127,7 +115,6 @@ try {
   console.error('خطأ في تحميل سعات القاعات:', e);
 }
 
-// ========== دوال الإعلانات ==========
 export const getAnnouncements = async () => {
   return Promise.resolve([...announcements]);
 };
@@ -148,7 +135,6 @@ export const deleteAnnouncement = async (id) => {
   return Promise.resolve();
 };
 
-// ========== دوال المستخدمين ==========
 export const getUsers = async () => {
   return Promise.resolve({ ...users });
 };
@@ -170,7 +156,6 @@ export const addParent = async (parent) => {
   return Promise.resolve(newParent);
 };
 
-// ========== دوال الاستبيانات (Polls) المتقدمة ==========
 export const getPolls = async () => {
   console.log('📊 getPolls تم استدعاؤها, عدد الاستبيانات:', polls.length);
   return Promise.resolve([...polls]);
@@ -200,9 +185,7 @@ export const getPollResults = async (pollId) => {
   const poll = polls.find(p => p.id === pollId);
   if (!poll) return Promise.resolve([]);
   
-  // حساب النتائج (نسبة كل خيار)
   const results = poll.questions.map(question => {
-    // محاكاة إجابات وهمية
     const totalVotes = 100;
     const optionsWithStats = question.options.map((option, idx) => {
       const votes = Math.floor(Math.random() * 50) + 10;
@@ -232,8 +215,6 @@ export const submitPollResponse = async (pollId, answers) => {
   }
   return Promise.resolve({ success: true });
 };
-
-// ========== دوال التقارير ==========
 export const getReports = async () => {
   return Promise.resolve({
     studentsCount: 350,
@@ -275,7 +256,6 @@ export const getReports = async () => {
   });
 };
 
-// ========== دوال الشكاوى (Complaints) ==========
 export const getComplaints = async () => {
   return Promise.resolve([...complaints]);
 };
@@ -312,7 +292,6 @@ export const deleteComplaint = async (id) => {
   return Promise.resolve();
 };
 
-// ========== دوال الاستفسارات (للتوافق مع الكود القديم) ==========
 export const getInquiries = async () => {
   return Promise.resolve([...complaints]);
 };
@@ -321,7 +300,6 @@ export const replyToInquiry = async (id, replyMessage) => {
   return replyToComplaint(id, replyMessage);
 };
 
-// ========== دوال النقاط ==========
 export const getPoints = async () => {
   return Promise.resolve([...points]);
 };
@@ -344,7 +322,6 @@ export const getTopStudents = async (category) => {
   return reports.topStudents;
 };
 
-// ========== دوال المواد والقاعات والصفوف ==========
 export const getCourses = async () => {
   return Promise.resolve([
     { id: 1, name: 'الرياضيات' },
@@ -383,16 +360,11 @@ export const getTeachers = async () => {
   return Promise.resolve(users.teachers || []);
 };
 
-// ========== دوال القاعات الامتحانية (Exam Halls) ==========
 export const getExamHall = async () => {
-  // Fetch halls from the backend.
-  // The Laravel API exposes halls at GET /halls (prefixed by /api via API_BASE_URL).
-  // Each hall object contains an id, name and capacity.
   try {
     const response = await apiClient.get('/halls');
     return response.data;
   } catch (error) {
-    // Fall back to local mock data if the API call fails.
     const hallsWithCapacity = examHalls.map(hall => ({
       ...hall,
       capacity: examHallCapacities[hall.id] || 0,
@@ -402,19 +374,14 @@ export const getExamHall = async () => {
 };
 
 export const updateExamHallCapacity = async (hallId, capacity) => {
-  // To update a hall capacity in the backend we need to send the full list of halls
-  // because the Laravel endpoint '/setup-halls' truncates existing halls before inserting.
   try {
-    // Fetch current halls from the API
     const currentHalls = await getExamHall();
-    // Build new array with updated capacity
     const updatedHalls = currentHalls.map(h =>
       h.id === hallId ? { name: h.name, capacity } : { name: h.name, capacity: h.capacity || 0 }
     );
     await apiClient.post('/setup-halls', { halls: updatedHalls });
     return { id: hallId, capacity, success: true };
   } catch (error) {
-    // Fallback: update local mock data
     examHallCapacities[hallId] = capacity;
     localStorage.setItem('examHallCapacities', JSON.stringify(examHallCapacities));
     return { id: hallId, capacity, success: true };
@@ -422,7 +389,6 @@ export const updateExamHallCapacity = async (hallId, capacity) => {
 };
 
 export const addExamHall = async (hallData) => {
-  // Add a new hall by sending the updated hall list to the backend.
   try {
     const currentHalls = await getExamHall();
     const updatedHalls = [
@@ -430,12 +396,10 @@ export const addExamHall = async (hallData) => {
       { name: hallData.name, capacity: hallData.capacity || 0 },
     ];
     await apiClient.post('/setup-halls', { halls: updatedHalls });
-    // Re-fetch halls to obtain ids and return the newly added hall
     const hallsAfter = await getExamHall();
     const addedHall = hallsAfter.find(h => h.name === hallData.name && h.capacity === (hallData.capacity || 0));
     return addedHall || { name: hallData.name, capacity: hallData.capacity || 0 };
   } catch (error) {
-    // Fallback to local mock addition
     const newHall = {
       id: Date.now(),
       name: hallData.name,
@@ -458,33 +422,22 @@ export const getExamHallCapacities = async () => {
   return Promise.resolve({ ...examHallCapacities });
 };
 
-// ========== دوال توليد الجداول ==========
 export const generateWeeklySchedule = async () => {
-  // توليد جدول الدوام عبر الـ Backend
   const response = await apiClient.post('/generate-schedule', { type: 'course' });
   return response.data;
 };
 
 export const generateExamSchedule = async () => {
-  // توليد جدول الامتحانات عبر الـ Backend
   const response = await apiClient.post('/generate-schedule', { type: 'exam' });
   return response.data;
 };
 
-// ========== دوال البرنامج الأسبوعي (الدوام) ==========
 export const getWeeklyProgram = async () => {
-  // ✅ جلب الجدول مباشرة من الـ Backend بدل المتغير المحلي
   try {
-    const response = await apiClient.get('/admin-schedule', { params: { type: 'course' } });
-
-    // The sessions field might be returned either as an array or an object
-    // (e.g. {"0": {...}, "1": {...}}) depending on how the backend
-    // collection was encoded. If it's an object, convert it to an array
-    // using Object.values() to avoid runtime errors when calling map().
+    const response = await apiClient.get('/admin-schedule', { params: { type: 'course' } })
     const rawSessions = response.data?.sessions || [];
     const sessions = Array.isArray(rawSessions) ? rawSessions : Object.values(rawSessions);
 
-    // تحويل البيانات للشكل المطلوب في الجدول
     return sessions.map((session) => ({
       id:         session.id,
       day:        session.day,
@@ -498,12 +451,11 @@ export const getWeeklyProgram = async () => {
     }));
   } catch (error) {
     console.error('خطأ في جلب برنامج الدوام:', error);
-    return [...weeklyPrograms]; // fallback للبيانات المحلية
+    return [...weeklyPrograms]; 
   }
 };
 
 export const getExamProgram = async () => {
-  // ✅ جلب جدول الامتحانات مباشرة من الـ Backend
   try {
     const response = await apiClient.get('/admin-schedule', { params: { type: 'exam' } });
 
@@ -521,7 +473,7 @@ export const getExamProgram = async () => {
     }));
   } catch (error) {
     console.error('خطأ في جلب برنامج الامتحانات:', error);
-    return [...examPrograms]; // fallback للبيانات المحلية
+    return [...examPrograms]; 
   }
 };
 
@@ -556,36 +508,30 @@ export const updateExamProgram = async (id, data) => {
 };
 
 export const deleteWeeklyProgram = async (id) => {
-  // ✅ حذف الجلسة من الـ Backend
+ 
   try {
     await apiClient.delete(`/sessions/${id}`);
   } catch (error) {
-    // fallback: حذف من المتغير المحلي
     weeklyPrograms = weeklyPrograms.filter(p => p.id !== id);
   }
   return Promise.resolve();
 };
 
 export const deleteExamProgram = async (id) => {
-  // ✅ حذف الجلسة من الـ Backend
   try {
     await apiClient.delete(`/sessions/${id}`);
   } catch (error) {
     examPrograms = examPrograms.filter(e => e.id !== id);
   }
   return Promise.resolve();
-};
-
-// ========== دوال جداول الأساتذة والطلاب ==========
+}
 export const getTeacherSchedule = async (teacherId) => {
   // Fetch the teacher's schedule from the backend.
   try {
     const response = await apiClient.get(`/my-schedule/${teacherId}`, {
       params: { type: 'course' },
     });
-    // The API returns {success, viewing_as, type, sessions}.
     const sessions = response.data.sessions || [];
-    // Map API sessions to the front-end format.
     return sessions.map((session) => ({
       id: session.id,
       day: session.day,
@@ -594,17 +540,15 @@ export const getTeacherSchedule = async (teacherId) => {
       course: session.course,
       course_id: session.course,
       room_name: session.hall,
-      class_name: session.class_name || '', // not provided by API
+      class_name: session.class_name || '', 
     }));
   } catch (error) {
-    // Fallback: return mock data
     const teacherSchedule = weeklyPrograms.filter(p => p.teacherId === teacherId);
     return teacherSchedule;
   }
 };
 
 export const getStudentSchedule = async (studentId) => {
-  // Fetch the student's weekly (course) schedule from the backend.
   try {
     const response = await apiClient.get(`/my-schedule/${studentId}`, {
       params: { type: 'course' },
@@ -620,7 +564,6 @@ export const getStudentSchedule = async (studentId) => {
       room_name: session.hall,
     }));
   } catch (error) {
-    // Fallback to mock: filter weeklyPrograms by classId
     const student = users.students.find(s => s.id === studentId);
     if (!student) return [];
     const studentSchedule = weeklyPrograms.filter(p => p.classId === student.classId);
@@ -629,7 +572,6 @@ export const getStudentSchedule = async (studentId) => {
 };
 
 export const getStudentExams = async (studentId) => {
-  // Fetch the student's exam schedule from the backend.
   try {
     const response = await apiClient.get(`/my-schedule/${studentId}`, {
       params: { type: 'exam' },
@@ -645,7 +587,6 @@ export const getStudentExams = async (studentId) => {
       room_name: session.hall,
     }));
   } catch (error) {
-    // Fallback to mock: compute exams based on examPrograms
     const student = users.students.find(s => s.id === studentId);
     if (!student) return [];
     const studentCourses = weeklyPrograms
@@ -656,7 +597,6 @@ export const getStudentExams = async (studentId) => {
   }
 };
 
-// ========== دوال إضافية للاستعلامات السريعة ==========
 export const getAnnouncementsCount = async () => {
   return Promise.resolve(announcements.length);
 };

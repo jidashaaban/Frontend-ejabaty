@@ -8,9 +8,6 @@ import ExamModels from './ExamModels';
 import AnnounceTest from './AnnounceTest';
 import Inquiries from '../Admin/Complaints';
 
-/**
- * تعريف مسارات الأستاذ
- */
 const TeacherRoutes = () => {
   return (
     <Routes>
@@ -20,7 +17,6 @@ const TeacherRoutes = () => {
         <Route path="schedule" element={<Schedule />} />
         <Route path="exam-models" element={<ExamModels />} />
         <Route path="announce-test" element={<AnnounceTest />} />
-        {/* إعادة استخدام صفحة الاستفسارات من الإدارة لرد الأستاذ على الاستفسارات */}
         <Route path="inquiries" element={<Inquiries />} />
       </Route>
     </Routes>

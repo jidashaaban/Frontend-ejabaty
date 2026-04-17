@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Paper } from '@mui/material';
 import { getPoints } from '../../services/studentService';
 
-/**
- * صفحة نقاط التحفيز
- */
 const Points = () => {
   const [points, setPoints] = useState(0);
   useEffect(() => {

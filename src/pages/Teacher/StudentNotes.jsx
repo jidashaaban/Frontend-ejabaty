@@ -12,9 +12,6 @@ import {
 import { getStudents, addNote } from '../../services/teacherService';
 import Toast from '../../components/common/Toast';
 
-/**
- * صفحة ملاحظات الطلاب للأستاذ
- */
 const StudentNotes = () => {
   const [students, setStudents] = useState([]);
   const [notes, setNotes] = useState({});

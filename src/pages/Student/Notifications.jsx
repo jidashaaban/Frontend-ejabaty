@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Paper } from '@mui/material';
 import { getNotifications } from '../../services/studentService';
 
-/**
- * صفحة الإشعارات
- */
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   useEffect(() => {

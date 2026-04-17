@@ -1,12 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-/**
- * شريحة الطالب
- * تخزن بيانات الجدول، الاختبارات، المهام، الدرجات، الأقساط، الشكاوى، الاستبيانات، النقاط، والإشعارات.
- */
 const initialState = {
-  schedule: [],           // جدول الدوام (فقط المواد الخاصة بالطالب)
-  exams: [],              // جدول الامتحانات (فقط المواد الخاصة بالطالب)
+  schedule: [],           
+  exams: [],              
   tasks: [],
   grades: [],
   installments: [],
@@ -20,7 +16,6 @@ const studentSlice = createSlice({
   name: 'student',
   initialState,
   reducers: {
-    // ========== جدول الدوام ==========
     setSchedule: (state, action) => {
       state.schedule = action.payload;
     },
@@ -34,8 +29,6 @@ const studentSlice = createSlice({
     deleteFromSchedule: (state, action) => {
       state.schedule = state.schedule.filter((s) => s.id !== action.payload);
     },
-
-    // ========== جدول الامتحانات ==========
     setExams: (state, action) => {
       state.exams = action.payload;
     },
@@ -49,8 +42,6 @@ const studentSlice = createSlice({
     deleteExam: (state, action) => {
       state.exams = state.exams.filter((e) => e.id !== action.payload);
     },
-
-    // ========== المهام ==========
     setTasks: (state, action) => {
       state.tasks = action.payload;
     },
@@ -64,17 +55,14 @@ const studentSlice = createSlice({
     deleteTask: (state, action) => {
       state.tasks = state.tasks.filter((t) => t.id !== action.payload);
     },
-
-    // ========== الدرجات ==========
-    setGrades: (state, action) => {
+    setGrades: ( state, action ) =>
+    {
       state.grades = action.payload;
     },
     updateGrade: (state, action) => {
       const index = state.grades.findIndex((g) => g.id === action.payload.id);
       if (index !== -1) state.grades[index] = action.payload;
     },
-
-    // ========== الأقساط ==========
     setInstallments: (state, action) => {
       state.installments = action.payload;
     },
@@ -82,21 +70,17 @@ const studentSlice = createSlice({
       const index = state.installments.findIndex((i) => i.id === action.payload.id);
       if (index !== -1) state.installments[index] = action.payload;
     },
-
-    // ========== الشكاوى ==========
     setComplaints: (state, action) => {
       state.complaints = action.payload;
     },
     addComplaint: (state, action) => {
       state.complaints.push(action.payload);
     },
-
-    // ========== الاستبيانات ==========
-    setSurveys: (state, action) => {
+    setSurveys: ( state, action ) =>
+    {
       state.surveys = action.payload;
     },
 
-    // ========== النقاط ==========
     setPoints: (state, action) => {
       state.points = action.payload;
     },
@@ -104,12 +88,11 @@ const studentSlice = createSlice({
       state.points += action.payload;
     },
 
-    // ========== الإشعارات ==========
     setNotifications: (state, action) => {
       state.notifications = action.payload;
     },
     addNotification: (state, action) => {
-      state.notifications.unshift(action.payload); // الإشعارات الجديدة بالأعلى
+      state.notifications.unshift(action.payload); 
     },
     markNotificationAsRead: (state, action) => {
       const index = state.notifications.findIndex((n) => n.id === action.payload);
@@ -125,44 +108,27 @@ const studentSlice = createSlice({
 });
 
 export const {
-  // Schedule (جدول الدوام)
   setSchedule,
   addToSchedule,
   updateSchedule,
   deleteFromSchedule,
-  
-  // Exams (جدول الامتحانات)
   setExams,
   addToExams,
   updateExam,
-  deleteExam,
-  
-  // Tasks
+  deleteExam,  
   setTasks,
   addTask,
   updateTask,
   deleteTask,
-  
-  // Grades
   setGrades,
   updateGrade,
-  
-  // Installments
   setInstallments,
   updateInstallment,
-  
-  // Complaints
   setComplaints,
   addComplaint,
-  
-  // Surveys
   setSurveys,
-  
-  // Points
   setPoints,
   addPoints,
-  
-  // Notifications
   setNotifications,
   addNotification,
   markNotificationAsRead,

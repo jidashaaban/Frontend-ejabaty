@@ -12,9 +12,6 @@ import {
 import { getSurveys, submitSurveyResponse } from '../../services/studentService';
 import Toast from '../../components/common/Toast';
 
-/**
- * صفحة الاستبيانات للطالب
- */
 const Surveys = () => {
   const [surveys, setSurveys] = useState([]);
   const [selectedSurvey, setSelectedSurvey] = useState(null);

@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Paper } from '@mui/material';
 import { getGrades } from '../../services/studentService';
 
-/**
- * صفحة نتائج الامتحانات
- */
 const Grades = () => {
   const [grades, setGrades] = useState([]);
   useEffect(() => {

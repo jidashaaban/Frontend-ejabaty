@@ -4,9 +4,8 @@ const initialState = {
   announcements: [],
   polls: [],
   reports: {},
-  // توحيد البرامج في مصفوفتين واضحتين
-  weeklyProgram: [],      // برنامج الدوام (بدلاً من weekSchedule)
-  examProgram: [],        // برنامج الامتحان (بدلاً من examSchedule)
+  weeklyProgram: [],    
+  examProgram: [],      
   studentSchedule: [],
   teacherSchedule: [],
   Complaints: [],
@@ -21,7 +20,6 @@ const adminSlice = createSlice({
   name: 'admin',
   initialState,
   reducers: {
-    // ========== الإعلانات ==========
     setAnnouncements: (state, action) => {
       state.announcements = action.payload;
     },
@@ -38,9 +36,7 @@ const adminSlice = createSlice({
       state.announcements = state.announcements.filter(
         (a) => a.id !== action.payload
       );
-    },
-  
-    // ========== الاستبيانات ==========
+    }, 
     setPolls: (state, action) => {
       state.polls = action.payload;
     },
@@ -53,8 +49,6 @@ const adminSlice = createSlice({
     getPollResults: (state, action) => {
       state.pollResults = action.payload;
     },
-
-    // ========== التقارير ==========
     setReports: (state, action) => {
       state.reports = action.payload;
     },
@@ -67,8 +61,6 @@ const adminSlice = createSlice({
     getReports: (state, action) => {
       state.reports = action.payload;
     },
-
-    // ========== برنامج الدوام (weeklyProgram) ==========
     setWeeklyProgram: (state, action) => {
       state.weeklyProgram = action.payload;
     },
@@ -82,9 +74,7 @@ const adminSlice = createSlice({
     deleteWeeklyProgram: (state, action) => {
       state.weeklyProgram = state.weeklyProgram.filter((w) => w.id !== action.payload);
     },
-
-    // ========== برنامج الامتحان (examProgram) ==========
-    setExamProgram: (state, action) => {
+   setExamProgram: (state, action) => {
       state.examProgram = action.payload;
     },
     addExamProgram: (state, action) => {
@@ -97,8 +87,6 @@ const adminSlice = createSlice({
     deleteExamProgram: (state, action) => {
       state.examProgram = state.examProgram.filter((e) => e.id !== action.payload);
     },
-
-    // ========== جداول الطلاب والأساتذة ==========
     setStudentSchedule: (state, action) => {
       state.studentSchedule = action.payload;
     },
@@ -108,7 +96,6 @@ const adminSlice = createSlice({
     deleteStudentSchedule: (state, action) => {
       state.studentSchedule = state.studentSchedule.filter((s) => s.id !== action.payload);
     },
-
     setTeacherSchedule: (state, action) => {
       state.teacherSchedule = action.payload;
     },
@@ -118,8 +105,6 @@ const adminSlice = createSlice({
     deleteTeacherSchedule: (state, action) => {
       state.teacherSchedule = state.teacherSchedule.filter((t) => t.id !== action.payload);
     },
-
-    // ========== المستخدمين ==========
     setUsers: (state, action) => {
       state.users = action.payload;
     },
@@ -129,8 +114,6 @@ const adminSlice = createSlice({
     deleteUsers: (state, action) => {
       state.users = state.users.filter((u) => u.id !== action.payload);
     },
-
-    // ========== الموظفين ==========
     setEmployees: (state, action) => {
       state.employees = action.payload;
     },
@@ -143,8 +126,6 @@ const adminSlice = createSlice({
     getEmployees: (state, action) => {
       state.employees = action.payload;
     },
-
-    // ========== النقاط ==========
     setPoints: (state, action) => {
       state.points = action.payload;
     },
@@ -157,8 +138,6 @@ const adminSlice = createSlice({
     deletePoints: (state, action) => {
       state.points = state.points.filter((p) => p.id !== action.payload);
     },
-
-    // ========== الشكاوى ==========
     setComplaints: (state, action) => {
       state.Complaints = action.payload;
     },
@@ -168,8 +147,6 @@ const adminSlice = createSlice({
     deleteComplaint: (state, action) => {
       state.Complaints = state.Complaints.filter((c) => c.id !== action.payload);
     },
-
-    // ========== القاعات الامتحانية ==========
     setExamHall: (state, action) => {
       state.examHall = action.payload;
     },
@@ -183,67 +160,46 @@ const adminSlice = createSlice({
 });
 
 export const {
-  // Announcements
   setAnnouncements,
   addAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
-  
-  // Polls
   setPolls,
   addPoll,
   deletePoll,
   getPollResults,
-  
-  // Reports
   setReports,
   addReports,
   deleteReports,
   getReports,
-  
-  // Weekly Program (الدوام)
   setWeeklyProgram,
   addWeeklyProgram,
   updateWeeklyProgram,
   deleteWeeklyProgram,
-  
-  // Exam Program (الامتحان)
   setExamProgram,
   addExamProgram,
   updateExamProgram,
   deleteExamProgram,
-  
-  // Student & Teacher Schedules
   setStudentSchedule,
   addStudentSchedule,
   deleteStudentSchedule,
   setTeacherSchedule,
   addTeacherSchedule,
   deleteTeacherSchedule,
-  
-  // Users
   setUsers,
   addUsers,
   deleteUsers,
-  
-  // Employees
   setEmployees,
   addEmployees,
   deleteEmployees,
   getEmployees,
-  
-  // Points
   setPoints,
   getPoints,
   addPoints,
   deletePoints,
-  
-  // Complaints
   setComplaints,
   addComplaint,
   deleteComplaint,
-  
-  // Exam Hall
   setExamHall,
   addExamHall,
   deleteExamHall,

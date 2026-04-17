@@ -1,4 +1,3 @@
-// src/components/layout/Sidebar.jsx
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -39,7 +38,6 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
     { text: 'التقارير', path: 'reports', icon: <AssessmentIcon /> },
     { text: 'البرنامج الأسبوعي', path: 'weekly-program', icon: <CalendarMonthIcon /> },
     { text: 'الشكاوى', path: 'complaints', icon: <ReportProblemIcon /> },
-    { text: 'القاعات الامتحانية', path: 'exam-halls', icon: <MeetingRoomIcon /> },
     { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
   ];
 
@@ -80,8 +78,8 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
-          backgroundColor: '#1976d2', // أزرق فاتح (الأساسي)
-          backgroundImage: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', // تدرج أزرق
+          backgroundColor: '#1976d2',
+          backgroundImage: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 
           color: '#fff',
           borderRight: 'none',
         },

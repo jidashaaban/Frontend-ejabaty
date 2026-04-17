@@ -2,7 +2,6 @@ import React from 'react';
 import { Grid, Paper, Typography } from '@mui/material';
 
 /**
- * مكون يعرض مجموعة من الملخصات (كروت) في لوحة التحكم.
  * @param {Array<{label: string, value: string|number}>} items
  */
 const DashboardSummary = ({ items }) => {

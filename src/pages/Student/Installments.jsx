@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Paper, LinearProgress, Box } from '@mui/material';
 import { getInstallments } from '../../services/studentService';
 
-/**
- * صفحة الأقساط
- */
 const Installments = () => {
   const [installments, setInstallments] = useState([]);
   useEffect(() => {

@@ -8,7 +8,6 @@ import {
 } from '@mui/material';
 
 /**
- * مكون عام للمودال (Dialog)
  * @param {boolean} open - حالة فتح المودال
  * @param {function} onClose - دالة لإغلاق المودال
  * @param {string} title - عنوان المودال

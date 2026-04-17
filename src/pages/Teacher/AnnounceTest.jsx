@@ -1,4 +1,3 @@
-// src/pages/Admin/Announcements.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -49,7 +48,6 @@ function Announcements() {
   });
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-  // جلب الإعلانات
   const fetchAnnouncements = async () => {
     setLoading(true);
     try {
@@ -67,7 +65,6 @@ function Announcements() {
     fetchAnnouncements();
   }, []);
 
-  // فتح نافذة إضافة إعلان جديد
   const handleOpenAddDialog = () => {
     setEditingAnnouncement(null);
     setFormData({
@@ -79,7 +76,6 @@ function Announcements() {
     setOpenDialog(true);
   };
 
-  // فتح نافذة تعديل إعلان
   const handleOpenEditDialog = (announcement) => {
     setEditingAnnouncement(announcement);
     setFormData({
@@ -91,19 +87,16 @@ function Announcements() {
     setOpenDialog(true);
   };
 
-  // إغلاق النافذة
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingAnnouncement(null);
   };
 
-  // تغيير الحقول
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  // حفظ الإعلان (إضافة أو تعديل)
   const handleSave = async () => {
     if (!formData.title || !formData.description) {
       setToast({ open: true, message: 'الرجاء تعبئة العنوان والوصف', severity: 'error' });
@@ -125,7 +118,6 @@ function Announcements() {
     }
   };
 
-  // حذف إعلان
   const handleDelete = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
       try {
@@ -234,7 +226,6 @@ function Announcements() {
         )}
       </Paper>
 
-      {/* نافذة إضافة/تعديل إعلان */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>
           {editingAnnouncement ? '✏️ تعديل إعلان' : '➕ إضافة إعلان جديد'}

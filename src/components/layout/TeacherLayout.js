@@ -4,9 +4,6 @@ import { Box } from '@mui/material';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 
-/**
- * تخطيط لوحة الأستاذ
- */
 const TeacherLayout = () => {
   return (
     <Box sx={{ display: 'flex', direction: 'rtl' }}>

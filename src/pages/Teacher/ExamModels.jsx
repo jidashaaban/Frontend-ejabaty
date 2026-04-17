@@ -9,9 +9,6 @@ import {
 import { getExamModels, uploadExamModel } from '../../services/teacherService';
 import Toast from '../../components/common/Toast';
 
-/**
- * صفحة النماذج الامتحانية
- */
 const ExamModels = () => {
   const subjects = ['رياضيات', 'فيزياء', 'لغة عربية'];
   const [models, setModels] = useState([]);

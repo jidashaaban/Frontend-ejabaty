@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Paper } from '@mui/material';
 import { getTasks } from '../../services/studentService';
 
-/**
- * صفحة المهام والواجبات
- */
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
   useEffect(() => {

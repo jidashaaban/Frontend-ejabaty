@@ -3,9 +3,6 @@ import { Typography, TextField, Button, Paper } from '@mui/material';
 import { submitComplaint } from '../../services/studentService';
 import Toast from '../../components/common/Toast';
 
-/**
- * صفحة رفع شكوى إلى الإدارة
- */
 const Complaints = () => {
   const [message, setMessage] = useState('');
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });

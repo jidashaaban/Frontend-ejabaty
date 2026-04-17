@@ -1,11 +1,5 @@
-/**
- * خدمات الطالب
- * توفر بيانات وهمية للجدول، الاختبارات، المهام، الدرجات، الأقساط، الشكاوى، الاستبيانات، النقاط، والإشعارات.
- */
-
 import { v4 as uuidv4 } from 'uuid';
 
-// بيانات وهمية لجدول الطالب (تم تحديث الهيكل ليتوافق مع النظام الجديد)
 let studentSchedule = [
   { 
     id: uuidv4(), 
@@ -27,7 +21,6 @@ let studentSchedule = [
   },
 ];
 
-// بيانات وهمية لامتحانات الطالب (تم تحديث الهيكل)
 let studentExams = [
   { 
     id: uuidv4(), 
@@ -49,55 +42,48 @@ let studentExams = [
   },
 ];
 
-// بيانات وهمية للمهام والواجبات
 const studentTasks = [
   { id: uuidv4(), title: 'حل تمارين الوحدة الأولى', dueDate: '2026-04-05', priority: 'عالية' },
   { id: uuidv4(), title: 'كتابة تقرير عن الكهرباء', dueDate: '2026-04-07', priority: 'متوسطة' },
 ];
 
-// بيانات وهمية للدرجات
 const studentGrades = [
   { id: uuidv4(), course: 'الرياضيات', grade: 85 },
   { id: uuidv4(), course: 'الفيزياء', grade: 90 },
 ];
 
-// بيانات وهمية للأقساط
 const studentInstallments = [
   { id: uuidv4(), label: 'القسط الأول', amount: 1000, paid: 800 },
   { id: uuidv4(), label: 'القسط الثاني', amount: 1000, paid: 0 },
 ];
 
-// بيانات وهمية للشكاوى
+
 let studentComplaints = [];
 
-// بيانات وهمية للاستبيانات
+
 const studentSurveys = [
   { id: uuidv4(), title: 'تقييم خدمات المكتبة', questions: [ { id: uuidv4(), type: 'rating', question: 'قيم نظافة المكتبة' } ] },
 ];
 
-// بيانات وهمية للنقاط
+
 let studentPoints = 10;
 
-// بيانات وهمية للإشعارات
+
 let studentNotifications = [
   { id: uuidv4(), message: 'تم إضافة اختبار جديد في مادة الفيزياء', date: '2026-03-30', isRead: false },
 ];
 
-// ========== دوال جدول الطالب ==========
+
 
 /**
- * جلب جدول الطالب (فقط المواد المسجل عليها)
  * @param {number} studentId - معرف الطالب
  * @returns {Promise<Array>} - قائمة الجلسات الخاصة بالطالب
  */
 export const getStudentSchedule = async (studentId) => {
-  // في البيانات الوهمية، نرجع الجدول كاملاً
-  // في الحالة الحقيقية، يتم فلترة الجدول حسب classId الخاص بالطالب
   return Promise.resolve([...studentSchedule]);
 };
 
 /**
- * جلب امتحانات الطالب (فقط المواد المسجل عليها)
  * @param {number} studentId - معرف الطالب
  * @returns {Promise<Array>} - قائمة الامتحانات الخاصة بالطالب
  */
@@ -105,23 +91,15 @@ export const getStudentExams = async (studentId) => {
   return Promise.resolve([...studentExams]);
 };
 
-// ========== دوال التوافق مع الكود القديم ==========
-
-/**
- * الحصول على الجدول (للتوافق مع الكود القديم)
- */
 export const getSchedule = async () => {
   return Promise.resolve([...studentSchedule]);
 };
 
-/**
- * الحصول على الامتحانات (للتوافق مع الكود القديم)
- */
 export const getExams = async () => {
   return Promise.resolve([...studentExams]);
 };
 
-// ========== دوال المهام ==========
+
 export const getTasks = async () => {
   return Promise.resolve([...studentTasks]);
 };
@@ -149,7 +127,6 @@ export const deleteTask = async (id) => {
   return Promise.resolve();
 };
 
-// ========== دوال الدرجات ==========
 export const getGrades = async () => {
   return Promise.resolve([...studentGrades]);
 };
@@ -159,7 +136,7 @@ export const getGradeByCourse = async (courseId) => {
   return Promise.resolve(grade || null);
 };
 
-// ========== دوال الأقساط ==========
+
 export const getInstallments = async () => {
   return Promise.resolve([...studentInstallments]);
 };
@@ -170,7 +147,7 @@ export const getRemainingAmount = async () => {
   return Promise.resolve(total - paid);
 };
 
-// ========== دوال الشكاوى ==========
+
 export const submitComplaint = async (complaint) => {
   const newComplaint = { id: uuidv4(), ...complaint, date: new Date().toISOString(), status: 'pending' };
   studentComplaints.push(newComplaint);
@@ -186,7 +163,7 @@ export const getComplaintById = async (id) => {
   return Promise.resolve(complaint || null);
 };
 
-// ========== دوال الاستبيانات ==========
+
 export const getSurveys = async () => {
   return Promise.resolve([...studentSurveys]);
 };
@@ -197,11 +174,9 @@ export const getSurveyById = async (surveyId) => {
 };
 
 export const submitSurveyResponse = async (surveyId, responses) => {
-  // في هذه المرحلة، نكتفي بحل وهمي لا يخزن الاستجابات
   return Promise.resolve({ surveyId, responses, submittedAt: new Date().toISOString() });
 };
 
-// ========== دوال النقاط ==========
 export const getPoints = async () => {
   return Promise.resolve(studentPoints);
 };
@@ -212,7 +187,6 @@ export const addPoints = async (delta) => {
 };
 
 export const getTopStudents = async (limit = 3) => {
-  // بيانات وهمية لأفضل الطلاب
   const topStudents = [
     { id: 1, name: 'أحمد', points: 250 },
     { id: 2, name: 'سارة', points: 180 },
@@ -221,7 +195,6 @@ export const getTopStudents = async (limit = 3) => {
   return Promise.resolve(topStudents.slice(0, limit));
 };
 
-// ========== دوال الإشعارات ==========
 export const getNotifications = async () => {
   return Promise.resolve([...studentNotifications]);
 };
@@ -251,10 +224,7 @@ export const addNotification = async (notification) => {
   return Promise.resolve(newNotification);
 };
 
-// ========== دوال إضافية ==========
-
 /**
- * تحديث جدول الطالب (عند إضافة جلسة جديدة من المدير)
  * @param {Object} session - بيانات الجلسة الجديدة
  */
 export const addToStudentSchedule = async (session) => {
@@ -264,14 +234,12 @@ export const addToStudentSchedule = async (session) => {
 };
 
 /**
- * تحديث امتحانات الطالب (عند إضافة امتحان جديد من المدير)
  * @param {Object} exam - بيانات الامتحان الجديد
  */
 export const addToStudentExams = async (exam) => {
   const newExam = { id: uuidv4(), ...exam };
   studentExams.push(newExam);
   
-  // إضافة إشعار للطالب
   await addNotification({
     message: `📝 تم إضافة امتحان جديد في مادة ${exam.subject} بتاريخ ${exam.date}`,
     type: 'exam',
@@ -281,7 +249,6 @@ export const addToStudentExams = async (exam) => {
 };
 
 /**
- * إرسال إشعار للطالب (عند إضافة/تعديل/حذف جدول)
  * @param {Object} notificationData - بيانات الإشعار
  */
 export const sendNotificationToStudent = async (notificationData) => {

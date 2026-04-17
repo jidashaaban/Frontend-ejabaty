@@ -4,9 +4,6 @@ import { Box } from '@mui/material';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 
-/**
- * تخطيط لوحة الطالب
- */
 const StudentLayout = () => {
   return (
     <Box sx={{ display: 'flex', direction: 'rtl' }}>

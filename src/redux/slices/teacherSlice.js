@@ -1,23 +1,18 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-/**
- * شريحة الأستاذ
- * تخزن بيانات الطلاب الذين يدرسهم، الجدول، النماذج الامتحانية، وغيرها.
- */
 const initialState = {
-  students: [],           // قائمة الطلاب المرتبطين بالأستاذ
-  schedule: [],           // جدول الأستاذ (فقط المواد التي يدرسها)
-  examModels: [],         // النماذج الامتحانية التي رفعها الأستاذ
-  tests: [],              // الاختبارات التي أعلن عنها الأستاذ
-  inquiries: [],          // الاستفسارات الموجهة للأستاذ
-  notes: [],              // ملاحظات الأستاذ على الطلاب
+  students: [],           
+  schedule: [],           
+  examModels: [],         
+  tests: [],              
+  inquiries: [],          
+  notes: [],              
 };
 
 const teacherSlice = createSlice({
   name: 'teacher',
   initialState,
   reducers: {
-    // ========== الطلاب ==========
     setStudents: (state, action) => {
       state.students = action.payload;
     },
@@ -31,8 +26,6 @@ const teacherSlice = createSlice({
     deleteStudent: (state, action) => {
       state.students = state.students.filter((s) => s.id !== action.payload);
     },
-
-    // ========== جدول الأستاذ ==========
     setSchedule: (state, action) => {
       state.schedule = action.payload;
     },
@@ -46,8 +39,6 @@ const teacherSlice = createSlice({
     deleteFromSchedule: (state, action) => {
       state.schedule = state.schedule.filter((s) => s.id !== action.payload);
     },
-
-    // ========== النماذج الامتحانية ==========
     setExamModels: (state, action) => {
       state.examModels = action.payload;
     },
@@ -58,7 +49,6 @@ const teacherSlice = createSlice({
       state.examModels = state.examModels.filter((m) => m.id !== action.payload);
     },
 
-    // ========== الاختبارات المعلنة ==========
     setTests: (state, action) => {
       state.tests = action.payload;
     },
@@ -72,8 +62,6 @@ const teacherSlice = createSlice({
     deleteTest: (state, action) => {
       state.tests = state.tests.filter((t) => t.id !== action.payload);
     },
-
-    // ========== الاستفسارات ==========
     setInquiries: (state, action) => {
       state.inquiries = action.payload;
     },
@@ -87,14 +75,11 @@ const teacherSlice = createSlice({
         state.inquiries[index].replied = true;
       }
     },
-
-    // ========== ملاحظات الطلاب ==========
     setNotes: (state, action) => {
       state.notes = action.payload;
     },
     addNote: (state, action) => {
       const { studentId, note } = action.payload;
-      // إضافة الملاحظة للطالب المحدد
       const studentIndex = state.students.findIndex((s) => s.id === studentId);
       if (studentIndex !== -1) {
         if (!state.students[studentIndex].notes) {
@@ -112,35 +97,24 @@ const teacherSlice = createSlice({
 });
 
 export const {
-  // Students
   setStudents,
   addStudent,
   updateStudent,
   deleteStudent,
-  
-  // Schedule (جدول الأستاذ)
   setSchedule,
   addToSchedule,
   updateSchedule,
   deleteFromSchedule,
-  
-  // Exam Models
   setExamModels,
   addExamModel,
   deleteExamModel,
-  
-  // Tests
   setTests,
   addTest,
   updateTest,
   deleteTest,
-  
-  // Inquiries
   setInquiries,
   addInquiry,
   replyToInquiry,
-  
-  // Notes
   setNotes,
   addNote,
   

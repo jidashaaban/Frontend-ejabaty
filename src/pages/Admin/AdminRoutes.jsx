@@ -8,8 +8,9 @@ import Polls from './Polls';
 import Reports from './Reports';
 import WeeklyProgram from './WeeklyProgram';
 import Complaints from './Complaints';
-import ExamHalls from './ExamHalls';
 import AdminNotifications from './AdminNotifications';
+// import ExamHalls from './ExamHalls';  ← تم حذفها
+
 const AdminRoutes = () => {
   return (
     <Routes>
@@ -20,9 +21,9 @@ const AdminRoutes = () => {
         <Route path="polls" element={<Polls />} />
         <Route path="reports" element={<Reports />} />
         <Route path="weekly-program" element={<WeeklyProgram />} />
-        <Route path="complaints" element={ <Complaints /> } />
-        <Route path="exam-halls" element={ <ExamHalls /> } /> 
-        <Route path="notifications" element={ <AdminNotifications /> } />
+        <Route path="complaints" element={<Complaints />} />
+        <Route path="notifications" element={<AdminNotifications />} />
+        {/* <Route path="exam-halls" element={<ExamHalls />} />  ← تم حذفها */}
       </Route>
     </Routes>
   );

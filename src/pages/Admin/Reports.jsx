@@ -1,4 +1,3 @@
-// src/pages/Admin/Reports.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -24,8 +23,10 @@ import {
   Poll as PollIcon,
   EmojiEvents as EmojiEventsIcon,
   Star as StarIcon,
+  Assessment as AssessmentIcon,
 } from '@mui/icons-material';
-import { getReports, getTopStudents } from '../../services/adminService';
+import { getReports } from '../../services/adminService';
+import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
 function Reports() {
@@ -58,7 +59,6 @@ function Reports() {
     );
   }
 
-  // البيانات من الـ API أو بيانات افتراضية
   const studentsCount = reports?.studentsCount || 0;
   const teachersCount = reports?.teachersCount || 0;
   const activeCoursesCount = reports?.activeCoursesCount || 0;
@@ -69,30 +69,37 @@ function Reports() {
     literary: [],
   };
 
-  // ألوان للميداليات
   const medalColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        📊 لوحة التقارير والإحصائيات
-      </Typography>
+      {/* Header موحد */}
+      <PageHeader 
+        title="التقارير والإحصائيات"
+        subtitle="عرض إحصائيات المنصة وتقارير الأداء"
+        icon={<AssessmentIcon sx={{ fontSize: 20 }} />}
+      />
 
-      {/* ========== بطاقات الإحصائيات ========== */}
+      {/* بطاقات الإحصائيات */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* عدد الطلاب */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ minWidth: 275, backgroundColor: '#e3f2fd', borderRadius: 3 }}>
+          <Card sx={{ 
+            minWidth: 275, 
+            background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%)',
+            borderRadius: 3,
+            transition: '0.3s',
+            '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 }
+          }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                  <Typography variant="h6" color="#1565c0" gutterBottom>
                     عدد الطلاب
                   </Typography>
-                  <Typography variant="h3" component="div" color="primary" fontWeight="bold">
+                  <Typography variant="h3" component="div" color="#1976d2" fontWeight="bold">
                     {studentsCount}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="#37474f">
                     إجمالي الطلاب المسجلين
                   </Typography>
                 </Box>
@@ -104,19 +111,24 @@ function Reports() {
           </Card>
         </Grid>
 
-        {/* عدد الأساتذة */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ minWidth: 275, backgroundColor: '#e8f5e9', borderRadius: 3 }}>
+          <Card sx={{ 
+            minWidth: 275, 
+            background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+            borderRadius: 3,
+            transition: '0.3s',
+            '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 }
+          }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                  <Typography variant="h6" color="#2e7d32" gutterBottom>
                     عدد الأساتذة
                   </Typography>
-                  <Typography variant="h3" component="div" color="success.main" fontWeight="bold">
+                  <Typography variant="h3" component="div" color="#388e3c" fontWeight="bold">
                     {teachersCount}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="#37474f">
                     إجمالي الأساتذة العاملين
                   </Typography>
                 </Box>
@@ -128,19 +140,24 @@ function Reports() {
           </Card>
         </Grid>
 
-        {/* عدد الدورات النشطة */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ minWidth: 275, backgroundColor: '#fff3e0', borderRadius: 3 }}>
+          <Card sx={{ 
+            minWidth: 275, 
+            background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+            borderRadius: 3,
+            transition: '0.3s',
+            '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 }
+          }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                  <Typography variant="h6" color="#ed6c02" gutterBottom>
                     الدورات النشطة
                   </Typography>
-                  <Typography variant="h3" component="div" color="warning.main" fontWeight="bold">
+                  <Typography variant="h3" component="div" color="#ed6c02" fontWeight="bold">
                     {activeCoursesCount}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="#37474f">
                     الدورات المفتوحة حالياً
                   </Typography>
                 </Box>
@@ -153,29 +170,29 @@ function Reports() {
         </Grid>
       </Grid>
 
-      {/* ========== نتيجة الاستبيان ========== */}
+      {/* نتائج الاستبيان */}
       <Paper sx={{ p: 3, mb: 4, borderRadius: 3 }}>
         <Box display="flex" alignItems="center" gap={1} mb={2}>
           <PollIcon color="primary" />
-          <Typography variant="h5">نتائج الاستبيان</Typography>
+          <Typography variant="h5" sx={{ color: '#1976d2', fontWeight: 'bold' }}>نتائج الاستبيان</Typography>
         </Box>
 
         {surveyResults.length === 0 ? (
-          <Alert severity="info">لا توجد نتائج استبيانات متاحة حالياً</Alert>
+          <Alert severity="info" sx={{ borderRadius: 2 }}>لا توجد نتائج استبيانات متاحة حالياً</Alert>
         ) : (
           <Grid container spacing={3}>
             {surveyResults.map((survey, index) => (
               <Grid item xs={12} md={6} key={index}>
-                <Card variant="outlined">
+                <Card variant="outlined" sx={{ borderRadius: 3 }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom sx={{ color: '#1976d2', fontWeight: 'bold' }}>
                       {survey.title}
                     </Typography>
                     {survey.results?.map((result, idx) => (
                       <Box key={idx} sx={{ mb: 1 }}>
                         <Box display="flex" justifyContent="space-between">
                           <Typography variant="body2">{result.question}</Typography>
-                          <Typography variant="body2" fontWeight="bold">
+                          <Typography variant="body2" fontWeight="bold" color="#1976d2">
                             {result.averageRating || result.percentage}%
                           </Typography>
                         </Box>
@@ -183,7 +200,7 @@ function Reports() {
                           <Box
                             sx={{
                               width: `${result.averageRating ? (result.averageRating / 5) * 100 : result.percentage}%`,
-                              bgcolor: '#1976d2',
+                              background: 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)',
                               height: 8,
                               borderRadius: 1,
                             }}
@@ -199,22 +216,21 @@ function Reports() {
         )}
       </Paper>
 
-      {/* ========== ترتيب النقاط ========== */}
+      {/* ترتيب الطلاب حسب النقاط */}
       <Paper sx={{ p: 3, borderRadius: 3 }}>
         <Box display="flex" alignItems="center" gap={1} mb={3}>
           <EmojiEventsIcon sx={{ color: '#FFD700' }} />
-          <Typography variant="h5">🏆 ترتيب الطلاب حسب النقاط</Typography>
+          <Typography variant="h5" sx={{ color: '#1976d2', fontWeight: 'bold' }}>🏆 ترتيب الطلاب حسب النقاط</Typography>
         </Box>
 
         <Grid container spacing={4}>
-          {/* الصف التاسع */}
           <Grid item xs={12} md={4}>
-            <Typography variant="h6" align="center" gutterBottom sx={{ color: '#1976d2' }}>
+            <Typography variant="h6" align="center" gutterBottom sx={{ color: '#1976d2', fontWeight: 'bold' }}>
               🎓 الصف التاسع
             </Typography>
             <Table>
               <TableHead>
-                <TableRow>
+                <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
                   <TableCell align="center">الترتيب</TableCell>
                   <TableCell>اسم الطالب</TableCell>
                   <TableCell align="center">النقاط</TableCell>
@@ -223,7 +239,7 @@ function Reports() {
               <TableBody>
                 {topStudents.grade9?.length > 0 ? (
                   topStudents.grade9.map((student, idx) => (
-                    <TableRow key={student.id}>
+                    <TableRow key={student.id} hover>
                       <TableCell align="center">
                         {idx === 0 && <StarIcon sx={{ color: medalColors[0] }} />}
                         {idx === 1 && <StarIcon sx={{ color: medalColors[1] }} />}
@@ -232,7 +248,7 @@ function Reports() {
                       </TableCell>
                       <TableCell>{student.name}</TableCell>
                       <TableCell align="center">
-                        <Chip label={student.points} size="small" color="primary" />
+                        <Chip label={student.points} size="small" sx={{ bgcolor: '#1976d2', color: '#fff' }} />
                       </TableCell>
                     </TableRow>
                   ))
@@ -247,14 +263,13 @@ function Reports() {
             </Table>
           </Grid>
 
-          {/* البكالوريا علمي */}
           <Grid item xs={12} md={4}>
-            <Typography variant="h6" align="center" gutterBottom sx={{ color: '#2e7d32' }}>
+            <Typography variant="h6" align="center" gutterBottom sx={{ color: '#2e7d32', fontWeight: 'bold' }}>
               🔬 البكالوريا - علمي
             </Typography>
             <Table>
               <TableHead>
-                <TableRow>
+                <TableRow sx={{ backgroundColor: '#e8f5e9' }}>
                   <TableCell align="center">الترتيب</TableCell>
                   <TableCell>اسم الطالب</TableCell>
                   <TableCell align="center">النقاط</TableCell>
@@ -263,7 +278,7 @@ function Reports() {
               <TableBody>
                 {topStudents.scientific?.length > 0 ? (
                   topStudents.scientific.map((student, idx) => (
-                    <TableRow key={student.id}>
+                    <TableRow key={student.id} hover>
                       <TableCell align="center">
                         {idx === 0 && <StarIcon sx={{ color: medalColors[0] }} />}
                         {idx === 1 && <StarIcon sx={{ color: medalColors[1] }} />}
@@ -272,7 +287,7 @@ function Reports() {
                       </TableCell>
                       <TableCell>{student.name}</TableCell>
                       <TableCell align="center">
-                        <Chip label={student.points} size="small" color="success" />
+                        <Chip label={student.points} size="small" sx={{ bgcolor: '#2e7d32', color: '#fff' }} />
                       </TableCell>
                     </TableRow>
                   ))
@@ -287,14 +302,13 @@ function Reports() {
             </Table>
           </Grid>
 
-          {/* البكالوريا أدبي */}
           <Grid item xs={12} md={4}>
-            <Typography variant="h6" align="center" gutterBottom sx={{ color: '#ed6c02' }}>
+            <Typography variant="h6" align="center" gutterBottom sx={{ color: '#ed6c02', fontWeight: 'bold' }}>
               📚 البكالوريا - أدبي
             </Typography>
             <Table>
               <TableHead>
-                <TableRow>
+                <TableRow sx={{ backgroundColor: '#fff3e0' }}>
                   <TableCell align="center">الترتيب</TableCell>
                   <TableCell>اسم الطالب</TableCell>
                   <TableCell align="center">النقاط</TableCell>
@@ -303,7 +317,7 @@ function Reports() {
               <TableBody>
                 {topStudents.literary?.length > 0 ? (
                   topStudents.literary.map((student, idx) => (
-                    <TableRow key={student.id}>
+                    <TableRow key={student.id} hover>
                       <TableCell align="center">
                         {idx === 0 && <StarIcon sx={{ color: medalColors[0] }} />}
                         {idx === 1 && <StarIcon sx={{ color: medalColors[1] }} />}
@@ -312,7 +326,7 @@ function Reports() {
                       </TableCell>
                       <TableCell>{student.name}</TableCell>
                       <TableCell align="center">
-                        <Chip label={student.points} size="small" color="warning" />
+                        <Chip label={student.points} size="small" sx={{ bgcolor: '#ed6c02', color: '#fff' }} />
                       </TableCell>
                     </TableRow>
                   ))

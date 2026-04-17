@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Paper } from '@mui/material';
 import { getExams } from '../../services/studentService';
 
-/**
- * صفحة الاختبارات القادمة
- */
 const Exams = () => {
   const [exams, setExams] = useState([]);
   useEffect(() => {
