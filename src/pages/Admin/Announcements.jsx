@@ -111,14 +111,12 @@ const Announcements = () => {
 
   return (
     <Box>
-      {/* Header موحد */}
       <PageHeader 
         title="الإعلانات"
         subtitle="أضف أو عدل أو احذف الإعلانات"
         icon={<AnnouncementIcon sx={{ fontSize: 20 }} />}
       />
 
-      {/* زر الإضافة */}
       <Box display="flex" justifyContent="flex-end" mb={3}>
         <Button
           variant="contained"
@@ -140,7 +138,6 @@ const Announcements = () => {
         </Button>
       </Box>
 
-      {/* قائمة الإعلانات */}
       {announcements.length === 0 ? (
         <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 4 }}>
           <AnnouncementIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
@@ -215,7 +212,6 @@ const Announcements = () => {
         </Grid>
       )}
 
-      {/* نافذة إضافة/تعديل إعلان */}
       <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ 
           background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 

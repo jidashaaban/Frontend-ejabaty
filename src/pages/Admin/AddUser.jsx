@@ -124,7 +124,6 @@ function AddUser() {
 
   return (
     <Box>
-      {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
           👥 إضافة مستخدم جديد
@@ -135,7 +134,6 @@ function AddUser() {
         <Divider sx={{ mt: 2 }} />
       </Box>
 
-      {/* Tabs */}
       <Paper elevation={0} sx={{ borderRadius: 3, overflow: 'hidden' }}>
         <Tabs 
           value={tab} 
@@ -175,7 +173,6 @@ function AddUser() {
           />
         </Tabs>
 
-        {/* تبويب الأستاذ */}
         {tab === 0 && (
           <Box component="form" onSubmit={handleTeacherSubmit} sx={{ p: 4 }}>
             <Grid container spacing={3}>
@@ -252,7 +249,6 @@ function AddUser() {
           </Box>
         )}
 
-        {/* تبويب الطالب */}
         {tab === 1 && (
           <Box component="form" onSubmit={handleStudentSubmit} sx={{ p: 4 }}>
             <Typography variant="h6" sx={{ mb: 2, color: '#1976d2' }}>
@@ -396,7 +392,6 @@ function AddUser() {
           </Box>
         )}
 
-        {/* تبويب ولي الأمر */}
         {tab === 2 && (
           <Box component="form" onSubmit={handleParentSubmit} sx={{ p: 4 }}>
             <Grid container spacing={3}>
@@ -460,7 +455,6 @@ function AddUser() {
         )}
       </Paper>
 
-      {/* عرض بيانات اعتماد الطالب */}
       {credentials && (
         <Paper elevation={0} sx={{ mt: 4, p: 3, borderRadius: 3, bgcolor: '#e8f5e9' }}>
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

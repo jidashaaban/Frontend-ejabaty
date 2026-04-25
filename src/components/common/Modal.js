@@ -8,11 +8,11 @@ import {
 } from '@mui/material';
 
 /**
- * @param {boolean} open - حالة فتح المودال
- * @param {function} onClose - دالة لإغلاق المودال
- * @param {string} title - عنوان المودال
- * @param {React.ReactNode} children - محتوى المودال
- * @param {React.ReactNode} actions - أزرار أسفل المودال (اختياري)
+ * @param {boolean} open 
+ * @param {function} onClose 
+ * @param {string} title 
+ * @param {React.ReactNode} children 
+ * @param {React.ReactNode} actions 
  */
 const Modal = ({ open, onClose, title, children, actions }) => {
   return (

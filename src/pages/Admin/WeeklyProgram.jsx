@@ -154,7 +154,6 @@ function WeeklyProgram() {
 
   return (
     <Box>
-      {/* Header موحد */}
       <PageHeader 
         title="البرنامج الأسبوعي"
         subtitle="إدارة جداول الدوام والامتحانات"

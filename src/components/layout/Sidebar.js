@@ -1,3 +1,4 @@
+// src/components/layout/Sidebar.js
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -25,6 +26,7 @@ import ScoreIcon from '@mui/icons-material/Score';
 import PaymentIcon from '@mui/icons-material/Payment';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
+import SchoolIcon from '@mui/icons-material/School';
 
 const Sidebar = ({ role, drawerWidth = 260 }) => {
   const navigate = useNavigate();
@@ -39,6 +41,7 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
     { text: 'البرنامج الأسبوعي', path: 'weekly-program', icon: <CalendarMonthIcon /> },
     { text: 'الشكاوى', path: 'complaints', icon: <ReportProblemIcon /> },
     { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
+    { text: 'القاعات', path: 'halls', icon: <MeetingRoomIcon /> },
   ];
 
   const teacherItems = [
@@ -61,10 +64,20 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
     { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
   ];
 
+  // ✅ إضافة عناصر ولي الأمر
+  const parentItems = [
+    { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
+    { text: 'تقديم شكوى', path: 'complaints', icon: <ReportProblemIcon /> },
+    { text: 'نقاط الطالب', path: 'points', icon: <StarIcon /> },
+    { text: 'برنامج الامتحانات', path: 'exams', icon: <CalendarMonthIcon /> },
+    { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
+  ];
+
   let items = [];
   if (role === 'admin') items = adminItems;
   else if (role === 'teacher') items = teacherItems;
-  else items = studentItems;
+  else if (role === 'student') items = studentItems;
+  else if (role === 'parent') items = parentItems;  // ✅ إضافة شرط ولي الأمر
 
   const currentPath = location.pathname;
 
@@ -79,7 +92,7 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
           width: drawerWidth,
           boxSizing: 'border-box',
           backgroundColor: '#1976d2',
-          backgroundImage: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 
+          backgroundImage: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
           color: '#fff',
           borderRight: 'none',
         },
@@ -90,7 +103,7 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
           منصة إجابتي
         </Typography>
         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.85)' }}>
-          نظام إدارة المعاهد
+          {role === 'parent' ? 'ولي الأمر' : 'نظام إدارة المعاهد'}
         </Typography>
       </Box>
 
@@ -121,9 +134,9 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
                 <ListItemIcon sx={{ color: '#fff', minWidth: 40 }}>
                   {item.icon}
                 </ListItemIcon>
-                <ListItemText 
-                  primary={item.text} 
-                  primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: selected ? 'bold' : 'normal' }} 
+                <ListItemText
+                  primary={item.text}
+                  primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: selected ? 'bold' : 'normal' }}
                 />
               </ListItemButton>
             </ListItem>

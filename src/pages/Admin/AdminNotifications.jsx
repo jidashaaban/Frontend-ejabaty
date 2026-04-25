@@ -131,14 +131,12 @@ function AdminNotifications() {
 
   return (
     <Box>
-      {/* Header موحد */}
       <PageHeader 
         title="الإشعارات"
         subtitle="عرض آخر الإشعارات والتحديثات"
         icon={<NotificationsIcon sx={{ fontSize: 20 }} />}
       />
 
-      {/* عداد الإشعارات */}
       <Box display="flex" justifyContent="flex-end" mb={2}>
         <Badge 
           badgeContent={notifications.filter(n => n.type !== 'empty').length} 
@@ -159,7 +157,6 @@ function AdminNotifications() {
         </Badge>
       </Box>
 
-      {/* قائمة الإشعارات */}
       <Paper sx={{ borderRadius: 3, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
         <List>
           {notifications.map((notification, index) => (

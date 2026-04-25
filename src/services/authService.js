@@ -2,6 +2,7 @@ const users = {
   admin: { token: 'admin-token', role: 'admin', name: 'مدير' },
   teacher: { token: 'teacher-token', role: 'teacher', name: 'أستاذ' },
   student: { token: 'student-token', role: 'student', name: 'طالب' },
+  parent: { token: 'parent-token', role: 'parent', name: 'ولي أمر' },
 };
 
 /**

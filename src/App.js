@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import AdminRoutes from './pages/Admin/AdminRoutes';
 import TeacherRoutes from './pages/Teacher/TeacherRoutes';
 import StudentRoutes from './pages/Student/StudentRoutes';
+import ParentRoutes from './pages/Parent/ParentRoutes';
 
 function App() {
   const { isAuthenticated, role } = useSelector((state) => state.auth);
@@ -41,6 +42,17 @@ function App() {
         element={
           isAuthenticated && role === 'student' ? (
             <StudentRoutes />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      
+      <Route
+        path="/parent/*"
+        element={
+          isAuthenticated && role === 'parent' ? (
+            <ParentRoutes />
           ) : (
             <Navigate to="/login" replace />
           )

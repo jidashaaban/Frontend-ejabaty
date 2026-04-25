@@ -2,10 +2,10 @@ import React from 'react';
 import { Snackbar, Alert } from '@mui/material';
 
 /**
- * @param {boolean} open - حالة فتح التوست
- * @param {function} onClose - دالة إغلاق التوست
- * @param {string} message - رسالة التوست
- * @param {string} severity - نوع الرسالة (success, error, warning, info)
+ * @param {boolean} open 
+ * @param {function} onClose 
+ * @param {string} message 
+ * @param {string} severity 
  */
 const Toast = ({ open, onClose, message, severity = 'success' }) => {
   return (

@@ -9,7 +9,7 @@ import Reports from './Reports';
 import WeeklyProgram from './WeeklyProgram';
 import Complaints from './Complaints';
 import AdminNotifications from './AdminNotifications';
-// import ExamHalls from './ExamHalls';  ← تم حذفها
+import Halls from './Halls';
 
 const AdminRoutes = () => {
   return (
@@ -22,8 +22,8 @@ const AdminRoutes = () => {
         <Route path="reports" element={<Reports />} />
         <Route path="weekly-program" element={<WeeklyProgram />} />
         <Route path="complaints" element={<Complaints />} />
-        <Route path="notifications" element={<AdminNotifications />} />
-        {/* <Route path="exam-halls" element={<ExamHalls />} />  ← تم حذفها */}
+        <Route path="notifications" element={ <AdminNotifications /> } />
+        <Route path="halls" element={<Halls />} />
       </Route>
     </Routes>
   );

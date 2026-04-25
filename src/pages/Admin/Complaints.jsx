@@ -88,7 +88,6 @@ const Complaints = () => {
 
   return (
     <Box>
-      {/* Header موحد */}
       <PageHeader 
         title="إدارة الشكاوى"
         subtitle="عرض والرد على شكاوى أولياء الأمور"

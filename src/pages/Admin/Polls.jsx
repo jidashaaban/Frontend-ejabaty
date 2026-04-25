@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Typography,  // ← أضفنا Typography هنا
+  Typography,  
   Paper,
   Button,
   IconButton,
@@ -194,14 +194,12 @@ function Polls() {
 
   return (
     <Box>
-      {/* Header موحد */}
       <PageHeader 
         title="إدارة الاستبيانات"
         subtitle="أنشئ استبيانات لجمع آراء الطلاب وأولياء الأمور"
         icon={<PollIcon sx={{ fontSize: 20 }} />}
       />
 
-      {/* زر الإضافة */}
       <Box display="flex" justifyContent="flex-end" mb={3}>
         <Button
           variant="contained"
@@ -219,7 +217,6 @@ function Polls() {
         </Button>
       </Box>
 
-      {/* قائمة الاستبيانات */}
       {polls.length === 0 ? (
         <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 4 }}>
           <PollIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
@@ -285,7 +282,6 @@ function Polls() {
         </Grid>
       )}
 
-      {/* نافذة إضافة استبيان جديد */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ 
           background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 
@@ -395,7 +391,6 @@ function Polls() {
         </DialogActions>
       </Dialog>
 
-      {/* نافذة عرض النتائج */}
       <Dialog open={openViewDialog} onClose={() => setOpenViewDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ 
           background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 

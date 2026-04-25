@@ -73,14 +73,12 @@ function Reports() {
 
   return (
     <Box>
-      {/* Header موحد */}
       <PageHeader 
         title="التقارير والإحصائيات"
         subtitle="عرض إحصائيات المنصة وتقارير الأداء"
         icon={<AssessmentIcon sx={{ fontSize: 20 }} />}
       />
 
-      {/* بطاقات الإحصائيات */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={4}>
           <Card sx={{ 
@@ -170,7 +168,6 @@ function Reports() {
         </Grid>
       </Grid>
 
-      {/* نتائج الاستبيان */}
       <Paper sx={{ p: 3, mb: 4, borderRadius: 3 }}>
         <Box display="flex" alignItems="center" gap={1} mb={2}>
           <PollIcon color="primary" />
@@ -216,7 +213,6 @@ function Reports() {
         )}
       </Paper>
 
-      {/* ترتيب الطلاب حسب النقاط */}
       <Paper sx={{ p: 3, borderRadius: 3 }}>
         <Box display="flex" alignItems="center" gap={1} mb={3}>
           <EmojiEventsIcon sx={{ color: '#FFD700' }} />

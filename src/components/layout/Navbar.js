@@ -29,7 +29,7 @@ const Navbar = () => {
     <AppBar 
       position="static" 
       sx={{ 
-        bgcolor: '#165ca1',  // أزرق فاتح
+        bgcolor: '#165ca1', 
         background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
         boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
         borderRadius: 2,
