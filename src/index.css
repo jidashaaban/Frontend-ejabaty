@@ -1,3 +1,4 @@
+/* src/index.css */
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
 
 * {
@@ -7,14 +8,15 @@
 }
 
 body {
-    font-family: 'Tajawal', sans-serif;
-    background-color: #f8f9fa !important;
+    font-family: 'Tajawal', 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #087f99 0%, #0083b0 100%) !important;
+    background-attachment: fixed !important;
     direction: rtl;
-    color: #2c3e50;
+    color: #1e293b;
+    min-height: 100vh;
 }
 
 #root {
-    background-color: #f8f9fa;
     min-height: 100vh;
 }
 
@@ -24,15 +26,15 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: #e9ecef;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #1976d2;
+    background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #1565c0;
+    background: #006994;
 }

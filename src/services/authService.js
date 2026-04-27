@@ -6,8 +6,8 @@ const users = {
 };
 
 /**
- * @param {Object} credentials - بيانات الاعتماد (اسم المستخدم وكلمة المرور)
- * @returns {Promise<Object>} بيانات المصادقة (token, role, user)
+ * @param {Object} credentials 
+ * @returns {Promise<Object>} 
  */
 export const login = async ({ username, password }) => {
   const key = username.toLowerCase();

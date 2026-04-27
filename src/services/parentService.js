@@ -18,31 +18,26 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// جلب معلومات الطالب التابع لولي الأمر
 export const getStudentInfo = async () => {
   const response = await apiClient.get('/parent/student-info');
   return response.data;
 };
 
-// جلب نقاط الطالب
 export const getStudentPoints = async (studentId) => {
   const response = await apiClient.get(`/student/${studentId}/points`);
   return response.data;
 };
 
-// جلب جدول الامتحانات الخاص بالطالب
 export const getStudentExams = async (studentId) => {
   const response = await apiClient.get(`/student/${studentId}/exams`);
   return response.data;
 };
 
-// جلب ملاحظات الأستاذ على الطالب
 export const getStudentNotes = async (studentId) => {
   const response = await apiClient.get(`/student/${studentId}/notes`);
   return response.data;
 };
 
-// إرسال شكوى جديدة
 export const submitComplaint = async (complaintData) => {
   const response = await apiClient.post('/complaints', complaintData);
   return response.data;

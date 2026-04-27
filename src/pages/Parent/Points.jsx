@@ -1,4 +1,3 @@
-// src/pages/Parent/Points.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -80,7 +79,6 @@ const Points = () => {
       />
 
       <Grid container spacing={4}>
-        {/* القسم الأيمن: النقاط والمستوى */}
         <Grid item xs={12} md={6}>
           <Card sx={{ borderRadius: 4, background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)', height: '100%' }}>
             <CardContent sx={{ p: 4 }}>
@@ -125,7 +123,6 @@ const Points = () => {
           </Card>
         </Grid>
 
-        {/* القسم الأيسر: ملاحظات الأساتذة */}
         <Grid item xs={12} md={6}>
           <Card sx={{ borderRadius: 4, height: '100%' }}>
             <CardContent sx={{ p: 3 }}>

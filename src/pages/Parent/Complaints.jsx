@@ -1,4 +1,3 @@
-// src/pages/Parent/Complaints.jsx
 import React, { useState } from 'react';
 import {
   Box,
@@ -80,7 +79,6 @@ const Complaints = () => {
       />
 
       <Grid container spacing={4} justifyContent="center">
-        {/* نموذج تقديم الشكوى - توسيط */}
         <Grid item xs={12} md={8} lg={6}>
           <Paper
             elevation={0}

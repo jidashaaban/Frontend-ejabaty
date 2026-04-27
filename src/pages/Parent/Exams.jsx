@@ -1,4 +1,3 @@
-// src/pages/Parent/Exams.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -35,7 +34,6 @@ const Exams = () => {
         const data = await getStudentExams(1);
         setExams(data || []);
       } catch (error) {
-        // بيانات تجريبية ملونة
         setExams([
           { id: 1, subject: 'الرياضيات', date: '2026-04-25', day: 'الأحد', time: '10:00-12:00', room: 'قاعة 101', teacher: 'أ. أحمد' },
           { id: 2, subject: 'الفيزياء', date: '2026-04-27', day: 'الثلاثاء', time: '10:00-12:00', room: 'قاعة 102', teacher: 'أ. سارة' },
@@ -50,7 +48,6 @@ const Exams = () => {
     fetchExams();
   }, []);
 
-  // ألوان مميزة لكل مادة
   const subjectColors = {
     'الرياضيات': { bg: '#e3f2fd', color: '#1565c0', icon: '📐' },
     'الفيزياء': { bg: '#e8f5e9', color: '#2e7d32', icon: '⚛️' },

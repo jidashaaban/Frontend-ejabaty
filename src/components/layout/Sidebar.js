@@ -10,6 +10,7 @@ import {
   ListItemText,
   Box,
   Typography,
+  Avatar,
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AnnouncementIcon from '@mui/icons-material/Campaign';
@@ -17,14 +18,8 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PollIcon from '@mui/icons-material/Poll';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
-import StarIcon from '@mui/icons-material/Star';
-import NoteAddIcon from '@mui/icons-material/NoteAdd';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import NotificationImportantIcon from '@mui/icons-material/Notifications';
-import ScoreIcon from '@mui/icons-material/Score';
-import PaymentIcon from '@mui/icons-material/Payment';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import SchoolIcon from '@mui/icons-material/School';
 
@@ -40,44 +35,21 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
     { text: 'التقارير', path: 'reports', icon: <AssessmentIcon /> },
     { text: 'البرنامج الأسبوعي', path: 'weekly-program', icon: <CalendarMonthIcon /> },
     { text: 'الشكاوى', path: 'complaints', icon: <ReportProblemIcon /> },
-    { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
+    { text: 'الإشعارات', path: 'notifications', icon: <NotificationsIcon /> },
     { text: 'القاعات', path: 'halls', icon: <MeetingRoomIcon /> },
   ];
 
-  const teacherItems = [
-    { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
-    { text: 'جدولي', path: 'my-schedule', icon: <CalendarMonthIcon /> },
-    { text: 'ملاحظات الطلاب', path: 'notes', icon: <NoteAddIcon /> },
-    { text: 'نماذج امتحانية', path: 'exam-models', icon: <MenuBookIcon /> },
-    { text: 'إعلان اختبار', path: 'announce-test', icon: <CalendarMonthIcon /> },
-    { text: 'الاستفسارات', path: 'inquiries', icon: <QuestionAnswerIcon /> },
-  ];
-
-  const studentItems = [
-    { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
-    { text: 'برنامجي', path: 'my-schedule', icon: <CalendarMonthIcon /> },
-    { text: 'الدرجات', path: 'grades', icon: <ScoreIcon /> },
-    { text: 'الأقساط', path: 'installments', icon: <PaymentIcon /> },
-    { text: 'الشكاوى', path: 'complaints', icon: <ReportProblemIcon /> },
-    { text: 'الاستبيانات', path: 'surveys', icon: <PollIcon /> },
-    { text: 'النقاط', path: 'points', icon: <StarIcon /> },
-    { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
-  ];
-
-  // ✅ إضافة عناصر ولي الأمر
   const parentItems = [
     { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
     { text: 'تقديم شكوى', path: 'complaints', icon: <ReportProblemIcon /> },
-    { text: 'نقاط الطالب', path: 'points', icon: <StarIcon /> },
+    { text: 'نقاط الطالب', path: 'points', icon: <SchoolIcon /> },
     { text: 'برنامج الامتحانات', path: 'exams', icon: <CalendarMonthIcon /> },
-    { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
+    { text: 'الإشعارات', path: 'notifications', icon: <NotificationsIcon /> },
   ];
 
   let items = [];
   if (role === 'admin') items = adminItems;
-  else if (role === 'teacher') items = teacherItems;
-  else if (role === 'student') items = studentItems;
-  else if (role === 'parent') items = parentItems;  // ✅ إضافة شرط ولي الأمر
+  else if (role === 'parent') items = parentItems;
 
   const currentPath = location.pathname;
 
@@ -91,52 +63,77 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
-          backgroundColor: '#1976d2',
-          backgroundImage: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-          color: '#fff',
+          background: 'linear-gradient(180deg, #0f2b3d 0%, #1a4a6f 50%, #0f2b3d 100%)',
+          color: '#e0e7ff',
           borderRight: 'none',
+          boxShadow: '2px 0 10px rgba(0,0,0,0.1)',
+          borderRadius: 0,
         },
       }}
     >
-      <Box sx={{ p: 3, textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
-        <Typography variant="h6" sx={{ color: '#fff', fontWeight: 'bold' }}>
-          منصة إجابتي
-        </Typography>
-        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.85)' }}>
-          {role === 'parent' ? 'ولي الأمر' : 'نظام إدارة المعاهد'}
-        </Typography>
+      {/* Logo Area */}
+      <Box sx={{ 
+        p: 3, 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 2, 
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+      }}>
+        <Avatar sx={{ 
+          background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+          width: 42, 
+          height: 42,
+        }}>
+          <SchoolIcon sx={{ color: '#fff' }} />
+        </Avatar>
+        <Box>
+          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 'bold' }}>
+            منصة إجابتي
+          </Typography>
+          <Typography variant="caption" sx={{ color: '#93c5fd' }}>
+            {role === 'admin' ? 'لوحة التحكم' : 'ولي الأمر'}
+          </Typography>
+        </Box>
       </Box>
 
-      <List sx={{ mt: 2 }}>
+      <List sx={{ mt: 2, px: 2 }}>
         {items.map((item) => {
           const to = `/${role}${item.path ? '/' + item.path : ''}`;
           const selected = currentPath === to;
           return (
-            <ListItem key={item.text} disablePadding>
+            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 selected={selected}
                 onClick={() => navigate(to)}
                 sx={{
-                  mx: 1,
-                  borderRadius: 2,
-                  mb: 0.5,
+                  borderRadius: 0,
+                  py: 1.2,
+                  px: 2,
+                  transition: 'all 0.3s ease',
                   '&:hover': {
-                    backgroundColor: 'rgba(255,255,255,0.15)',
+                    backgroundColor: 'rgba(59,130,246,0.2)',
                   },
                   '&.Mui-selected': {
-                    backgroundColor: 'rgba(255,255,255,0.25)',
+                    background: 'linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%)',
+                    color: '#fff',
                     '&:hover': {
-                      backgroundColor: 'rgba(255,255,255,0.3)',
+                      background: 'linear-gradient(90deg, #1d4ed8 0%, #1e3a8a 100%)',
+                    },
+                    '& .MuiListItemIcon-root': {
+                      color: '#fff',
                     },
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: '#fff', minWidth: 40 }}>
+                <ListItemIcon sx={{ color: selected ? '#fff' : '#93c5fd', minWidth: 40 }}>
                   {item.icon}
                 </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: selected ? 'bold' : 'normal' }}
+                <ListItemText 
+                  primary={item.text} 
+                  primaryTypographyProps={{ 
+                    fontSize: '0.9rem', 
+                    fontWeight: selected ? 600 : 400,
+                  }} 
                 />
               </ListItemButton>
             </ListItem>

@@ -9,6 +9,7 @@ import store from './redux/store';
 import theme from './theme';
 import './index.css';
 import '@fontsource/tajawal';
+import './index.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

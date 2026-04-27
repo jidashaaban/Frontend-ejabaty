@@ -1,4 +1,3 @@
-// src/pages/Parent/ParentRoutes.jsx
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ParentLayout from '../../components/layout/ParentLayout';
@@ -6,7 +5,7 @@ import Dashboard from './Dashboard';
 import Complaints from './Complaints';
 import Points from './Points';
 import Exams from './Exams';
-import ParentNotifications from './ParentNotifications';  // ← P كبيرة في البداية
+import ParentNotifications from './ParentNotifications';  
 
 const ParentRoutes = () => {
   return (

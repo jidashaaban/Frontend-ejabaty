@@ -1,4 +1,3 @@
-// src/pages/Parent/ParentNotifications.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -31,7 +30,6 @@ const ParentNotifications = () => {
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
-    // بيانات تجريبية للإشعارات
     const notificationsList = [
       {
         id: 1,
