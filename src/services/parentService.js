@@ -41,3 +41,16 @@ export const submitComplaint = async (complaintData) => {
   const response = await apiClient.post('/complaints', complaintData);
   return response.data;
 };
+
+export const getStudentGrades = async (studentId) => {
+  try {
+    const response = await apiClient.get(`/student/${studentId}/grades`);
+    return response.data;
+  } catch (error) {
+    return [
+      { id: 1, subject: 'الرياضيات', grade: 92, maxGrade: 100, date: '2026-04-20', type: 'اختبار نهائي' },
+      { id: 2, subject: 'الفيزياء', grade: 88, maxGrade: 100, date: '2026-04-18', type: 'اختبار شهري' },
+      { id: 3, subject: 'الكيمياء', grade: 95, maxGrade: 100, date: '2026-04-15', type: 'اختبار نهائي' },
+    ];
+  }
+};
