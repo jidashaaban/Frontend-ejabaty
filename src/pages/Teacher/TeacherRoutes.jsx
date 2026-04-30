@@ -14,7 +14,8 @@ const TeacherRoutes = () => {
       <Route element={<TeacherLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="notes" element={<StudentNotes />} />
-        <Route path="schedule" element={<Schedule />} />
+        <Route path="schedule" element={<Schedule />} />        {/* ← أضيفي هذا */}  
+        <Route path="schedule" element={<Schedule />} />     {/* ← وهذا */}
         <Route path="exam-models" element={<ExamModels />} />
         <Route path="announce-test" element={<AnnounceTest />} />
         <Route path="inquiries" element={<Inquiries />} />

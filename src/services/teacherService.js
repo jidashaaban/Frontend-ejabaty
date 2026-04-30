@@ -1,5 +1,25 @@
+// src/services/teacherService.js
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ========== بيانات وهمية ==========
 let teacherStudents = [
   { id: uuidv4(), name: 'طارق', course: 'الرياضيات', notes: [] },
   { id: uuidv4(), name: 'ليلى', course: 'الفيزياء', notes: [] },
@@ -29,9 +49,9 @@ let teacherSchedule = [
 ];
 
 let examModels = [];
-
 let announcedTests = [];
 
+// ========== دوال الطلاب ==========
 export const getStudents = async () => {
   return Promise.resolve([...teacherStudents]);
 };
@@ -51,7 +71,7 @@ export const addNote = async (studentId, note) => {
   );
 };
 
-
+// ========== دوال جدول الأستاذ ==========
 export const getTeacherSchedule = async (teacherId) => {
   const filteredSchedule = teacherSchedule.filter(
     (session) => session.teacherId === teacherId
@@ -61,26 +81,6 @@ export const getTeacherSchedule = async (teacherId) => {
 
 export const getSchedule = async () => {
   return Promise.resolve([...teacherSchedule]);
-};
-
-export const getExamModels = async () => {
-  return Promise.resolve([...examModels]);
-};
-
-export const uploadExamModel = async (model) => {
-  const newModel = { id: uuidv4(), ...model };
-  examModels.push(newModel);
-  return Promise.resolve(newModel);
-};
-
-export const announceTest = async (test) => {
-  const newTest = { id: uuidv4(), ...test };
-  announcedTests.push(newTest);
-  return Promise.resolve(newTest);
-};
-
-export const getAnnouncedTests = async () => {
-  return Promise.resolve([...announcedTests]);
 };
 
 export const addTeacherSchedule = async (session) => {
@@ -101,4 +101,67 @@ export const updateTeacherSchedule = async (id, data) => {
 export const deleteTeacherSchedule = async (id) => {
   teacherSchedule = teacherSchedule.filter(s => s.id !== id);
   return Promise.resolve();
+};
+
+// ========== دوال النماذج الامتحانية ==========
+export const getExamModels = async () => {
+  return Promise.resolve([...examModels]);
+};
+
+export const uploadExamModel = async (modelData) => {
+  const newModel = { id: uuidv4(), ...modelData };
+  examModels.push(newModel);
+  return Promise.resolve(newModel);
+};
+
+export const deleteExamModel = async (modelId) => {
+  examModels = examModels.filter(model => model.id !== modelId);
+  return Promise.resolve({ success: true });
+};
+
+// ========== دوال الاختبارات المعلنة ==========
+export const announceTest = async (test) => {
+  const newTest = { id: uuidv4(), ...test };
+  announcedTests.push(newTest);
+  return Promise.resolve(newTest);
+};
+
+export const getAnnouncedTests = async () => {
+  return Promise.resolve([...announcedTests]);
+};
+
+export const deleteAnnouncedTest = async (id) => {
+  announcedTests = announcedTests.filter(test => test.id !== id);
+  return Promise.resolve({ success: true });
+};
+
+// ========== دوال إضافية ==========
+export const getTeacherStats = async (teacherId) => {
+  const schedule = await getTeacherSchedule(teacherId);
+  const models = await getExamModels();
+  const tests = await getAnnouncedTests();
+  
+  return Promise.resolve({
+    totalSessions: schedule.length,
+    totalExamModels: models.length,
+    totalAnnouncedTests: tests.length,
+    schedule: schedule,
+    examModels: models,
+    announcedTests: tests,
+  });
+};
+
+// src/services/teacherService.js - بدون رفع نماذج
+export const getTeacherExams = async (teacherId) => {
+  try {
+    const response = await apiClient.get(`/teacher/${teacherId}/exams`);
+    return response.data;
+  } catch (error) {
+    // بيانات وهمية
+    return [
+      { id: 1, subject: 'الرياضيات', date: '2026-04-25', day: 'الأحد', time: '10:00-12:00', room: 'قاعة 101' },
+      { id: 2, subject: 'الفيزياء', date: '2026-04-27', day: 'الثلاثاء', time: '10:00-12:00', room: 'قاعة 102' },
+      { id: 3, subject: 'الكيمياء', date: '2026-04-29', day: 'الخميس', time: '10:00-12:00', room: 'مختبر الكيمياء' },
+    ];
+  }
 };

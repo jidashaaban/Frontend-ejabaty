@@ -17,10 +17,17 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PollIcon from '@mui/icons-material/Poll';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import StarIcon from '@mui/icons-material/Star';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import NotificationImportantIcon from '@mui/icons-material/Notifications';
+import ScoreIcon from '@mui/icons-material/Score';
+import PaymentIcon from '@mui/icons-material/Payment';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import SchoolIcon from '@mui/icons-material/School';
+import EventNoteIcon from '@mui/icons-material/EventNote';
 
 const Sidebar = ({ role, drawerWidth = 260 }) => {
   const navigate = useNavigate();
@@ -34,20 +41,42 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
     { text: 'التقارير', path: 'reports', icon: <AssessmentIcon /> },
     { text: 'البرنامج الأسبوعي', path: 'weekly-program', icon: <CalendarMonthIcon /> },
     { text: 'الشكاوى', path: 'complaints', icon: <ReportProblemIcon /> },
-    { text: 'الإشعارات', path: 'notifications', icon: <NotificationsIcon /> },
+    { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
     { text: 'القاعات', path: 'halls', icon: <MeetingRoomIcon /> },
+  ];
+
+  const teacherItems = [
+    { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
+    { text: 'جدولي', path: 'schedule', icon: <CalendarMonthIcon /> },
+    { text: 'ملاحظات الطلاب', path: 'notes', icon: <NoteAddIcon /> },
+    { text: 'نماذج امتحانية', path: 'exam-models', icon: <MenuBookIcon /> },
+    { text: 'إعلان اختبار', path: 'announce-test', icon: <CalendarMonthIcon /> },
+    { text: 'الاستفسارات', path: 'inquiries', icon: <QuestionAnswerIcon /> },
+  ];
+
+  const studentItems = [
+    { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
+    { text: 'برنامجي', path: 'my-schedule', icon: <CalendarMonthIcon /> },
+    { text: 'الدرجات', path: 'grades', icon: <ScoreIcon /> },
+    { text: 'الأقساط', path: 'installments', icon: <PaymentIcon /> },
+    { text: 'الشكاوى', path: 'complaints', icon: <ReportProblemIcon /> },
+    { text: 'الاستبيانات', path: 'surveys', icon: <PollIcon /> },
+    { text: 'النقاط', path: 'points', icon: <StarIcon /> },
+    { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
   ];
 
   const parentItems = [
     { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
     { text: 'تقديم شكوى', path: 'complaints', icon: <ReportProblemIcon /> },
-    { text: 'نقاط الطالب', path: 'points', icon: <SchoolIcon /> },
-    { text: 'برنامج الامتحانات', path: 'exams', icon: <CalendarMonthIcon /> },
-    { text: 'الإشعارات', path: 'notifications', icon: <NotificationsIcon /> },
+    { text: 'تقييم الطالب', path: 'points', icon: <StarIcon /> },
+    { text: 'برنامج الامتحانات', path: 'exams', icon: <EventNoteIcon /> },
+    { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
   ];
 
   let items = [];
   if (role === 'admin') items = adminItems;
+  else if (role === 'teacher') items = teacherItems;
+  else if (role === 'student') items = studentItems;
   else if (role === 'parent') items = parentItems;
 
   const currentPath = location.pathname;
@@ -79,8 +108,8 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
       }}>
         <Avatar sx={{ 
           background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-          width: 42, 
-          height: 42,
+          width: 40, 
+          height: 40,
         }}>
           <SchoolIcon sx={{ color: '#fff' }} />
         </Avatar>
@@ -89,7 +118,7 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
             منصة إجابتي
           </Typography>
           <Typography variant="caption" sx={{ color: '#93c5fd' }}>
-            {role === 'admin' ? 'لوحة التحكم' : 'ولي الأمر'}
+            {role === 'admin' ? 'لوحة التحكم' : role === 'teacher' ? 'الأستاذ' : role === 'student' ? 'الطالب' : 'ولي الأمر'}
           </Typography>
         </Box>
       </Box>
