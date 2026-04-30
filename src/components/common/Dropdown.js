@@ -1,13 +1,6 @@
 import React from 'react';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
-/**
-
- * @param {string} label - عنوان الحقل
- * @param {any} value - القيمة المختارة
- * @param {function} onChange - حدث تغيير القيمة
- * @param {Array<{value: any, label: string}>} options - الخيارات
- */
 const Dropdown = ({ label, value, onChange, options, name }) => {
   const labelId = `${name}-label`;
   return (

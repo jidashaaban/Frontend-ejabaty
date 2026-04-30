@@ -52,10 +52,6 @@ export const addNote = async (studentId, note) => {
 };
 
 
-/**
- * @param {number} teacherId - معرف الأستاذ
- * @returns {Promise<Array>} - قائمة الجلسات التي يدرسها الأستاذ
- */
 export const getTeacherSchedule = async (teacherId) => {
   const filteredSchedule = teacherSchedule.filter(
     (session) => session.teacherId === teacherId

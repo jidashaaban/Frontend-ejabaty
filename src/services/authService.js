@@ -21,9 +21,6 @@ export const login = async ({ username, password }) => {
   return Promise.reject(new Error('بيانات الدخول غير صحيحة'));
 };
 
-/**
- * @returns {Promise<void>}
- */
 export const logout = async () => {
   return Promise.resolve();
 };

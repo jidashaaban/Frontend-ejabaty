@@ -1,4 +1,3 @@
-// src/components/layout/TeacherLayout.jsx
 import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Box } from '@mui/material';

@@ -1,9 +1,6 @@
 import React from 'react';
 import { Grid, Paper, Typography } from '@mui/material';
 
-/**
- * @param {Array<{label: string, value: string|number}>} items
- */
 const DashboardSummary = ({ items }) => {
   return (
     <Grid container spacing={2}>

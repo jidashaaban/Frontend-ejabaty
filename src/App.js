@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -11,7 +10,6 @@ import ParentRoutes from './pages/Parent/ParentRoutes';
 function App() {
   const { isAuthenticated, role } = useSelector((state) => state.auth);
 
-  // ✅ أضيفي هذا useEffect
   useEffect(() => {
     document.body.style.background = "linear-gradient(135deg, #114b58 0%, #011217 100%)";
     document.body.style.backgroundAttachment = "fixed";

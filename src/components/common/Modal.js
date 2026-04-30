@@ -7,13 +7,6 @@ import {
   Button,
 } from '@mui/material';
 
-/**
- * @param {boolean} open 
- * @param {function} onClose 
- * @param {string} title 
- * @param {React.ReactNode} children 
- * @param {React.ReactNode} actions 
- */
 const Modal = ({ open, onClose, title, children, actions }) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">

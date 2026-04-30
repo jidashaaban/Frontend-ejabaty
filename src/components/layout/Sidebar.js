@@ -1,4 +1,3 @@
-// src/components/layout/Sidebar.js
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -71,7 +70,6 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
         },
       }}
     >
-      {/* Logo Area */}
       <Box sx={{ 
         p: 3, 
         display: 'flex', 

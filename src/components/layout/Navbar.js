@@ -1,4 +1,3 @@
-// src/components/layout/Navbar.jsx
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -73,7 +72,6 @@ const Navbar = ({ toggleSidebar, sidebarOpen, handleLogout }) => {
         py: 1,
         px: { xs: 2, md: 4 },
       }}>
-        {/* الجهة اليمنى */}
         <Box display="flex" alignItems="center" gap={2}>
           <IconButton 
             onClick={toggleSidebar} 
@@ -103,7 +101,6 @@ const Navbar = ({ toggleSidebar, sidebarOpen, handleLogout }) => {
           />
         </Box>
 
-        {/* الجهة اليسرى */}
         <Box display="flex" alignItems="center" gap={2}>
           <IconButton 
             sx={{ 
