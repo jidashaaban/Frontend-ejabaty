@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import TeacherLayout from '../../components/layout/TeacherLayout';
 import Dashboard from './Dashboard';
-import StudentNotes from './StudentNotes';
+import StudentsRate from './StudentsRate';
 import Schedule from './Schedule';
 import ExamModels from './ExamModels';
 import AnnounceTest from './AnnounceTest';
@@ -13,9 +13,9 @@ const TeacherRoutes = () => {
     <Routes>
       <Route element={<TeacherLayout />}>
         <Route index element={<Dashboard />} />
-        <Route path="notes" element={<StudentNotes />} />
-        <Route path="schedule" element={<Schedule />} />        {/* ← أضيفي هذا */}  
-        <Route path="schedule" element={<Schedule />} />     {/* ← وهذا */}
+        <Route path="evaluations" element={<StudentsRate />} />
+        <Route path="schedule" element={<Schedule />} />        
+        <Route path="schedule" element={<Schedule />} />   
         <Route path="exam-models" element={<ExamModels />} />
         <Route path="announce-test" element={<AnnounceTest />} />
         <Route path="inquiries" element={<Inquiries />} />

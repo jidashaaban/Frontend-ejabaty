@@ -1,4 +1,3 @@
-// src/pages/Teacher/MySchedule.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -47,7 +46,6 @@ const MySchedule = () => {
         setExams(examsData || []);
       } catch (error) {
         console.error('خطأ في جلب البيانات:', error);
-        // بيانات وهمية
         setSchedule([
           { id: 1, subject: 'الرياضيات', day: 'الأحد', time: '09:00-11:00', room: 'قاعة 101', class: 'الثاني علمي' },
           { id: 2, subject: 'الفيزياء', day: 'الثلاثاء', time: '11:00-13:00', room: 'قاعة 102', class: 'الثالث علمي' },
@@ -85,7 +83,6 @@ const MySchedule = () => {
         icon={<CalendarMonthIcon sx={{ fontSize: 20 }} />}
       />
 
-      {/* التبويبات */}
       <Tabs 
         value={tab} 
         onChange={(e, v) => setTab(v)} 
@@ -96,7 +93,6 @@ const MySchedule = () => {
         <Tab label="📝 جدول الامتحانات" />
       </Tabs>
 
-      {/* ========== تبويب جدول الدوام ========== */}
       {tab === 0 && (
         <Paper
           sx={{
@@ -170,7 +166,6 @@ const MySchedule = () => {
         </Paper>
       )}
 
-      {/* ========== تبويب جدول الامتحانات (بدون رفع نماذج) ========== */}
       {tab === 1 && (
         <Paper
           sx={{

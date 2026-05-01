@@ -1,4 +1,3 @@
-// src/services/teacherService.js
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 
@@ -19,7 +18,6 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// ========== بيانات وهمية ==========
 let teacherStudents = [
   { id: uuidv4(), name: 'طارق', course: 'الرياضيات', notes: [] },
   { id: uuidv4(), name: 'ليلى', course: 'الفيزياء', notes: [] },
@@ -51,7 +49,6 @@ let teacherSchedule = [
 let examModels = [];
 let announcedTests = [];
 
-// ========== دوال الطلاب ==========
 export const getStudents = async () => {
   return Promise.resolve([...teacherStudents]);
 };
@@ -71,7 +68,6 @@ export const addNote = async (studentId, note) => {
   );
 };
 
-// ========== دوال جدول الأستاذ ==========
 export const getTeacherSchedule = async (teacherId) => {
   const filteredSchedule = teacherSchedule.filter(
     (session) => session.teacherId === teacherId
@@ -103,7 +99,6 @@ export const deleteTeacherSchedule = async (id) => {
   return Promise.resolve();
 };
 
-// ========== دوال النماذج الامتحانية ==========
 export const getExamModels = async () => {
   return Promise.resolve([...examModels]);
 };
@@ -119,7 +114,6 @@ export const deleteExamModel = async (modelId) => {
   return Promise.resolve({ success: true });
 };
 
-// ========== دوال الاختبارات المعلنة ==========
 export const announceTest = async (test) => {
   const newTest = { id: uuidv4(), ...test };
   announcedTests.push(newTest);
@@ -135,7 +129,6 @@ export const deleteAnnouncedTest = async (id) => {
   return Promise.resolve({ success: true });
 };
 
-// ========== دوال إضافية ==========
 export const getTeacherStats = async (teacherId) => {
   const schedule = await getTeacherSchedule(teacherId);
   const models = await getExamModels();
@@ -151,17 +144,58 @@ export const getTeacherStats = async (teacherId) => {
   });
 };
 
-// src/services/teacherService.js - بدون رفع نماذج
 export const getTeacherExams = async (teacherId) => {
   try {
     const response = await apiClient.get(`/teacher/${teacherId}/exams`);
     return response.data;
   } catch (error) {
-    // بيانات وهمية
     return [
       { id: 1, subject: 'الرياضيات', date: '2026-04-25', day: 'الأحد', time: '10:00-12:00', room: 'قاعة 101' },
       { id: 2, subject: 'الفيزياء', date: '2026-04-27', day: 'الثلاثاء', time: '10:00-12:00', room: 'قاعة 102' },
       { id: 3, subject: 'الكيمياء', date: '2026-04-29', day: 'الخميس', time: '10:00-12:00', room: 'مختبر الكيمياء' },
     ];
+  }
+};
+
+export const getStudentEvaluations = async (teacherId) => {
+  try {
+    const response = await apiClient.get(`/teacher/${teacherId}/evaluations`);
+    return response.data;
+  } catch (error) {
+    // بيانات وهمية
+    return [
+      { id: 1, studentId: 1, studentName: 'أحمد محمد', subject: 'الرياضيات', points: 15, notes: 'متميز', date: '2026-04-25' },
+      { id: 2, studentId: 2, studentName: 'سارة خالد', subject: 'الفيزياء', points: 10, notes: 'مشاركة ممتازة', date: '2026-04-24' },
+    ];
+  }
+};
+
+// إضافة تقييم جديد
+export const addStudentEvaluation = async (evaluationData) => {
+  try {
+    const response = await apiClient.post('/teacher/evaluations', evaluationData);
+    return response.data;
+  } catch (error) {
+    return { id: Date.now(), ...evaluationData, success: true };
+  }
+};
+
+// تحديث تقييم
+export const updateStudentEvaluation = async (id, evaluationData) => {
+  try {
+    const response = await apiClient.put(`/teacher/evaluations/${id}`, evaluationData);
+    return response.data;
+  } catch (error) {
+    return { id, ...evaluationData, success: true };
+  }
+};
+
+// حذف تقييم
+export const deleteStudentEvaluation = async (id) => {
+  try {
+    const response = await apiClient.delete(`/teacher/evaluations/${id}`);
+    return response.data;
+  } catch (error) {
+    return { success: true };
   }
 };

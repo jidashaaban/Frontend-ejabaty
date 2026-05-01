@@ -73,7 +73,6 @@ const ExamModels = () => {
           </Button>
         </form>
       </Paper>
-      {/* قائمة النماذج الحالية */}
       {models.length > 0 && (
         <div>
           <Typography variant="h6" gutterBottom>

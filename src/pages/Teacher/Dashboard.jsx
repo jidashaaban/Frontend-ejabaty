@@ -1,4 +1,3 @@
-// src/pages/Teacher/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -50,7 +49,6 @@ const Dashboard = () => {
         const testsData = await getAnnouncedTests();
         setAnnouncedTests(testsData || []);
       } catch (error) {
-        // بيانات وهمية
         setSchedule([
           { id: 1, subject: 'الرياضيات', day: 'الأحد', time: '09:00-11:00', room: 'قاعة 101', class: 'الثاني علمي' },
           { id: 2, subject: 'الفيزياء', day: 'الثلاثاء', time: '11:00-13:00', room: 'قاعة 102', class: 'الثالث علمي' },
@@ -92,7 +90,6 @@ const Dashboard = () => {
         icon={<DashboardIcon sx={{ fontSize: 20 }} />}
       />
 
-      {/* بطاقات إحصائيات سريعة (بدون حدود) */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={4}>
           <Card
@@ -176,7 +173,6 @@ const Dashboard = () => {
         </Grid>
       </Grid>
 
-      {/* جدول البرنامج الأسبوعي مع حدود فقط */}
       <Paper
         sx={{
           borderRadius: 3,

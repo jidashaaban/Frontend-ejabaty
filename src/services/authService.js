@@ -5,10 +5,6 @@ const users = {
   parent: { token: 'parent-token', role: 'parent', name: 'ولي أمر' },
 };
 
-/**
- * @param {Object} credentials 
- * @returns {Promise<Object>} 
- */
 export const login = async ({ username, password }) => {
   const key = username.toLowerCase();
   if (users[key]) {
