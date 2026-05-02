@@ -259,3 +259,50 @@ export const getTeacherStats = async (teacherId) => {
     announcedTests: tests,
   });
 };
+
+export const getTeacherNotifications = async (teacherId) => {
+  try {
+    const response = await apiClient.get(`/teacher/${teacherId}/notifications`);
+    return response.data;
+  } catch (error) {
+    return [
+      {
+        id: 1,
+        type: 'exam',
+        title: 'برنامج امتحان جديد',
+        message: 'تم إضافة امتحان جديد في مادة الرياضيات بتاريخ 2026-05-10',
+        date: '2026-04-28',
+        time: '10:30',
+        icon: 'EventNoteIcon',
+        color: '#1976d2',
+        bgColor: '#e3f2fd',
+        action: '/teacher/exams',
+        actionText: 'الذهاب إلى جدول الامتحانات',
+        read: false,
+      },
+      {
+        id: 2,
+        type: 'inquiry',
+        title: 'استفسار جديد من طالب',
+        message: 'لديك استفسار جديد من الطالب أحمد محمد بخصوص مادة الرياضيات',
+        date: '2026-04-27',
+        time: '14:15',
+        icon: 'QuestionAnswerIcon',
+        color: '#ff9800',
+        bgColor: '#fff3e0',
+        action: '/teacher/inquiries',
+        actionText: 'الذهاب إلى الاستفسارات',
+        read: false,
+      },
+    ];
+  }
+};
+
+export const markNotificationAsRead = async (notificationId) => {
+  try {
+    const response = await apiClient.put(`/teacher/notifications/${notificationId}/read`);
+    return response.data;
+  } catch (error) {
+    return { success: true };
+  }
+};

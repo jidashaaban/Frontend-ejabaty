@@ -7,6 +7,7 @@ import Schedule from './Schedule';
 import ExamModels from './ExamModels';
 import AnnounceTest from './AnnounceTest';
 import Inquiries from '../Admin/Complaints';
+import TeacherNotifications from './TeacherNotifications';
 
 const TeacherRoutes = () => {
   return (
@@ -19,6 +20,7 @@ const TeacherRoutes = () => {
         <Route path="exam-models" element={<ExamModels />} />
         <Route path="announce-test" element={<AnnounceTest />} />
         <Route path="inquiries" element={<Inquiries />} />
+        <Route path="notifications" element={<TeacherNotifications />} />
       </Route>
     </Routes>
   );

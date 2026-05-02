@@ -7,6 +7,10 @@ const initialState = {
   tests: [],              
   inquiries: [],          
   notes: [],              
+  evaluations: [],      
+  notifications: [],    
+  teacherExams: [],     
+  teacherSubjects: [],  
 };
 
 const teacherSlice = createSlice({
@@ -26,6 +30,7 @@ const teacherSlice = createSlice({
     deleteStudent: (state, action) => {
       state.students = state.students.filter((s) => s.id !== action.payload);
     },
+
     setSchedule: (state, action) => {
       state.schedule = action.payload;
     },
@@ -39,14 +44,51 @@ const teacherSlice = createSlice({
     deleteFromSchedule: (state, action) => {
       state.schedule = state.schedule.filter((s) => s.id !== action.payload);
     },
+
+    setTeacherExams: (state, action) => {
+      state.teacherExams = action.payload;
+    },
+    addTeacherExam: (state, action) => {
+      state.teacherExams.push(action.payload);
+    },
+    updateTeacherExam: (state, action) => {
+      const index = state.teacherExams.findIndex((e) => e.id === action.payload.id);
+      if (index !== -1) state.teacherExams[index] = action.payload;
+    },
+    deleteTeacherExam: (state, action) => {
+      state.teacherExams = state.teacherExams.filter((e) => e.id !== action.payload);
+    },
+
+    setTeacherSubjects: (state, action) => {
+      state.teacherSubjects = action.payload;
+    },
+
     setExamModels: (state, action) => {
       state.examModels = action.payload;
     },
     addExamModel: (state, action) => {
       state.examModels.push(action.payload);
     },
+    updateExamModel: (state, action) => {
+      const index = state.examModels.findIndex((m) => m.id === action.payload.id);
+      if (index !== -1) state.examModels[index] = action.payload;
+    },
     deleteExamModel: (state, action) => {
       state.examModels = state.examModels.filter((m) => m.id !== action.payload);
+    },
+
+    setEvaluations: (state, action) => {
+      state.evaluations = action.payload;
+    },
+    addEvaluation: (state, action) => {
+      state.evaluations.unshift(action.payload);
+    },
+    updateEvaluation: (state, action) => {
+      const index = state.evaluations.findIndex((e) => e.id === action.payload.id);
+      if (index !== -1) state.evaluations[index] = action.payload;
+    },
+    deleteEvaluation: (state, action) => {
+      state.evaluations = state.evaluations.filter((e) => e.id !== action.payload);
     },
 
     setTests: (state, action) => {
@@ -62,6 +104,7 @@ const teacherSlice = createSlice({
     deleteTest: (state, action) => {
       state.tests = state.tests.filter((t) => t.id !== action.payload);
     },
+
     setInquiries: (state, action) => {
       state.inquiries = action.payload;
     },
@@ -75,6 +118,7 @@ const teacherSlice = createSlice({
         state.inquiries[index].replied = true;
       }
     },
+
     setNotes: (state, action) => {
       state.notes = action.payload;
     },
@@ -93,6 +137,25 @@ const teacherSlice = createSlice({
       }
       state.notes.push({ studentId, note, date: new Date().toISOString() });
     },
+
+    setNotifications: (state, action) => {
+      state.notifications = action.payload;
+    },
+    addNotification: (state, action) => {
+      state.notifications.unshift(action.payload);
+    },
+    markNotificationAsRead: (state, action) => {
+      const index = state.notifications.findIndex((n) => n.id === action.payload);
+      if (index !== -1) {
+        state.notifications[index].read = true;
+      }
+    },
+    markAllNotificationsAsRead: (state) => {
+      state.notifications = state.notifications.map((n) => ({ ...n, read: true }));
+    },
+    deleteNotification: (state, action) => {
+      state.notifications = state.notifications.filter((n) => n.id !== action.payload);
+    },
   },
 });
 
@@ -105,9 +168,19 @@ export const {
   addToSchedule,
   updateSchedule,
   deleteFromSchedule,
+  setTeacherExams,
+  addTeacherExam,
+  updateTeacherExam,
+  deleteTeacherExam,
+  setTeacherSubjects,
   setExamModels,
   addExamModel,
+  updateExamModel,
   deleteExamModel,
+  setEvaluations,
+  addEvaluation,
+  updateEvaluation,
+  deleteEvaluation,
   setTests,
   addTest,
   updateTest,
@@ -117,6 +190,11 @@ export const {
   replyToInquiry,
   setNotes,
   addNote,
+  setNotifications,
+  addNotification,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  deleteNotification,
   
 } = teacherSlice.actions;
 

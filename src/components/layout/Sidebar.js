@@ -52,6 +52,7 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
     { text: 'نماذج امتحانية', path: 'exam-models', icon: <MenuBookIcon /> },
     { text: 'إعلان اختبار', path: 'announce-test', icon: <CalendarMonthIcon /> },
     { text: 'الاستفسارات', path: 'inquiries', icon: <QuestionAnswerIcon /> },
+    { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
   ];
 
   const studentItems = [
