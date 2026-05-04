@@ -59,7 +59,7 @@ let polls = [
   },
 ];
 
-let users = { teachers: [], students: [] };
+let users = { teachers: [], students: [], parents: [] };
 let points = [];
 let weeklyPrograms = [];
 let examPrograms = [];
@@ -153,6 +153,7 @@ export const addStudent = async (student) => {
 
 export const addParent = async (parent) => {
   const newParent = { id: uuidv4(), ...parent };
+  users.parents.push(newParent);
   return Promise.resolve(newParent);
 };
 
@@ -215,11 +216,15 @@ export const submitPollResponse = async (pollId, answers) => {
   }
   return Promise.resolve({ success: true });
 };
+
 export const getReports = async () => {
   return Promise.resolve({
-    studentsCount: 350,
-    teachersCount: 25,
+    studentsCount: users.students.length,
+    teachersCount: users.teachers.length,
+    parentsCount: users.parents.length,
     activeCoursesCount: 12,
+    pendingComplaintsCount: complaints.filter(c => !c.replied).length,
+    publishedPollsCount: polls.filter(p => p.published !== false).length,
     surveyResults: [
       {
         title: 'تقييم جودة التدريس',
@@ -422,6 +427,83 @@ export const getExamHallCapacities = async () => {
   return Promise.resolve({ ...examHallCapacities });
 };
 
+export const getHalls = async () => {
+  try {
+    const response = await apiClient.get('/halls');
+    return response.data;
+  } catch (error) {
+    const hallsWithCapacity = examHalls.map(hall => ({
+      id: hall.id,
+      name: hall.name,
+      capacity: examHallCapacities[hall.id] || 0,
+    }));
+    return hallsWithCapacity;
+  }
+};
+
+export const addHall = async (hallData) => {
+  try {
+    const response = await apiClient.post('/halls', hallData);
+    return response.data;
+  } catch (error) {
+    const newHall = {
+      id: Date.now(),
+      name: hallData.name,
+      capacity: hallData.capacity || 0,
+    };
+    examHalls.push({ id: newHall.id, name: newHall.name });
+    examHallCapacities[newHall.id] = newHall.capacity;
+    localStorage.setItem('examHallCapacities', JSON.stringify(examHallCapacities));
+    return newHall;
+  }
+};
+
+export const updateHall = async (id, hallData) => {
+  try {
+    const response = await apiClient.put(`/halls/${id}`, hallData);
+    return response.data;
+  } catch (error) {
+    const hallIndex = examHalls.findIndex(h => h.id === id);
+    if (hallIndex !== -1) {
+      examHalls[hallIndex] = { ...examHalls[hallIndex], name: hallData.name };
+    }
+    examHallCapacities[id] = hallData.capacity;
+    localStorage.setItem('examHallCapacities', JSON.stringify(examHallCapacities));
+    return { id, ...hallData, success: true };
+  }
+};
+
+export const deleteHall = async (id) => {
+  try {
+    const response = await apiClient.delete(`/halls/${id}`);
+    return response.data;
+  } catch (error) {
+    const hallIndex = examHalls.findIndex(h => h.id === id);
+    if (hallIndex !== -1) {
+      examHalls.splice(hallIndex, 1);
+    }
+    delete examHallCapacities[id];
+    localStorage.setItem('examHallCapacities', JSON.stringify(examHallCapacities));
+    return { success: true };
+  }
+};
+
+export const getHallById = async (id) => {
+  try {
+    const response = await apiClient.get(`/halls/${id}`);
+    return response.data;
+  } catch (error) {
+    const hall = examHalls.find(h => h.id === id);
+    if (hall) {
+      return {
+        ...hall,
+        capacity: examHallCapacities[id] || 0,
+      };
+    }
+    return null;
+  }
+};
+
 export const generateWeeklySchedule = async () => {
   const response = await apiClient.post('/generate-schedule', { type: 'course' });
   return response.data;
@@ -508,7 +590,6 @@ export const updateExamProgram = async (id, data) => {
 };
 
 export const deleteWeeklyProgram = async (id) => {
- 
   try {
     await apiClient.delete(`/sessions/${id}`);
   } catch (error) {
@@ -524,7 +605,8 @@ export const deleteExamProgram = async (id) => {
     examPrograms = examPrograms.filter(e => e.id !== id);
   }
   return Promise.resolve();
-}
+};
+
 export const getTeacherSchedule = async (teacherId) => {
   try {
     const response = await apiClient.get(`/my-schedule/${teacherId}`, {
@@ -608,6 +690,10 @@ export const getTeachersCount = async () => {
   return Promise.resolve(users.teachers.length);
 };
 
+export const getParentsCount = async () => {
+  return Promise.resolve(users.parents.length);
+};
+
 export const getActiveCoursesCount = async () => {
   const courses = await getCourses();
   return Promise.resolve(courses.length);
@@ -621,91 +707,6 @@ export const getUnrepliedComplaintsCount = async () => {
   return Promise.resolve(complaints.filter(c => !c.replied).length);
 };
 
-export const getHalls = async () => {
-  try {
-    const response = await apiClient.get('/halls');
-    return response.data;
-  } catch (error) {
-    const hallsWithCapacity = examHalls.map(hall => ({
-      id: hall.id,
-      name: hall.name,
-      capacity: examHallCapacities[hall.id] || 0,
-    }));
-    return hallsWithCapacity;
-  }
+export const getPublishedPollsCount = async () => {
+  return Promise.resolve(polls.length);
 };
-
-export const addHall = async (hallData) => {
-  try {
-    const response = await apiClient.post('/halls', hallData);
-    return response.data;
-  } catch (error) {
-    const newHall = {
-      id: Date.now(),
-      name: hallData.name,
-      capacity: hallData.capacity || 0,
-    };
-    examHalls.push({ id: newHall.id, name: newHall.name });
-    examHallCapacities[newHall.id] = newHall.capacity;
-    localStorage.setItem('examHallCapacities', JSON.stringify(examHallCapacities));
-    return newHall;
-  }
-};
-
-export const updateHall = async (id, hallData) => {
-  try {
-    const response = await apiClient.put(`/halls/${id}`, hallData);
-    return response.data;
-  } catch (error) {
-    const hallIndex = examHalls.findIndex(h => h.id === id);
-    if (hallIndex !== -1) {
-      examHalls[hallIndex] = { ...examHalls[hallIndex], name: hallData.name };
-    }
-    examHallCapacities[id] = hallData.capacity;
-    localStorage.setItem('examHallCapacities', JSON.stringify(examHallCapacities));
-    return { id, ...hallData, success: true };
-  }
-};
-
-export const deleteHall = async (id) => {
-  try {
-    const response = await apiClient.delete(`/halls/${id}`);
-    return response.data;
-  } catch (error) {
-    const hallIndex = examHalls.findIndex(h => h.id === id);
-    if (hallIndex !== -1) {
-      examHalls.splice(hallIndex, 1);
-    }
-    delete examHallCapacities[id];
-    localStorage.setItem('examHallCapacities', JSON.stringify(examHallCapacities));
-    return { success: true };
-  }
-};
-
-export const getHallById = async (id) => {
-  try {
-    const response = await apiClient.get(`/halls/${id}`);
-    return response.data;
-  } catch (error) {
-    const hall = examHalls.find(h => h.id === id);
-    if (hall) {
-      return {
-        ...hall,
-        capacity: examHallCapacities[id] || 0,
-      };
-    }
-    return null;
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-

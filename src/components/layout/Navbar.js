@@ -40,7 +40,7 @@ const Navbar = ({ toggleSidebar, sidebarOpen, handleLogout }) => {
       'points': 'نقاط الطالب',
       'exams': 'برنامج الامتحانات',
     };
-    return titles[path] || 'لوحة التحكم';
+    return titles[path] || 'مرحبا بك';
   };
 
   const role = user?.role || 'admin';

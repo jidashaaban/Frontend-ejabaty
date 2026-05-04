@@ -47,7 +47,6 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
 
   const teacherItems = [
     { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
-    { text: 'جدولي', path: 'schedule', icon: <CalendarMonthIcon /> },
     { text: 'تقييم الطلاب', path: 'evaluations', icon: <AssessmentIcon /> },
     { text: 'نماذج امتحانية', path: 'exam-models', icon: <MenuBookIcon /> },
     { text: 'إعلان اختبار', path: 'announce-test', icon: <CalendarMonthIcon /> },

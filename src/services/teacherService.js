@@ -306,3 +306,40 @@ export const markNotificationAsRead = async (notificationId) => {
     return { success: true };
   }
 };
+
+// ========== دوال الاستفسارات ==========
+
+// جلب استفسارات الأستاذ
+export const getInquiries = async (teacherId) => {
+  try {
+    const response = await apiClient.get(`/teacher/${teacherId}/inquiries`);
+    return response.data;
+  } catch (error) {
+    // بيانات تجريبية
+    return [
+      {
+        id: 1,
+        studentId: 1,
+        studentName: 'أحمد محمد',
+        studentClass: 'الثاني علمي',
+        subject: 'الرياضيات',
+        question: 'أستاذ، عندي سؤال في درس المشتقات...',
+        date: '2026-04-28',
+        time: '10:30',
+        replied: false,
+        reply: '',
+        replyDate: null,
+      },
+    ];
+  }
+};
+
+// الرد على استفسار
+export const replyToInquiry = async (inquiryId, reply) => {
+  try {
+    const response = await apiClient.put(`/teacher/inquiries/${inquiryId}/reply`, { reply });
+    return response.data;
+  } catch (error) {
+    return { success: true };
+  }
+};

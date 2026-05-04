@@ -25,6 +25,9 @@ import {
   Schedule as ScheduleIcon,
   Today as TodayIcon,
   Dashboard as DashboardIcon,
+  PeopleAlt as ParentsIcon,
+  ReportProblem as ReportProblemIcon,
+  Poll as PollIcon,
 } from '@mui/icons-material';
 import { getReports, getWeeklyProgram, getExamProgram } from '../../services/adminService';
 import PageHeader from '../../components/common/PageHeader';
@@ -68,9 +71,13 @@ function Dashboard() {
     fetchData();
   }, []);
 
+  // البيانات من الـ API أو قيم افتراضية
   const studentsCount = reports?.studentsCount || 0;
   const teachersCount = reports?.teachersCount || 0;
   const activeCoursesCount = reports?.activeCoursesCount || 0;
+  const parentsCount = reports?.parentsCount || 0;
+  const pendingComplaintsCount = reports?.pendingComplaintsCount || 0;
+  const publishedPollsCount = reports?.publishedPollsCount || 0;
 
   if (loading) {
     return (
@@ -85,49 +92,91 @@ function Dashboard() {
     <Box>
       <PageHeader 
         title="لوحة التحكم"
-        subtitle="مرحباً بك في لوحة التحكم "
+        subtitle="مرحباً بك في لوحة تحكم المدير"
         icon={<DashboardIcon sx={{ fontSize: 20 }} />}
       />
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ backgroundColor: '#e3f2fd', borderRadius: 3 }}>
+        <Grid item xs={12} sm={6} md={4} lg={2}>
+          <Card sx={{ backgroundColor: '#e3f2fd', borderRadius: 3, transition: '0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 } }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>عدد الطلاب</Typography>
-                  <Typography variant="h3" component="div" color="primary" fontWeight="bold">{studentsCount}</Typography>
-                  <Typography variant="body2" color="text.secondary">طالب مسجل</Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>عدد الطلاب</Typography>
+                  <Typography variant="h4" component="div" color="primary" fontWeight="bold">{studentsCount}</Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: '#1976d2', width: 56, height: 56 }}><PeopleIcon sx={{ fontSize: 32 }} /></Avatar>
+                <Avatar sx={{ bgcolor: '#1976d2', width: 50, height: 50 }}><PeopleIcon sx={{ fontSize: 28 }} /></Avatar>
               </Box>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ backgroundColor: '#e8f5e9', borderRadius: 3 }}>
+
+        <Grid item xs={12} sm={6} md={4} lg={2}>
+          <Card sx={{ backgroundColor: '#e8f5e9', borderRadius: 3, transition: '0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 } }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>عدد الأساتذة</Typography>
-                  <Typography variant="h3" component="div" color="success.main" fontWeight="bold">{teachersCount}</Typography>
-                  <Typography variant="body2" color="text.secondary">أستاذ يعمل</Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>عدد الأساتذة</Typography>
+                  <Typography variant="h4" component="div" color="success.main" fontWeight="bold">{teachersCount}</Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: '#2e7d32', width: 56, height: 56 }}><SchoolIcon sx={{ fontSize: 32 }} /></Avatar>
+                <Avatar sx={{ bgcolor: '#2e7d32', width: 50, height: 50 }}><SchoolIcon sx={{ fontSize: 28 }} /></Avatar>
               </Box>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ backgroundColor: '#fff3e0', borderRadius: 3 }}>
+
+        <Grid item xs={12} sm={6} md={4} lg={2}>
+          <Card sx={{ backgroundColor: '#f3e5f5', borderRadius: 3, transition: '0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 } }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>الدورات النشطة</Typography>
-                  <Typography variant="h3" component="div" color="warning.main" fontWeight="bold">{activeCoursesCount}</Typography>
-                  <Typography variant="body2" color="text.secondary">دورة نشطة</Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>أولياء الأمور</Typography>
+                  <Typography variant="h4" component="div" color="#9c27b0" fontWeight="bold">{parentsCount}</Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: '#ed6c02', width: 56, height: 56 }}><MenuBookIcon sx={{ fontSize: 32 }} /></Avatar>
+                <Avatar sx={{ bgcolor: '#9c27b0', width: 50, height: 50 }}><ParentsIcon sx={{ fontSize: 28 }} /></Avatar>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+
+        <Grid item xs={12} sm={6} md={4} lg={2}>
+          <Card sx={{ backgroundColor: '#ffebee', borderRadius: 3, transition: '0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 } }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>شكاوى معلقة</Typography>
+                  <Typography variant="h4" component="div" color="#f44336" fontWeight="bold">{pendingComplaintsCount}</Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: '#f44336', width: 50, height: 50 }}><ReportProblemIcon sx={{ fontSize: 28 }} /></Avatar>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={4} lg={2}>
+          <Card sx={{ backgroundColor: '#fff3e0', borderRadius: 3, transition: '0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 } }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>دورات نشطة</Typography>
+                  <Typography variant="h4" component="div" color="warning.main" fontWeight="bold">{activeCoursesCount}</Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: '#ed6c02', width: 50, height: 50 }}><MenuBookIcon sx={{ fontSize: 28 }} /></Avatar>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={4} lg={2}>
+          <Card sx={{ backgroundColor: '#e0f7fa', borderRadius: 3, transition: '0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 } }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>استبيانات</Typography>
+                  <Typography variant="h4" component="div" color="#00838f" fontWeight="bold">{publishedPollsCount}</Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: '#00838f', width: 50, height: 50 }}><PollIcon sx={{ fontSize: 28 }} /></Avatar>
               </Box>
             </CardContent>
           </Card>
@@ -149,10 +198,12 @@ function Dashboard() {
               <Alert severity="info">لا توجد جلسات في برنامج الدوام</Alert>
             ) : (
               <Table sx={{ minWidth: 800 }}>
-                <TableHead><TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                  <TableCell align="center">الوقت</TableCell>
-                  {days.map((day) => (<TableCell key={day} align="center">{day}</TableCell>))}
-                </TableRow></TableHead>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                    <TableCell align="center">الوقت</TableCell>
+                    {days.map((day) => (<TableCell key={day} align="center">{day}</TableCell>))}
+                  </TableRow>
+                </TableHead>
                 <TableBody>
                   {timeSlots.map((time) => (
                     <TableRow key={time}>
@@ -175,17 +226,31 @@ function Dashboard() {
         {tab === 1 && (
           <Box sx={{ overflowX: 'auto' }}>
             {examProgram.length === 0 ? (<Alert severity="info">لا توجد امتحانات</Alert>) : (
-              <Table><TableHead><TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                <TableCell>المادة</TableCell><TableCell>اليوم</TableCell><TableCell>التاريخ</TableCell><TableCell>الوقت</TableCell><TableCell>القاعة</TableCell>
-              </TableRow></TableHead>
-              <TableBody>{examProgram.map((exam) => (<TableRow key={exam.id}>
-                <TableCell>{exam.subject}</TableCell><TableCell><Chip label={exam.day} color="warning" size="small" /></TableCell>
-                <TableCell>{exam.date}</TableCell><TableCell>{exam.startTime} - {exam.endTime}</TableCell><TableCell>{exam.roomId}</TableCell>
-              </TableRow>))}</TableBody></Table>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                    <TableCell>المادة</TableCell>
+                    <TableCell>اليوم</TableCell>
+                    <TableCell>التاريخ</TableCell>
+                    <TableCell>الوقت</TableCell>
+                    <TableCell>القاعة</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {examProgram.map((exam) => (<TableRow key={exam.id}>
+                    <TableCell>{exam.subject}</TableCell>
+                    <TableCell><Chip label={exam.day} color="warning" size="small" /></TableCell>
+                    <TableCell>{exam.date}</TableCell>
+                    <TableCell>{exam.startTime} - {exam.endTime}</TableCell>
+                    <TableCell>{exam.roomId}</TableCell>
+                  </TableRow>))}
+                </TableBody>
+              </Table>
             )}
           </Box>
         )}
       </Paper>
+
       <Toast open={toast.open} onClose={() => setToast({ ...toast, open: false })} message={toast.message} severity={toast.severity} />
     </Box>
   );
