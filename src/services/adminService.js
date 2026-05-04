@@ -223,6 +223,7 @@ export const getReports = async () => {
     teachersCount: users.teachers.length,
     parentsCount: users.parents.length,
     activeCoursesCount: 12,
+    unseenPollResultsCount: polls.filter(p => !p.published).length,
     pendingComplaintsCount: complaints.filter(c => !c.replied).length,
     publishedPollsCount: polls.filter(p => p.published !== false).length,
     surveyResults: [
