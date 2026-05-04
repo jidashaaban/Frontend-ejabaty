@@ -88,7 +88,6 @@ function Reports() {
         icon={<AssessmentIcon sx={{ fontSize: 20 }} />}
       />
 
-      {/* بطاقات الإحصائيات الرئيسية */}
       <Grid container spacing={3} sx={{ mb: 5 }}>
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ 
@@ -183,7 +182,6 @@ function Reports() {
         </Grid>
       </Grid>
 
-      {/* بطاقات الإجراءات السريعة */}
       <Grid container spacing={3} sx={{ mb: 5 }}>
         <Grid item xs={12} md={6}>
           <Card 
@@ -250,7 +248,6 @@ function Reports() {
         </Grid>
       </Grid>
 
-      {/* نتائج الاستبيان - تدرج أزرق هادئ */}
       <Paper sx={{ 
         p: 3, 
         mb: 5, 
@@ -306,7 +303,6 @@ function Reports() {
         )}
       </Paper>
 
-      {/* ترتيب الطلاب حسب النقاط */}
       <Paper sx={{ 
         p: 3, 
         borderRadius: 4,
