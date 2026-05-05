@@ -29,7 +29,7 @@ import {
   ReportProblem as ReportProblemIcon,
   Poll as PollIcon,
 } from '@mui/icons-material';
-import { getReports, getWeeklyProgram, getExamProgram } from '../../services/adminService';
+import { getReports, getWeeklyProgram, getExamProgram, getDashboardMetrics } from '../../services/adminService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
@@ -40,6 +40,14 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(0);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+  const [metrics, setMetrics] = useState({
+    studentsCount: 0,
+    teachersCount: 0,
+    parentsCount: 0,
+    pendingComplaintsCount: 0,
+    totalCoursesCount: 0,
+    totalPollsCount: 0,
+  });
 
   const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
   const timeSlots = ['08:00-09:00', '09:00-10:00', '10:00-11:00', '11:00-12:00', '12:00-13:00', '13:00-14:00', '14:00-15:00'];
@@ -53,14 +61,71 @@ function Dashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [reportsData, weeklyData, examData] = await Promise.all([
-          getReports(),
-          getWeeklyProgram(),
-          getExamProgram(),
-        ]);
-        setReports(reportsData);
+        try {
+          const metricsData = await getDashboardMetrics();
+          setMetrics({
+            studentsCount: metricsData.studentsCount,
+            teachersCount: metricsData.teachersCount,
+            parentsCount: metricsData.parentsCount,
+            pendingComplaintsCount: metricsData.pendingComplaintsCount,
+            totalCoursesCount: metricsData.totalCoursesCount,
+            totalPollsCount: metricsData.totalPollsCount,
+          });
+        } catch (apiError) {
+          console.log('API غير متاح، استخدام البيانات الوهمية:', apiError);
+          const reportsData = await getReports();
+          setReports(reportsData);
+          setMetrics({
+            studentsCount: reportsData?.studentsCount || 0,
+            teachersCount: reportsData?.teachersCount || 0,
+            parentsCount: reportsData?.parentsCount || 0,
+            pendingComplaintsCount: reportsData?.pendingComplaintsCount || 0,
+            totalCoursesCount: reportsData?.activeCoursesCount || 0,
+            totalPollsCount: (reportsData?.surveyResults?.length || 0),
+          });
+        }
+
+        let weeklyData = [];
+        let examData = [];
+        
+        try {
+          if (weeklyData && weeklyData.length > 0 && weeklyData[0].start_time !== undefined) {
+            weeklyData = weeklyData.map(session => ({
+              id: session.id,
+              day: session.day,
+              startTime: session.start_time,
+              endTime: session.end_time,
+              subject: session.course?.name || 'غير محدد',
+              teacherId: session.teacher_id,
+              roomId: session.room_id || 'TBA',
+            }));
+          }
+        } catch (error) {
+          console.log('فشل جلب برنامج الدوام من API، استخدام بيانات وهمية');
+          weeklyData = [];
+        }
+
+        try {
+          examData = await getExamProgram();
+          if (examData && examData.length > 0 && examData[0].start_time !== undefined) {
+            examData = examData.map(session => ({
+              id: session.id,
+              day: session.day,
+              startTime: session.start_time,
+              endTime: session.end_time,
+              subject: session.course?.name || 'غير محدد',
+              roomId: session.hall_id || 'TBA',
+              date: session.day,
+            }));
+          }
+        } catch (error) {
+          console.log('فشل جلب برنامج الامتحانات من API، استخدام بيانات وهمية');
+          examData = [];
+        }
+
         setWeeklyProgram(weeklyData);
         setExamProgram(examData);
+        
       } catch (error) {
         console.error('خطأ في جلب البيانات:', error);
         setToast({ open: true, message: 'فشل في جلب البيانات', severity: 'error' });
@@ -71,13 +136,12 @@ function Dashboard() {
     fetchData();
   }, []);
 
-  // البيانات من الـ API أو قيم افتراضية
-  const studentsCount = reports?.studentsCount || 0;
-  const teachersCount = reports?.teachersCount || 0;
-  const activeCoursesCount = reports?.activeCoursesCount || 0;
-  const parentsCount = reports?.parentsCount || 0;
-  const pendingComplaintsCount = reports?.pendingComplaintsCount || 0;
-  const publishedPollsCount = reports?.publishedPollsCount || 0;
+  const studentsCount = metrics.studentsCount;
+  const teachersCount = metrics.teachersCount;
+  const activeCoursesCount = metrics.totalCoursesCount;
+  const parentsCount = metrics.parentsCount;
+  const pendingComplaintsCount = metrics.pendingComplaintsCount;
+  const publishedPollsCount = metrics.totalPollsCount;
 
   if (loading) {
     return (
@@ -138,7 +202,6 @@ function Dashboard() {
             </CardContent>
           </Card>
         </Grid>
-
 
         <Grid item xs={12} sm={6} md={4} lg={2}>
           <Card sx={{ backgroundColor: '#ffebee', borderRadius: 3, transition: '0.3s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 } }}>
@@ -212,7 +275,7 @@ function Dashboard() {
                         const session = getScheduleAt(day, time);
                         return (<TableCell key={day} align="center">
                           {session ? (<Box><Typography variant="body2" fontWeight="bold">{session.subject}</Typography>
-                          <Typography variant="caption" color="text.secondary">👨‍🏫 {session.teacherId}</Typography>
+                          <Typography variant="caption" color="text.secondary">👨‍🏫 {session.teacherId || 'غير محدد'}</Typography>
                           <Typography variant="caption" color="text.secondary" display="block">🏫 {session.roomId}</Typography></Box>) : (<Typography variant="caption" color="text.disabled">—</Typography>)}
                         </TableCell>);
                       })}
@@ -225,7 +288,7 @@ function Dashboard() {
         )}
         {tab === 1 && (
           <Box sx={{ overflowX: 'auto' }}>
-            {examProgram.length === 0 ? (<Alert severity="info">لا توجد امتحانات</Alert>) : (
+            {examProgram.length === 0 ? (<Alert severity="info">لا توجد امتحانات مجدولة حالياً</Alert>) : (
               <Table>
                 <TableHead>
                   <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
@@ -240,7 +303,7 @@ function Dashboard() {
                   {examProgram.map((exam) => (<TableRow key={exam.id}>
                     <TableCell>{exam.subject}</TableCell>
                     <TableCell><Chip label={exam.day} color="warning" size="small" /></TableCell>
-                    <TableCell>{exam.date}</TableCell>
+                    <TableCell>{exam.date || exam.day}</TableCell>
                     <TableCell>{exam.startTime} - {exam.endTime}</TableCell>
                     <TableCell>{exam.roomId}</TableCell>
                   </TableRow>))}

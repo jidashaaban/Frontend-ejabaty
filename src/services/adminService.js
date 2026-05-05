@@ -532,7 +532,6 @@ export const getWeeklyProgram = async () => {
       course_id:  session.course_id,
       teacher_id: session.course?.teacher_id ?? null,
       room_id:    session.hall?.id ?? session.hall_id ?? null,
-      class_id:   null,
     }));
   } catch (error) {
     console.error('خطأ في جلب برنامج الدوام:', error);
@@ -713,3 +712,197 @@ export const getUnrepliedComplaintsCount = async () => {
 export const getPublishedPollsCount = async () => {
   return Promise.resolve(polls.length);
 };
+
+export const getDashboardStats = async () => {
+  try {
+    const response = await apiClient.get('/admin/dashboard');
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب إحصائيات لوحة التحكم:', error);
+    throw error;
+  }
+};
+
+export const getDashboardMetrics = async () => {
+  try {
+    const dashboardData = await getDashboardStats();
+    
+    const metrics = dashboardData.metrics || {};
+    const viewingType = dashboardData.viewing_type || 'course';
+    const masterSchedule = dashboardData.master_schedule || {};
+    
+    return {
+      studentsCount: metrics.students || 0,
+      teachersCount: metrics.teachers || 0,
+      parentsCount: metrics.parents || 0,
+      pendingComplaintsCount: metrics.pending_complaints || 0,
+      totalCoursesCount: metrics.total_courses || 0,
+      totalPollsCount: metrics.total_polls || 0,
+      viewingType,
+      masterSchedule,
+    };
+  } catch (error) {
+    console.error('خطأ في جلب إحصائيات الـ Dashboard:', error);
+    return {
+      studentsCount: 0,
+      teachersCount: 0,
+      parentsCount: 0,
+      pendingComplaintsCount: 0,
+      totalCoursesCount: 0,
+      totalPollsCount: 0,
+      viewingType: 'course',
+      masterSchedule: {},
+    };
+  }
+};
+
+export const getReportsByRole = async (role) => {
+  try {
+    const response = await apiClient.get('/admin/reports', { 
+      params: { role } 
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`خطأ في جلب تقارير ${role}:`, error);
+    throw error;
+  }
+};
+
+export const saveReport = async (role) => {
+  try {
+    const response = await apiClient.post('/admin/reports/save', null, {
+      params: { role }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في حفظ التقرير:', error);
+    throw error;
+  }
+};
+
+export const getReportsHistory = async () => {
+  try {
+    const response = await apiClient.get('/admin/reports/history');
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب تاريخ التقارير:', error);
+    return [];
+  }
+};
+
+export const createUser = async (userData) => {
+  try {
+    const response = await apiClient.post('/admin/users', userData);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في إنشاء المستخدم:', error);
+    throw error;
+  }
+};
+
+export const getUsersFromAPI = async (role = null) => {
+  try {
+    const params = role ? { role } : {};
+    const response = await apiClient.get('/admin/users', { params });
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب المستخدمين:', error);
+    return [];
+  }
+};
+
+export const createPollViaAPI = async (pollData) => {
+  try {
+    const response = await apiClient.post('/admin/create-poll', pollData);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في إنشاء الاستبيان:', error);
+    throw error;
+  }
+};
+
+export const getAllPollsFromAPI = async () => {
+  try {
+    const response = await apiClient.get('/student/polls');
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب الاستبيانات:', error);
+    return [];
+  }
+};
+
+export const setupHallsViaAPI = async (halls) => {
+  try {
+    const response = await apiClient.post('/setup-halls', { halls });
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في إعداد القاعات:', error);
+    throw error;
+  }
+};
+
+export const addCourseViaAPI = async (courseData) => {
+  try {
+    const response = await apiClient.post('/admin/add-course', courseData);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في إضافة المادة:', error);
+    throw error;
+  }
+};
+
+export const getCoursesFromAPI = async () => {
+  try {
+    const response = await apiClient.get('/available-courses');
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب المواد:', error);
+    return [];
+  }
+};
+
+export const generateScheduleViaAPI = async (type) => {
+  try {
+    const response = await apiClient.post('/generate-schedule', { type });
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في إنشاء الجدول:', error);
+    throw error;
+  }
+};
+
+export const deleteSessionViaAPI = async (sessionId) => {
+  try {
+    const response = await apiClient.delete(`/sessions/${sessionId}`);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في حذف الجلسة:', error);
+    throw error;
+  }
+};
+
+export const logout = async () => {
+  try {
+    const response = await apiClient.post('/logout');
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في تسجيل الخروج:', error);
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    throw error;
+  }
+};
+
+export const getCurrentUser = async () => {
+  try {
+    const response = await apiClient.get('/user');
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب معلومات المستخدم:', error);
+    throw error;
+  }
+};
+
+export { apiClient };
