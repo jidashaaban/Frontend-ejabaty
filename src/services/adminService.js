@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -95,11 +95,13 @@ let complaints = [
     replyDate: null,
   },
 ];
+
 let examHalls = [
   { id: 1, name: 'قاعة A' },
   { id: 2, name: 'قاعة B' },
   { id: 3, name: 'قاعة C' },
 ];
+
 let examHallCapacities = {
   1: 4,  
   2: 4,  
@@ -223,9 +225,9 @@ export const getReports = async () => {
     teachersCount: users.teachers.length,
     parentsCount: users.parents.length,
     activeCoursesCount: 12,
-    unseenPollResultsCount: polls.filter(p => !p.published).length,
     pendingComplaintsCount: complaints.filter(c => !c.replied).length,
-    publishedPollsCount: polls.filter(p => p.published !== false).length,
+    unpublishedPollsCount: polls.filter(p => !p.published).length,
+    unseenPollResultsCount: polls.filter(p => !p.published).length,
     surveyResults: [
       {
         title: 'تقييم جودة التدريس',
