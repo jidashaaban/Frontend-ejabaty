@@ -160,7 +160,7 @@ export const addParent = async (parent) => {
 };
 
 export const getPolls = async () => {
-  console.log('📊 getPolls تم استدعاؤها, عدد الاستبيانات:', polls.length);
+  console.log(' getPolls تم استدعاؤها, عدد الاستبيانات:', polls.length);
   return Promise.resolve([...polls]);
 };
 
@@ -174,13 +174,13 @@ export const createPoll = async (pollData) => {
     results: [],
   };
   polls.push(newPoll);
-  console.log('✅ تم إضافة استبيان جديد:', newPoll);
+  console.log(' تم إضافة استبيان جديد:', newPoll);
   return Promise.resolve(newPoll);
 };
 
 export const deletePoll = async (id) => {
   polls = polls.filter(p => p.id !== id);
-  console.log('🗑️ تم حذف استبيان:', id);
+  console.log(' تم حذف استبيان:', id);
   return Promise.resolve();
 };
 
@@ -508,56 +508,34 @@ export const getHallById = async (id) => {
 };
 
 export const generateWeeklySchedule = async () => {
-  const response = await apiClient.post('/generate-schedule', { type: 'course' });
+  const response = await apiClient.post('/schedule/generate', { type: 'course' });
   return response.data;
 };
 
 export const generateExamSchedule = async () => {
-  const response = await apiClient.post('/generate-schedule', { type: 'exam' });
+  const response = await apiClient.post('/schedule/generate', { type: 'exam' });
   return response.data;
 };
 
 export const getWeeklyProgram = async () => {
   try {
-    const response = await apiClient.get('/admin-schedule', { params: { type: 'course' } })
-    const rawSessions = response.data?.sessions || [];
-    const sessions = Array.isArray(rawSessions) ? rawSessions : Object.values(rawSessions);
-
-    return sessions.map((session) => ({
-      id:         session.id,
-      day:        session.day,
-      start_time: session.start_time,
-      end_time:   session.end_time,
-      course:     session.course ?? null,
-      course_id:  session.course_id,
-      teacher_id: session.course?.teacher_id ?? null,
-      room_id:    session.hall?.id ?? session.hall_id ?? null,
-    }));
+    const response = await apiClient.get('/admin-schedule', { params: { type: 'course' } });
+    console.log(' getWeeklyProgram - Full response:', response.data);
+    return response.data;
   } catch (error) {
     console.error('خطأ في جلب برنامج الدوام:', error);
-    return [...weeklyPrograms]; 
+    return []; 
   }
 };
 
 export const getExamProgram = async () => {
   try {
     const response = await apiClient.get('/admin-schedule', { params: { type: 'exam' } });
-
-    const rawSessions = response.data?.sessions || [];
-    const sessions = Array.isArray(rawSessions) ? rawSessions : Object.values(rawSessions);
-
-    return sessions.map((session) => ({
-      id:         session.id,
-      day:        session.day,
-      start_time: session.start_time,
-      end_time:   session.end_time,
-      course:     session.course ?? null,
-      course_id:  session.course_id,
-      hall_id:    session.hall?.id ?? session.hall_id ?? null,
-    }));
+    console.log(' getExamProgram - Full response:', response.data);
+    return response.data;
   } catch (error) {
     console.error('خطأ في جلب برنامج الامتحانات:', error);
-    return [...examPrograms]; 
+    return []; 
   }
 };
 
@@ -863,7 +841,7 @@ export const getCoursesFromAPI = async () => {
 
 export const generateScheduleViaAPI = async (type) => {
   try {
-    const response = await apiClient.post('/generate-schedule', { type });
+    const response = await apiClient.post('/schedule/generate', { type });
     return response.data;
   } catch (error) {
     console.error('خطأ في إنشاء الجدول:', error);
