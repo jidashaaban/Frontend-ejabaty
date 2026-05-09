@@ -6,7 +6,6 @@ import {
   FormControlLabel,
   TextField,
   IconButton,
-  Stack,
   Box,
   Paper,
   Grid,
@@ -17,6 +16,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -28,29 +29,88 @@ import {
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
-import {
-  getAnnouncements,
-  createAnnouncement,
-  updateAnnouncement,
-  deleteAnnouncement,
-} from '../../services/adminService';
+
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
+
+const getAnnouncementsFromLocal = () => {
+  const saved = localStorage.getItem('announcements');
+  if (saved) {
+    return JSON.parse(saved);
+  }
+  return [];
+};
+
+const saveAnnouncementsToLocal = (announcements) => {
+  localStorage.setItem('announcements', JSON.stringify(announcements));
+};
+
+const getAnnouncements = async () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(getAnnouncementsFromLocal());
+    }, 500);
+  });
+};
+
+const createAnnouncementAPI = async (announcement) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const announcements = getAnnouncementsFromLocal();
+      const newAnnouncement = {
+        ...announcement,
+        id: Date.now(),
+        created_at: new Date().toISOString(),
+      };
+      announcements.unshift(newAnnouncement);
+      saveAnnouncementsToLocal(announcements);
+      resolve(newAnnouncement);
+    }, 500);
+  });
+};
+
+const updateAnnouncementAPI = async (id, announcement) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const announcements = getAnnouncementsFromLocal();
+      const index = announcements.findIndex(a => a.id === id);
+      if (index !== -1) {
+        announcements[index] = { ...announcements[index], ...announcement };
+        saveAnnouncementsToLocal(announcements);
+      }
+      resolve(announcements[index]);
+    }, 500);
+  });
+};
+
+const deleteAnnouncementAPI = async (id) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const announcements = getAnnouncementsFromLocal();
+      const filtered = announcements.filter(a => a.id !== id);
+      saveAnnouncementsToLocal(filtered);
+      resolve(true);
+    }, 500);
+  });
+};
 
 const Announcements = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [current, setCurrent] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchData = async () => {
-    setLoading(true);
+    setFetching(true);
     try {
       const data = await getAnnouncements();
       setAnnouncements(data);
     } catch (error) {
+      console.error('خطأ في جلب الإعلانات:', error);
       setToast({ open: true, message: 'فشل في جلب الإعلانات', severity: 'error' });
     } finally {
-      setLoading(false);
+      setFetching(false);
     }
   };
 
@@ -59,7 +119,14 @@ const Announcements = () => {
   }, []);
 
   const handleAdd = () => {
-    setCurrent({ title: '', description: '', date: new Date().toISOString().split('T')[0], published: false, image: '' });
+    setCurrent({ 
+      id: null,
+      title: '', 
+      description: '', 
+      date: new Date().toISOString().split('T')[0], 
+      published: false, 
+      image: '' 
+    });
     setModalOpen(true);
   };
 
@@ -70,44 +137,68 @@ const Announcements = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
+      setLoading(true);
       try {
-        await deleteAnnouncement(id);
+        await deleteAnnouncementAPI(id);
         setToast({ open: true, message: 'تم حذف الإعلان بنجاح', severity: 'success' });
         fetchData();
       } catch (error) {
-        setToast({ open: true, message: error.message, severity: 'error' });
+        setToast({ open: true, message: error.message || 'فشل في حذف الإعلان', severity: 'error' });
+      } finally {
+        setLoading(false);
       }
     }
   };
 
   const handleSave = async () => {
-    if (!current.title || !current.description) {
-      setToast({ open: true, message: 'الرجاء تعبئة العنوان والنص', severity: 'error' });
+    if (!current.title || !current.title.trim()) {
+      setToast({ open: true, message: 'الرجاء إدخال عنوان الإعلان', severity: 'error' });
       return;
     }
+    if (!current.description || !current.description.trim()) {
+      setToast({ open: true, message: 'الرجاء إدخال نص الإعلان', severity: 'error' });
+      return;
+    }
+    
+    setLoading(true);
     try {
       if (current.id) {
-        await updateAnnouncement(current.id, current);
+        await updateAnnouncementAPI(current.id, current);
         setToast({ open: true, message: 'تم تعديل الإعلان بنجاح', severity: 'success' });
       } else {
-        await createAnnouncement(current);
+        await createAnnouncementAPI(current);
         setToast({ open: true, message: 'تم إضافة الإعلان بنجاح', severity: 'success' });
       }
       setModalOpen(false);
       fetchData();
     } catch (err) {
-      setToast({ open: true, message: err.message, severity: 'error' });
+      setToast({ open: true, message: err.message || 'فشل في حفظ الإعلان', severity: 'error' });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleTogglePublish = async (row) => {
+    setLoading(true);
     try {
-      await updateAnnouncement(row.id, { published: !row.published });
+      await updateAnnouncementAPI(row.id, { published: !row.published });
+      setToast({ open: true, message: row.published ? 'تم إلغاء نشر الإعلان' : 'تم نشر الإعلان', severity: 'success' });
       fetchData();
     } catch (error) {
-      setToast({ open: true, message: error.message, severity: 'error' });
+      setToast({ open: true, message: error.message || 'فشل في تغيير حالة النشر', severity: 'error' });
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (fetching) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+        <Typography sx={{ mr: 2 }}>جاري تحميل الإعلانات...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -126,9 +217,9 @@ const Announcements = () => {
             borderRadius: 2,
             px: 3,
             py: 0.8,
-            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+            bgcolor: '#1976d2',
             '&:hover': {
-              background: 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)',
+              bgcolor: '#1565c0',
               transform: 'translateY(-2px)',
             },
             transition: 'all 0.3s ease',
@@ -139,10 +230,12 @@ const Announcements = () => {
       </Box>
 
       {announcements.length === 0 ? (
-        <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 4 }}>
+        <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 3 }}>
           <AnnouncementIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
           <Typography variant="h6" color="text.secondary">لا توجد إعلانات حالياً</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>اضغط على "إعلان جديد" لإضافة أول إعلان</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            اضغط على "إعلان جديد" لإضافة أول إعلان
+          </Typography>
         </Paper>
       ) : (
         <Grid container spacing={3}>
@@ -151,11 +244,12 @@ const Announcements = () => {
               <Card sx={{
                 borderRadius: 3,
                 transition: '0.3s',
-                background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%)',
-                border: announcement.published ? '1px solid #4caf50' : '1px solid #90caf9',
+                bgcolor: '#ffffff',
+                border: announcement.published ? '1px solid #4caf50' : '1px solid #e0e0e0',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 '&:hover': { 
                   transform: 'translateY(-4px)', 
-                  boxShadow: '0 8px 25px rgba(25,118,210,0.25)',
+                  boxShadow: '0 8px 25px rgba(25,118,210,0.15)',
                 }
               }}>
                 <CardContent>
@@ -164,7 +258,7 @@ const Announcements = () => {
                       label={announcement.published ? 'منشور' : 'مسودة'}
                       size="small"
                       color={announcement.published ? 'success' : 'default'}
-                      icon={announcement.published ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                      icon={announcement.published ? <VisibilityIcon sx={{ fontSize: 16 }} /> : <VisibilityOffIcon sx={{ fontSize: 16 }} />}
                     />
                     <Box>
                       <IconButton onClick={() => handleEdit(announcement)} color="primary" size="small" title="تعديل">
@@ -181,7 +275,7 @@ const Announcements = () => {
                     {announcement.title}
                   </Typography>
 
-                  <Typography variant="body2" sx={{ mb: 2, color: '#37474f' }}>
+                  <Typography variant="body2" sx={{ mb: 2, color: '#37474f', lineHeight: 1.6 }}>
                     {announcement.description.length > 100 
                       ? `${announcement.description.substring(0, 100)}...` 
                       : announcement.description}
@@ -189,7 +283,7 @@ const Announcements = () => {
 
                   <Box display="flex" alignItems="center" justifyContent="space-between" mt={2}>
                     <Chip 
-                      label={announcement.date} 
+                      label={announcement.date || new Date(announcement.created_at).toLocaleDateString('ar')} 
                       size="small" 
                       variant="outlined"
                       sx={{ borderColor: '#1976d2', color: '#1976d2' }}
@@ -232,6 +326,7 @@ const Announcements = () => {
             onChange={(e) => setCurrent({ ...current, title: e.target.value })}
             required
             variant="outlined"
+            placeholder="أدخل عنوان الإعلان"
           />
           <TextField
             label="نص الإعلان"
@@ -243,6 +338,7 @@ const Announcements = () => {
             onChange={(e) => setCurrent({ ...current, description: e.target.value })}
             required
             variant="outlined"
+            placeholder="أدخل محتوى الإعلان"
           />
           <TextField
             label="التاريخ"
@@ -250,7 +346,7 @@ const Announcements = () => {
             fullWidth
             margin="normal"
             InputLabelProps={{ shrink: true }}
-            value={current?.date || ''}
+            value={current?.date || new Date().toISOString().split('T')[0]}
             onChange={(e) => setCurrent({ ...current, date: e.target.value })}
             variant="outlined"
           />
@@ -273,11 +369,16 @@ const Announcements = () => {
             onChange={(e) => setCurrent({ ...current, image: e.target.value })}
             variant="outlined"
             helperText="أدخل رابط صورة للإعلان (اختياري)"
+            placeholder="https://example.com/image.jpg"
           />
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setModalOpen(false)} variant="outlined">إلغاء</Button>
-          <Button onClick={handleSave} variant="contained" sx={{ bgcolor: '#1976d2' }}>حفظ</Button>
+          <Button onClick={() => setModalOpen(false)} variant="outlined" disabled={loading}>
+            إلغاء
+          </Button>
+          <Button onClick={handleSave} variant="contained" disabled={loading} sx={{ bgcolor: '#1976d2' }}>
+            {loading ? <CircularProgress size={24} /> : 'حفظ'}
+          </Button>
         </DialogActions>
       </Dialog>
 
