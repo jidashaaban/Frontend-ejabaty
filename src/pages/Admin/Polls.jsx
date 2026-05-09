@@ -28,7 +28,7 @@ import {
   Visibility as VisibilityIcon,
   QuestionAnswer as QuestionAnswerIcon,
 } from '@mui/icons-material';
-import { getPolls, createPoll, deletePoll, getPollResults } from '../../services/adminService';
+import { getAllPolls, createPoll, deletePoll, getPollResults } from '../../services/adminService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
@@ -38,7 +38,7 @@ function Polls() {
   const [openDialog, setOpenDialog] = useState(false);
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [selectedPoll, setSelectedPoll] = useState(null);
-  const [pollResults, setPollResults] = useState(null);
+  const [pollResults, setPollResults] = useState([]);
   const [pollForm, setPollForm] = useState({
     title: '',
     description: '',
@@ -51,8 +51,23 @@ function Polls() {
   const fetchPolls = async () => {
     setLoading(true);
     try {
-      const data = await getPolls();
-      setPolls(data);
+      const data = await getAllPolls();
+      console.log('📊 بيانات الاستبيانات المستلمة:', data);
+      
+      // معالجة البيانات إذا كانت غير مصفوفة
+      let pollsArray = [];
+      if (Array.isArray(data)) {
+        pollsArray = data;
+      } else if (data && data.data && Array.isArray(data.data)) {
+        pollsArray = data.data;
+      } else if (data && typeof data === 'object') {
+        // إذا كانت البيانات كائن وليست مصفوفة، نحولها إلى مصفوفة
+        pollsArray = Object.values(data);
+      } else {
+        pollsArray = [];
+      }
+      
+      setPolls(pollsArray);
     } catch (error) {
       console.error('خطأ في جلب الاستبيانات:', error);
       setToast({ open: true, message: 'فشل في جلب الاستبيانات', severity: 'error' });
@@ -105,6 +120,10 @@ function Polls() {
   };
 
   const handleRemoveOption = (questionId, optionIndex) => {
+    if (pollForm.questions.find(q => q.id === questionId).options.length <= 2) {
+      setToast({ open: true, message: 'يجب أن يكون هناك خياران على الأقل', severity: 'warning' });
+      return;
+    }
     setPollForm({
       ...pollForm,
       questions: pollForm.questions.map(q =>
@@ -146,7 +165,17 @@ function Polls() {
     }
 
     try {
-      await createPoll(pollForm);
+      // تحويل البيانات إلى الصيغة المطلوبة من الـ API
+      const pollData = {
+        title: pollForm.title,
+        description: pollForm.description,
+        questions: pollForm.questions.map(q => ({
+          text: q.text,
+          options: q.options.filter(opt => opt.trim() !== '')
+        }))
+      };
+      
+      await createPoll(pollData);
       setToast({ open: true, message: 'تم إضافة الاستبيان بنجاح', severity: 'success' });
       setOpenDialog(false);
       setPollForm({
@@ -156,7 +185,8 @@ function Polls() {
       });
       fetchPolls();
     } catch (error) {
-      setToast({ open: true, message: 'فشل في إضافة الاستبيان', severity: 'error' });
+      console.error('خطأ في إضافة الاستبيان:', error);
+      setToast({ open: true, message: error.response?.data?.message || 'فشل في إضافة الاستبيان', severity: 'error' });
     }
   };
 
@@ -167,7 +197,8 @@ function Polls() {
         setToast({ open: true, message: 'تم حذف الاستبيان بنجاح', severity: 'success' });
         fetchPolls();
       } catch (error) {
-        setToast({ open: true, message: 'فشل في حذف الاستبيان', severity: 'error' });
+        console.error('خطأ في حذف الاستبيان:', error);
+        setToast({ open: true, message: error.response?.data?.message || 'فشل في حذف الاستبيان', severity: 'error' });
       }
     }
   };
@@ -176,10 +207,23 @@ function Polls() {
     setSelectedPoll(poll);
     try {
       const results = await getPollResults(poll.id);
-      setPollResults(results);
+      console.log('📊 نتائج الاستبيان:', results);
+      
+      // معالجة النتائج إذا كانت غير مصفوفة
+      let resultsArray = [];
+      if (Array.isArray(results)) {
+        resultsArray = results;
+      } else if (results && results.data && Array.isArray(results.data)) {
+        resultsArray = results.data;
+      } else {
+        resultsArray = [];
+      }
+      
+      setPollResults(resultsArray);
       setOpenViewDialog(true);
     } catch (error) {
-      setToast({ open: true, message: 'فشل في جلب النتائج', severity: 'error' });
+      console.error('خطأ في جلب النتائج:', error);
+      setToast({ open: true, message: error.response?.data?.message || 'فشل في جلب النتائج', severity: 'error' });
     }
   };
 
@@ -272,7 +316,7 @@ function Polls() {
                   <Box display="flex" alignItems="center" gap={1}>
                     <QuestionAnswerIcon fontSize="small" sx={{ color: '#1565c0' }} />
                     <Typography variant="caption" sx={{ color: '#1565c0' }}>
-                      تم الإنشاء: {poll.date || '2026-04-15'}
+                      تم الإنشاء: {poll.created_at ? new Date(poll.created_at).toLocaleDateString('ar') : (poll.date || 'تاريخ غير محدد')}
                     </Typography>
                   </Box>
                 </CardContent>
@@ -282,6 +326,7 @@ function Polls() {
         </Grid>
       )}
 
+      {/* حوار إنشاء استبيان جديد */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ 
           background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 
@@ -391,6 +436,7 @@ function Polls() {
         </DialogActions>
       </Dialog>
 
+      {/* حوار عرض النتائج */}
       <Dialog open={openViewDialog} onClose={() => setOpenViewDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ 
           background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 
@@ -405,21 +451,21 @@ function Polls() {
                 <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#1565c0' }}>
                   {result.question}
                 </Typography>
-                {result.options.map((option, optIdx) => (
+                {result.options && result.options.map((option, optIdx) => (
                   <Box key={optIdx} sx={{ mb: 2 }}>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
                       <Typography variant="body2">{option.text}</Typography>
                       <Typography variant="body2" fontWeight="bold" color="#1976d2">
-                        {option.percentage}%
+                        {option.percentage || 0}%
                       </Typography>
                     </Box>
                     <LinearProgress
                       variant="determinate"
-                      value={option.percentage}
+                      value={option.percentage || 0}
                       sx={{ height: 8, borderRadius: 4, bgcolor: '#e0e0e0', '& .MuiLinearProgress-bar': { bgcolor: '#1976d2' } }}
                     />
                     <Typography variant="caption" color="text.secondary">
-                      {option.votes} صوت
+                      {option.votes || 0} صوت
                     </Typography>
                   </Box>
                 ))}
