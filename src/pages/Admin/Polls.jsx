@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Typography,  
+  Typography,
   Paper,
   Button,
   IconButton,
@@ -28,9 +28,14 @@ import {
   Visibility as VisibilityIcon,
   QuestionAnswer as QuestionAnswerIcon,
 } from '@mui/icons-material';
-import { getAllPolls, createPoll, deletePoll, getPollResults } from '../../services/adminService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
+import {
+  getAllPolls,
+  createPoll,
+  deletePoll,
+  getPollResults,
+} from '../../services/adminService';
 
 function Polls() {
   const [polls, setPolls] = useState([]);
@@ -43,7 +48,7 @@ function Polls() {
     title: '',
     description: '',
     questions: [
-      { id: 1, text: '', options: ['', ''] }
+      { id: Date.now(), text: '', options: ['', ''] }
     ]
   });
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
@@ -52,17 +57,13 @@ function Polls() {
     setLoading(true);
     try {
       const data = await getAllPolls();
-      console.log('📊 بيانات الاستبيانات المستلمة:', data);
+      console.log('بيانات الاستبيانات المستلمة:', data);
       
-      // معالجة البيانات إذا كانت غير مصفوفة
       let pollsArray = [];
       if (Array.isArray(data)) {
         pollsArray = data;
       } else if (data && data.data && Array.isArray(data.data)) {
         pollsArray = data.data;
-      } else if (data && typeof data === 'object') {
-        // إذا كانت البيانات كائن وليست مصفوفة، نحولها إلى مصفوفة
-        pollsArray = Object.values(data);
       } else {
         pollsArray = [];
       }
@@ -120,7 +121,8 @@ function Polls() {
   };
 
   const handleRemoveOption = (questionId, optionIndex) => {
-    if (pollForm.questions.find(q => q.id === questionId).options.length <= 2) {
+    const question = pollForm.questions.find(q => q.id === questionId);
+    if (question.options.length <= 2) {
       setToast({ open: true, message: 'يجب أن يكون هناك خياران على الأقل', severity: 'warning' });
       return;
     }
@@ -165,7 +167,6 @@ function Polls() {
     }
 
     try {
-      // تحويل البيانات إلى الصيغة المطلوبة من الـ API
       const pollData = {
         title: pollForm.title,
         description: pollForm.description,
@@ -186,7 +187,7 @@ function Polls() {
       fetchPolls();
     } catch (error) {
       console.error('خطأ في إضافة الاستبيان:', error);
-      setToast({ open: true, message: error.response?.data?.message || 'فشل في إضافة الاستبيان', severity: 'error' });
+      setToast({ open: true, message: error.message || 'فشل في إضافة الاستبيان', severity: 'error' });
     }
   };
 
@@ -198,7 +199,7 @@ function Polls() {
         fetchPolls();
       } catch (error) {
         console.error('خطأ في حذف الاستبيان:', error);
-        setToast({ open: true, message: error.response?.data?.message || 'فشل في حذف الاستبيان', severity: 'error' });
+        setToast({ open: true, message: error.message || 'فشل في حذف الاستبيان', severity: 'error' });
       }
     }
   };
@@ -207,9 +208,8 @@ function Polls() {
     setSelectedPoll(poll);
     try {
       const results = await getPollResults(poll.id);
-      console.log('📊 نتائج الاستبيان:', results);
+      console.log('نتائج الاستبيان:', results);
       
-      // معالجة النتائج إذا كانت غير مصفوفة
       let resultsArray = [];
       if (Array.isArray(results)) {
         resultsArray = results;
@@ -223,7 +223,7 @@ function Polls() {
       setOpenViewDialog(true);
     } catch (error) {
       console.error('خطأ في جلب النتائج:', error);
-      setToast({ open: true, message: error.response?.data?.message || 'فشل في جلب النتائج', severity: 'error' });
+      setToast({ open: true, message: error.message || 'فشل في جلب النتائج', severity: 'error' });
     }
   };
 
@@ -262,7 +262,7 @@ function Polls() {
       </Box>
 
       {polls.length === 0 ? (
-        <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 4 }}>
+        <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 3 }}>
           <PollIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
           <Typography variant="h6" color="text.secondary">
             لا توجد استبيانات حالياً
@@ -278,7 +278,9 @@ function Polls() {
               <Card sx={{ 
                 borderRadius: 3, 
                 transition: '0.3s', 
-                background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%)',
+                bgcolor: '#ffffff',
+                border: '1px solid #e0e0e0',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 '&:hover': { 
                   transform: 'translateY(-4px)', 
                   boxShadow: '0 8px 25px rgba(25,118,210,0.15)',
@@ -289,7 +291,6 @@ function Polls() {
                     <Chip
                       label={`${poll.questions?.length || 0} أسئلة`}
                       size="small"
-                      color="primary"
                       sx={{ bgcolor: '#1976d2', color: '#fff' }}
                     />
                     <Box>
@@ -311,7 +312,7 @@ function Polls() {
                     {poll.description || 'لا يوجد وصف'}
                   </Typography>
 
-                  <Divider sx={{ my: 1.5, borderColor: '#90caf9' }} />
+                  <Divider sx={{ my: 1.5 }} />
 
                   <Box display="flex" alignItems="center" gap={1}>
                     <QuestionAnswerIcon fontSize="small" sx={{ color: '#1565c0' }} />
@@ -326,7 +327,6 @@ function Polls() {
         </Grid>
       )}
 
-      {/* حوار إنشاء استبيان جديد */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ 
           background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 
@@ -367,7 +367,7 @@ function Polls() {
           </Typography>
 
           {pollForm.questions.map((question, qIndex) => (
-            <Paper key={question.id} sx={{ p: 2, mb: 3, bgcolor: '#e3f2fd', borderRadius: 3 }}>
+            <Paper key={question.id} sx={{ p: 2, mb: 3, bgcolor: '#f5f5f5', borderRadius: 3 }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="subtitle1" fontWeight="bold" color="#1565c0">
                   سؤال {qIndex + 1}
@@ -436,7 +436,6 @@ function Polls() {
         </DialogActions>
       </Dialog>
 
-      {/* حوار عرض النتائج */}
       <Dialog open={openViewDialog} onClose={() => setOpenViewDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ 
           background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 

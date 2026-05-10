@@ -17,7 +17,6 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
-  Alert,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -29,69 +28,12 @@ import {
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
-
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
-
-const getAnnouncementsFromLocal = () => {
-  const saved = localStorage.getItem('announcements');
-  if (saved) {
-    return JSON.parse(saved);
-  }
-  return [];
-};
-
-const saveAnnouncementsToLocal = (announcements) => {
-  localStorage.setItem('announcements', JSON.stringify(announcements));
-};
-
-const getAnnouncements = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(getAnnouncementsFromLocal());
-    }, 500);
-  });
-};
-
-const createAnnouncementAPI = async (announcement) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const announcements = getAnnouncementsFromLocal();
-      const newAnnouncement = {
-        ...announcement,
-        id: Date.now(),
-        created_at: new Date().toISOString(),
-      };
-      announcements.unshift(newAnnouncement);
-      saveAnnouncementsToLocal(announcements);
-      resolve(newAnnouncement);
-    }, 500);
-  });
-};
-
-const updateAnnouncementAPI = async (id, announcement) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const announcements = getAnnouncementsFromLocal();
-      const index = announcements.findIndex(a => a.id === id);
-      if (index !== -1) {
-        announcements[index] = { ...announcements[index], ...announcement };
-        saveAnnouncementsToLocal(announcements);
-      }
-      resolve(announcements[index]);
-    }, 500);
-  });
-};
-
-const deleteAnnouncementAPI = async (id) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const announcements = getAnnouncementsFromLocal();
-      const filtered = announcements.filter(a => a.id !== id);
-      saveAnnouncementsToLocal(filtered);
-      resolve(true);
-    }, 500);
-  });
-};
+import {
+  getAnnouncements,
+  createAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement,
+} from '../../services/adminService';
 
 const Announcements = () => {
   const [announcements, setAnnouncements] = useState([]);
@@ -105,7 +47,20 @@ const Announcements = () => {
     setFetching(true);
     try {
       const data = await getAnnouncements();
-      setAnnouncements(data);
+      console.log('📢 الإعلانات المستلمة:', data);
+      
+      let announcementsArray = [];
+      if (Array.isArray(data)) {
+        announcementsArray = data;
+      } else if (data && data.data && Array.isArray(data.data)) {
+        announcementsArray = data.data;
+      } else if (data && data.announcements && Array.isArray(data.announcements)) {
+        announcementsArray = data.announcements;
+      } else {
+        announcementsArray = [];
+      }
+      
+      setAnnouncements(announcementsArray);
     } catch (error) {
       console.error('خطأ في جلب الإعلانات:', error);
       setToast({ open: true, message: 'فشل في جلب الإعلانات', severity: 'error' });
@@ -139,11 +94,11 @@ const Announcements = () => {
     if (window.confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
       setLoading(true);
       try {
-        await deleteAnnouncementAPI(id);
+        await deleteAnnouncement(id);
         setToast({ open: true, message: 'تم حذف الإعلان بنجاح', severity: 'success' });
         fetchData();
       } catch (error) {
-        setToast({ open: true, message: error.message || 'فشل في حذف الإعلان', severity: 'error' });
+        setToast({ open: true, message: error.response?.data?.message || 'فشل في حذف الإعلان', severity: 'error' });
       } finally {
         setLoading(false);
       }
@@ -162,17 +117,25 @@ const Announcements = () => {
     
     setLoading(true);
     try {
+      const payload = {
+        title: current.title,
+        description: current.description,
+        date: current.date,
+        published: current.published || false,
+        image: current.image || '',
+      };
+      
       if (current.id) {
-        await updateAnnouncementAPI(current.id, current);
+        await updateAnnouncement(current.id, payload);
         setToast({ open: true, message: 'تم تعديل الإعلان بنجاح', severity: 'success' });
       } else {
-        await createAnnouncementAPI(current);
+        await createAnnouncement(payload);
         setToast({ open: true, message: 'تم إضافة الإعلان بنجاح', severity: 'success' });
       }
       setModalOpen(false);
       fetchData();
     } catch (err) {
-      setToast({ open: true, message: err.message || 'فشل في حفظ الإعلان', severity: 'error' });
+      setToast({ open: true, message: err.response?.data?.message || 'فشل في حفظ الإعلان', severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -181,11 +144,11 @@ const Announcements = () => {
   const handleTogglePublish = async (row) => {
     setLoading(true);
     try {
-      await updateAnnouncementAPI(row.id, { published: !row.published });
+      await updateAnnouncement(row.id, { published: !row.published });
       setToast({ open: true, message: row.published ? 'تم إلغاء نشر الإعلان' : 'تم نشر الإعلان', severity: 'success' });
       fetchData();
     } catch (error) {
-      setToast({ open: true, message: error.message || 'فشل في تغيير حالة النشر', severity: 'error' });
+      setToast({ open: true, message: error.response?.data?.message || 'فشل في تغيير حالة النشر', severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -283,7 +246,7 @@ const Announcements = () => {
 
                   <Box display="flex" alignItems="center" justifyContent="space-between" mt={2}>
                     <Chip 
-                      label={announcement.date || new Date(announcement.created_at).toLocaleDateString('ar')} 
+                      label={announcement.date || (announcement.created_at ? new Date(announcement.created_at).toLocaleDateString('ar') : 'تاريخ غير محدد')} 
                       size="small" 
                       variant="outlined"
                       sx={{ borderColor: '#1976d2', color: '#1976d2' }}
