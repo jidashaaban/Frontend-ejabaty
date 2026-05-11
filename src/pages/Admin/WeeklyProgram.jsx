@@ -126,7 +126,10 @@ function WeeklyProgram() {
             }
           });
         });
-      } else if (examRes && examRes.sessions) {
+      }
+      
+        else if ( examRes && examRes.sessions )
+      {
         formattedExams = examRes.sessions.map(session => ({
           id: session.id,
           day: daysMap[session.day] || session.day,

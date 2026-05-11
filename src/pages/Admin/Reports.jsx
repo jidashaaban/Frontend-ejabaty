@@ -1070,7 +1070,6 @@ function Reports() {
                   </Table>
                 </Paper>
               )}
-
               {selectedHistoryReport.category === 'admin' && (
                 <Paper sx={{ overflowX: 'auto' }}>
                   <Table>
