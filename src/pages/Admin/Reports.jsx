@@ -677,7 +677,7 @@ function Reports() {
               <Avatar sx={{ bgcolor: '#ff9800', width: 40, height: 40 }}>
                 <EmojiEventsIcon sx={{ color: '#fff' }} />
               </Avatar>
-              <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1976d2' }}>🏆 ترتيب الطلاب حسب النقاط</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1976d2' }}>ترتيب الطلاب حسب النقاط</Typography>
             </Box>
 
             {topStudents.grade9.length === 0 && topStudents.scientific.length === 0 && topStudents.literary.length === 0 ? (
@@ -965,7 +965,7 @@ function Reports() {
                       <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
                         <TableCell><strong>#</strong></TableCell>
                         <TableCell><strong>اسم الطالب</strong></TableCell>
-                        <TableCell><strong>المساقات المسجل فيها</strong></TableCell>
+                        <TableCell><strong>الدورات المسجل فيها</strong></TableCell>
                         <TableCell><strong>علامات الامتحانات</strong></TableCell>
                         <TableCell><strong>نقاط الاختبارات</strong></TableCell>
                       </TableRow>
