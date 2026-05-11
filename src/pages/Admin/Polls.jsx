@@ -26,7 +26,6 @@ import {
   AddCircle as AddCircleIcon,
   RemoveCircle as RemoveCircleIcon,
   Visibility as VisibilityIcon,
-  QuestionAnswer as QuestionAnswerIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
@@ -44,14 +43,26 @@ function Polls() {
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [selectedPoll, setSelectedPoll] = useState(null);
   const [pollResults, setPollResults] = useState([]);
+  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+  
+  const getDefaultExpiresAt = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 7);
+    date.setHours(date.getHours() + 1);
+    return date.toISOString().slice(0, 16);
+  };
+
   const [pollForm, setPollForm] = useState({
     title: '',
     description: '',
+    expires_at: getDefaultExpiresAt(),
     questions: [
-      { id: Date.now(), text: '', options: ['', ''] }
+      {
+        question_text: '',
+        options: ['', '']
+      }
     ]
   });
-  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchPolls = async () => {
     setLoading(true);
@@ -86,65 +97,59 @@ function Polls() {
       ...pollForm,
       questions: [
         ...pollForm.questions,
-        { id: Date.now(), text: '', options: ['', ''] }
+        { question_text: '', options: ['', ''] }
       ]
     });
   };
 
-  const handleRemoveQuestion = (questionId) => {
+  const handleRemoveQuestion = (questionIndex) => {
     if (pollForm.questions.length === 1) {
       setToast({ open: true, message: 'يجب أن يكون هناك سؤال واحد على الأقل', severity: 'warning' });
       return;
     }
     setPollForm({
       ...pollForm,
-      questions: pollForm.questions.filter(q => q.id !== questionId)
+      questions: pollForm.questions.filter((_, idx) => idx !== questionIndex)
     });
   };
 
-  const handleQuestionChange = (questionId, value) => {
-    setPollForm({
-      ...pollForm,
-      questions: pollForm.questions.map(q =>
-        q.id === questionId ? { ...q, text: value } : q
-      )
-    });
+  const handleQuestionChange = (questionIndex, value) => {
+    const updatedQuestions = [...pollForm.questions];
+    updatedQuestions[questionIndex].question_text = value;
+    setPollForm({ ...pollForm, questions: updatedQuestions });
   };
 
-  const handleAddOption = (questionId) => {
-    setPollForm({
-      ...pollForm,
-      questions: pollForm.questions.map(q =>
-        q.id === questionId ? { ...q, options: [...q.options, ''] } : q
-      )
-    });
+  const handleAddOption = (questionIndex) => {
+    const updatedQuestions = [...pollForm.questions];
+    updatedQuestions[questionIndex].options.push('');
+    setPollForm({ ...pollForm, questions: updatedQuestions });
   };
 
-  const handleRemoveOption = (questionId, optionIndex) => {
-    const question = pollForm.questions.find(q => q.id === questionId);
-    if (question.options.length <= 2) {
-      setToast({ open: true, message: 'يجب أن يكون هناك خياران على الأقل', severity: 'warning' });
+  const handleRemoveOption = (questionIndex, optionIndex) => {
+    const updatedQuestions = [...pollForm.questions];
+    if (updatedQuestions[questionIndex].options.length <= 2) {
+      setToast({ open: true, message: 'يجب أن يكون هناك خياران على الأقل لكل سؤال', severity: 'warning' });
       return;
     }
-    setPollForm({
-      ...pollForm,
-      questions: pollForm.questions.map(q =>
-        q.id === questionId
-          ? { ...q, options: q.options.filter((_, idx) => idx !== optionIndex) }
-          : q
-      )
-    });
+    updatedQuestions[questionIndex].options = updatedQuestions[questionIndex].options.filter((_, idx) => idx !== optionIndex);
+    setPollForm({ ...pollForm, questions: updatedQuestions });
   };
 
-  const handleOptionChange = (questionId, optionIndex, value) => {
-    setPollForm({
-      ...pollForm,
-      questions: pollForm.questions.map(q =>
-        q.id === questionId
-          ? { ...q, options: q.options.map((opt, idx) => idx === optionIndex ? value : opt) }
-          : q
-      )
-    });
+  const handleOptionChange = (questionIndex, optionIndex, value) => {
+    const updatedQuestions = [...pollForm.questions];
+    updatedQuestions[questionIndex].options[optionIndex] = value;
+    setPollForm({ ...pollForm, questions: updatedQuestions });
+  };
+
+  const formatDateForMySQL = (dateString) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
   const handleSavePoll = async () => {
@@ -153,41 +158,63 @@ function Polls() {
       return;
     }
 
-    for (const question of pollForm.questions) {
-      if (!question.text.trim()) {
-        setToast({ open: true, message: 'الرجاء إكمال جميع الأسئلة', severity: 'error' });
+    if (!pollForm.expires_at) {
+      setToast({ open: true, message: 'الرجاء تحديد تاريخ انتهاء الاستبيان', severity: 'error' });
+      return;
+    }
+    const expiresAtDate = new Date(pollForm.expires_at);
+    const now = new Date();
+    
+    if (expiresAtDate <= now) {
+      setToast({ open: true, message: 'تاريخ الانتهاء يجب أن يكون بعد الوقت الحالي', severity: 'error' });
+      return;
+    }
+
+    for (let i = 0; i < pollForm.questions.length; i++) {
+      const question = pollForm.questions[i];
+      if (!question.question_text.trim()) {
+        setToast({ open: true, message: `الرجاء إدخال نص السؤال ${i + 1}`, severity: 'error' });
         return;
       }
-      for (const option of question.options) {
-        if (!option.trim()) {
-          setToast({ open: true, message: 'الرجاء إكمال جميع الخيارات', severity: 'error' });
-          return;
-        }
+      const validOptions = question.options.filter(opt => opt.trim() !== '');
+      if (validOptions.length < 2) {
+        setToast({ open: true, message: `السؤال ${i + 1} يحتاج إلى خيارين على الأقل`, severity: 'error' });
+        return;
       }
     }
 
     try {
+      const formattedExpiresAt = formatDateForMySQL(pollForm.expires_at);
+      
       const pollData = {
         title: pollForm.title,
-        description: pollForm.description,
+        description: pollForm.description || '',
+        expires_at: formattedExpiresAt,
         questions: pollForm.questions.map(q => ({
-          text: q.text,
+          question_text: q.question_text,
           options: q.options.filter(opt => opt.trim() !== '')
         }))
       };
       
+      console.log('البيانات المرسلة للـ API:', pollData);
       await createPoll(pollData);
       setToast({ open: true, message: 'تم إضافة الاستبيان بنجاح', severity: 'success' });
       setOpenDialog(false);
+      
       setPollForm({
         title: '',
         description: '',
-        questions: [{ id: Date.now(), text: '', options: ['', ''] }]
+        expires_at: getDefaultExpiresAt(),
+        questions: [{ question_text: '', options: ['', ''] }]
       });
       fetchPolls();
     } catch (error) {
       console.error('خطأ في إضافة الاستبيان:', error);
-      setToast({ open: true, message: error.message || 'فشل في إضافة الاستبيان', severity: 'error' });
+      setToast({ 
+        open: true, 
+        message: error.response?.data?.message || 'فشل في إضافة الاستبيان', 
+        severity: 'error' 
+      });
     }
   };
 
@@ -199,7 +226,7 @@ function Polls() {
         fetchPolls();
       } catch (error) {
         console.error('خطأ في حذف الاستبيان:', error);
-        setToast({ open: true, message: error.message || 'فشل في حذف الاستبيان', severity: 'error' });
+        setToast({ open: true, message: error.response?.data?.message || 'فشل في حذف الاستبيان', severity: 'error' });
       }
     }
   };
@@ -223,7 +250,8 @@ function Polls() {
       setOpenViewDialog(true);
     } catch (error) {
       console.error('خطأ في جلب النتائج:', error);
-      setToast({ open: true, message: error.message || 'فشل في جلب النتائج', severity: 'error' });
+      setPollResults([]);
+      setOpenViewDialog(true);
     }
   };
 
@@ -289,7 +317,7 @@ function Polls() {
                 <CardContent>
                   <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                     <Chip
-                      label={`${poll.questions?.length || 0} أسئلة`}
+                      label={`${poll.questions_count || poll.questions?.length || 0} أسئلة`}
                       size="small"
                       sx={{ bgcolor: '#1976d2', color: '#fff' }}
                     />
@@ -308,16 +336,17 @@ function Polls() {
                     {poll.title}
                   </Typography>
 
-                  <Typography variant="body2" sx={{ mt: 1, mb: 2, color: '#555' }}>
-                    {poll.description || 'لا يوجد وصف'}
-                  </Typography>
+                  {poll.description && (
+                    <Typography variant="body2" sx={{ mt: 1, mb: 2, color: '#555' }}>
+                      {poll.description}
+                    </Typography>
+                  )}
 
                   <Divider sx={{ my: 1.5 }} />
 
                   <Box display="flex" alignItems="center" gap={1}>
-                    <QuestionAnswerIcon fontSize="small" sx={{ color: '#1565c0' }} />
                     <Typography variant="caption" sx={{ color: '#1565c0' }}>
-                      تم الإنشاء: {poll.created_at ? new Date(poll.created_at).toLocaleDateString('ar') : (poll.date || 'تاريخ غير محدد')}
+                      ينتهي: {poll.expires_at ? new Date(poll.expires_at).toLocaleDateString('ar') : 'غير محدد'}
                     </Typography>
                   </Box>
                 </CardContent>
@@ -348,8 +377,9 @@ function Polls() {
             required
             variant="outlined"
           />
+
           <TextField
-            label="وصف الاستبيان"
+            label="وصف الاستبيان (اختياري)"
             fullWidth
             margin="normal"
             multiline
@@ -359,30 +389,44 @@ function Polls() {
             variant="outlined"
           />
 
+          <TextField
+            label="تاريخ الانتهاء"
+            type="datetime-local"
+            fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+            value={pollForm.expires_at}
+            onChange={(e) => setPollForm({ ...pollForm, expires_at: e.target.value })}
+            required
+            variant="outlined"
+            helperText="بعد هذا التاريخ لن يتمكن الطلاب من الإجابة"
+          />
+
           <Divider sx={{ my: 2 }} />
 
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#1976d2' }}>
-            <QuestionAnswerIcon color="primary" />
             الأسئلة
           </Typography>
 
           {pollForm.questions.map((question, qIndex) => (
-            <Paper key={question.id} sx={{ p: 2, mb: 3, bgcolor: '#f5f5f5', borderRadius: 3 }}>
+            <Paper key={qIndex} sx={{ p: 2, mb: 3, bgcolor: '#f5f5f5', borderRadius: 3 }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="subtitle1" fontWeight="bold" color="#1565c0">
                   سؤال {qIndex + 1}
                 </Typography>
-                <IconButton onClick={() => handleRemoveQuestion(question.id)} color="error" size="small">
-                  <RemoveCircleIcon />
-                </IconButton>
+                {pollForm.questions.length > 1 && (
+                  <IconButton onClick={() => handleRemoveQuestion(qIndex)} color="error" size="small">
+                    <RemoveCircleIcon />
+                  </IconButton>
+                )}
               </Box>
 
               <TextField
                 label="نص السؤال"
                 fullWidth
                 margin="normal"
-                value={question.text}
-                onChange={(e) => handleQuestionChange(question.id, e.target.value)}
+                value={question.question_text}
+                onChange={(e) => handleQuestionChange(qIndex, e.target.value)}
                 required
                 variant="outlined"
               />
@@ -398,11 +442,11 @@ function Polls() {
                     size="small"
                     fullWidth
                     value={option}
-                    onChange={(e) => handleOptionChange(question.id, optIndex, e.target.value)}
+                    onChange={(e) => handleOptionChange(qIndex, optIndex, e.target.value)}
                     variant="outlined"
                   />
                   {question.options.length > 2 && (
-                    <IconButton onClick={() => handleRemoveOption(question.id, optIndex)} color="error" size="small">
+                    <IconButton onClick={() => handleRemoveOption(qIndex, optIndex)} color="error" size="small">
                       <RemoveCircleIcon />
                     </IconButton>
                   )}
@@ -412,7 +456,7 @@ function Polls() {
               <Button
                 size="small"
                 startIcon={<AddCircleIcon />}
-                onClick={() => handleAddOption(question.id)}
+                onClick={() => handleAddOption(qIndex)}
                 sx={{ mt: 1, color: '#1976d2' }}
               >
                 إضافة خيار
@@ -441,19 +485,19 @@ function Polls() {
           background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 
           color: '#fff' 
         }}>
-          📊 نتائج الاستبيان: {selectedPoll?.title}
+           نتائج الاستبيان: {selectedPoll?.title}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           {pollResults && pollResults.length > 0 ? (
             pollResults.map((result, idx) => (
               <Paper key={idx} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#1565c0' }}>
-                  {result.question}
+                  {result.question_text || result.question}
                 </Typography>
-                {result.options && result.options.map((option, optIdx) => (
+                {result.options?.map((option, optIdx) => (
                   <Box key={optIdx} sx={{ mb: 2 }}>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
-                      <Typography variant="body2">{option.text}</Typography>
+                      <Typography variant="body2">{option.option_text}</Typography>
                       <Typography variant="body2" fontWeight="bold" color="#1976d2">
                         {option.percentage || 0}%
                       </Typography>
@@ -464,7 +508,7 @@ function Polls() {
                       sx={{ height: 8, borderRadius: 4, bgcolor: '#e0e0e0', '& .MuiLinearProgress-bar': { bgcolor: '#1976d2' } }}
                     />
                     <Typography variant="caption" color="text.secondary">
-                      {option.votes || 0} صوت
+                      {option.votes_count || option.votes || 0} صوت
                     </Typography>
                   </Box>
                 ))}

@@ -35,7 +35,32 @@ const Complaints = () => {
     setLoading(true);
     try {
       const data = await getComplaints();
-      setComplaints(data);
+      console.log('📋 الشكاوى المستلمة:', data);
+      
+      let complaintsArray = [];
+      if (Array.isArray(data)) {
+        complaintsArray = data;
+      } else if (data && data.data && Array.isArray(data.data)) {
+        complaintsArray = data.data;
+      } else if (data && data.complaints && Array.isArray(data.complaints)) {
+        complaintsArray = data.complaints;
+      } else {
+        complaintsArray = [];
+      }
+      
+      const formattedComplaints = complaintsArray.map(complaint => ({
+        id: complaint.id,
+        parentName: complaint.parent?.name || 'ولي أمر',
+        studentName: complaint.student_name || '',
+        message: complaint.complaint_text || complaint.message,
+        subject: complaint.subject,
+        reply: complaint.answer_text || complaint.reply,
+        replied: !!complaint.answer_text || !!complaint.reply,
+        replyDate: complaint.updated_at,
+        date: complaint.created_at,
+      }));
+      
+      setComplaints(formattedComplaints);
     } catch (error) {
       console.error('خطأ في جلب الشكاوى:', error);
       setToast({ open: true, message: 'فشل في جلب الشكاوى', severity: 'error' });
@@ -61,7 +86,12 @@ const Complaints = () => {
       setReplyTexts((prev) => ({ ...prev, [id]: '' }));
       fetchComplaints(); 
     } catch (error) {
-      setToast({ open: true, message: error.message || 'فشل في إرسال الرد', severity: 'error' });
+      console.error('خطأ:', error);
+      setToast({ 
+        open: true, 
+        message: error.response?.data?.message || error.message || 'فشل في إرسال الرد', 
+        severity: 'error' 
+      });
     }
   };
 
@@ -117,8 +147,8 @@ const Complaints = () => {
                 '&:hover': { backgroundColor: complaint.replied ? '#eeeeee' : '#bbdef5' },
               }}
             >
-              <Box display="flex" alignItems="center" justifyContent="space-between" width="100%">
-                <Box display="flex" alignItems="center" gap={2}>
+              <Box display="flex" alignItems="center" justifyContent="space-between" width="100%" flexWrap="wrap" gap={1}>
+                <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
                   <Chip
                     label={complaint.replied ? 'تم الرد' : 'قيد الانتظار'}
                     color={complaint.replied ? 'success' : 'warning'}
@@ -128,13 +158,18 @@ const Complaints = () => {
                   <Typography variant="subtitle1" fontWeight="bold" sx={{ color: '#1565c0' }}>
                     {complaint.parentName || 'ولي أمر'}
                   </Typography>
+                  {complaint.subject && (
+                    <Chip label={complaint.subject} size="small" variant="outlined" />
+                  )}
                   <Typography variant="caption" color="text.secondary">
                     {formatDate(complaint.date)}
                   </Typography>
                 </Box>
-                <Typography variant="caption" color="text.secondary">
-                  {complaint.studentName ? `عن الطالب: ${complaint.studentName}` : ''}
-                </Typography>
+                {complaint.studentName && (
+                  <Typography variant="caption" color="text.secondary">
+                    عن الطالب: {complaint.studentName}
+                  </Typography>
+                )}
               </Box>
             </AccordionSummary>
             <AccordionDetails>

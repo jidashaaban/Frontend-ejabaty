@@ -23,6 +23,7 @@ export const login = async (email, password) => {
     if (response.data && response.data.access_token) {
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('role', response.data.role);
+      localStorage.setItem('user_id', response.data.user_id || response.data.id); // أضيفي هذا السطر
     }
     return response.data;
   } catch (error) {
@@ -36,6 +37,7 @@ export const logout = async () => {
     await apiClient.post('/logout');
     localStorage.removeItem('token');
     localStorage.removeItem('role');
+    localStorage.removeItem('user_id');
     return { success: true };
   } catch (error) {
     console.error('خطأ في تسجيل الخروج:', error);
@@ -137,7 +139,7 @@ export const getCourses = getAllCourses;
 export const getAllStudents = async () => {
   try {
     const response = await apiClient.get('/admin/simple-students');
-    console.log('الطلاب المستلمة:', response.data);
+    console.log(' الطلاب المستلمة:', response.data);
     
     if (Array.isArray(response.data)) {
       return response.data;
@@ -147,7 +149,7 @@ export const getAllStudents = async () => {
     }
     return [];
   } catch (error) {
-    console.error('❌ خطأ في جلب الطلاب:', error);
+    console.error(' خطأ في جلب الطلاب:', error);
     return [];
   }
 };
@@ -318,7 +320,7 @@ export const deleteHall = async (id) => {
 export const getAllPolls = async () => {
   try {
     const response = await apiClient.get('/admin/polls');
-    console.log('📊 الاستبيانات المستلمة:', response.data);
+    console.log(' الاستبيانات المستلمة:', response.data);
     
     if (Array.isArray(response.data)) {
       return response.data;
@@ -338,7 +340,12 @@ export const getAllPollsFromAPI = getAllPolls;
 
 export const createPoll = async (pollData) => {
   try {
-    const response = await apiClient.post('/admin/create-poll', pollData);
+    const response = await apiClient.post('/admin/create-poll', {
+      title: pollData.title,
+      description: pollData.description || '',
+      expires_at: pollData.expires_at,
+      questions: pollData.questions
+    });
     return response.data;
   } catch (error) {
     console.error('خطأ في إنشاء الاستبيان:', error);
@@ -362,7 +369,7 @@ export const getPollResults = async (pollId) => {
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب نتائج الاستبيان:', error);
-    throw error;
+    return [];
   }
 };
 
@@ -408,27 +415,29 @@ export const deleteAnnouncement = async (id) => {
 
 export const getComplaints = async () => {
   try {
-    const response = await apiClient.get('/parent/complaints');
-    return response.data;
+    const userRole = localStorage.getItem('role');
+    const userId = localStorage.getItem('user_id');
+    
+    if (userRole === 'parent') {
+      const response = await apiClient.get(`/parent/${userId}/complaints`);
+      return response.data.complaints || [];
+    } else if (userRole === 'admin') {
+      const response = await apiClient.get('/admin/complaints');
+      return response.data.data || [];
+    }
+    return [];
   } catch (error) {
     console.error('خطأ في جلب الشكاوى:', error);
     return [];
   }
 };
 
-export const submitComplaint = async (complaintData) => {
+export const replyToComplaint = async (complaintId, answer) => {
   try {
-    const response = await apiClient.post('/parent/complaints/submit', complaintData);
-    return response.data;
-  } catch (error) {
-    console.error('خطأ في إرسال الشكوى:', error);
-    throw error;
-  }
-};
-
-export const answerComplaint = async (complaintId, answer) => {
-  try {
-    const response = await apiClient.post(`/admin/complaints/${complaintId}/answer`, { answer });
+    const adminId = localStorage.getItem('user_id');
+    const response = await apiClient.post(`/admin/${adminId}/complaints/${complaintId}/answer`, {
+      answer_text: answer
+    });
     return response.data;
   } catch (error) {
     console.error('خطأ في الرد على الشكوى:', error);
@@ -436,7 +445,31 @@ export const answerComplaint = async (complaintId, answer) => {
   }
 };
 
-export const replyToComplaint = answerComplaint;
+export const submitComplaint = async (subject, complaintText) => {
+  try {
+    const parentId = localStorage.getItem('user_id');
+    const response = await apiClient.post(`/parent/${parentId}/complaints/submit`, {
+      subject: subject,
+      complaint_text: complaintText
+    });
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في إرسال الشكوى:', error);
+    throw error;
+  }
+};
+
+export const updateComplaintAnswer = async (complaintId, answer) => {
+  try {
+    const response = await apiClient.put(`/admin/complaints/${complaintId}/answer`, {
+      answer_text: answer
+    });
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في تحديث الرد:', error);
+    throw error;
+  }
+};
 
 export const getUpcomingQuizzes = async () => {
   try {
@@ -470,7 +503,7 @@ export const getPoints = async () => {
 
 export const getStudentSchedule = async (studentId) => {
   try {
-    const response = await apiClient.get(`/student/my-schedule`);
+    const response = await apiClient.get('/student/my-schedule');
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب جدول الطالب:', error);
@@ -480,7 +513,7 @@ export const getStudentSchedule = async (studentId) => {
 
 export const getStudentExams = async (studentId) => {
   try {
-    const response = await apiClient.get(`/student/upcoming-exams`);
+    const response = await apiClient.get('/student/upcoming-exams');
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب امتحانات الطالب:', error);
