@@ -17,13 +17,14 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// بعد تسجيل الدخول، تأكدي من حفظ user_id في localStorage
 export const login = async (email, password) => {
   try {
     const response = await apiClient.post('/login', { email, password });
     if (response.data && response.data.access_token) {
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('role', response.data.role);
-      localStorage.setItem('user_id', response.data.user_id || response.data.id); // أضيفي هذا السطر
+      localStorage.setItem('user_id', response.data.user_id || response.data.id);
     }
     return response.data;
   } catch (error) {
@@ -116,7 +117,7 @@ export const getReportsHistory = async () => {
 export const getAllCourses = async () => {
   try {
     const response = await apiClient.get('/admin/courses');
-    console.log(' المواد المستلمة:', response.data);
+    console.log('✅ المواد المستلمة:', response.data);
     
     if (response.data && response.data.data && Array.isArray(response.data.data)) {
       return response.data.data;
@@ -129,7 +130,7 @@ export const getAllCourses = async () => {
     }
     return [];
   } catch (error) {
-    console.error(' خطأ في جلب المواد:', error);
+    console.error('❌ خطأ في جلب المواد:', error);
     return [];
   }
 };
@@ -139,7 +140,7 @@ export const getCourses = getAllCourses;
 export const getAllStudents = async () => {
   try {
     const response = await apiClient.get('/admin/simple-students');
-    console.log(' الطلاب المستلمة:', response.data);
+    console.log('✅ الطلاب المستلمة:', response.data);
     
     if (Array.isArray(response.data)) {
       return response.data;
@@ -149,7 +150,7 @@ export const getAllStudents = async () => {
     }
     return [];
   } catch (error) {
-    console.error(' خطأ في جلب الطلاب:', error);
+    console.error('❌ خطأ في جلب الطلاب:', error);
     return [];
   }
 };
@@ -278,7 +279,15 @@ export const deleteExamProgram = deleteSession;
 export const getHalls = async () => {
   try {
     const response = await apiClient.get('/admin/halls');
-    return response.data;
+    console.log('🏢 القاعات المستلمة:', response.data);
+    
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+    return [];
   } catch (error) {
     console.error('خطأ في جلب القاعات:', error);
     return [];
@@ -289,7 +298,12 @@ export const getRooms = getHalls;
 
 export const addHall = async (hallData) => {
   try {
-    const response = await apiClient.post('/admin/setup-halls', hallData);
+    const response = await apiClient.post('/admin/setup-halls', {
+      halls: [{
+        name: hallData.name,
+        capacity: hallData.capacity
+      }]
+    });
     return response.data;
   } catch (error) {
     console.error('خطأ في إضافة القاعة:', error);
@@ -299,7 +313,10 @@ export const addHall = async (hallData) => {
 
 export const updateHall = async (id, hallData) => {
   try {
-    const response = await apiClient.put(`/admin/halls/${id}`, hallData);
+    const response = await apiClient.put(`/admin/halls/${id}`, {
+      name: hallData.name,
+      capacity: hallData.capacity
+    });
     return response.data;
   } catch (error) {
     console.error('خطأ في تحديث القاعة:', error);
@@ -320,7 +337,7 @@ export const deleteHall = async (id) => {
 export const getAllPolls = async () => {
   try {
     const response = await apiClient.get('/admin/polls');
-    console.log(' الاستبيانات المستلمة:', response.data);
+    console.log('📊 الاستبيانات المستلمة:', response.data);
     
     if (Array.isArray(response.data)) {
       return response.data;
@@ -412,6 +429,48 @@ export const deleteAnnouncement = async (id) => {
     throw error;
   }
 };
+
+// ============= دوال الإشعارات الحقيقية =============
+
+// جلب الإشعارات من الـ API الحقيقي
+export const getRealNotifications = async () => {
+  try {
+    const response = await apiClient.get('/notifications');
+    console.log('🔔 الإشعارات المستلمة:', response.data);
+    return {
+      unread_count: response.data.unread_count || 0,
+      notifications: response.data.notifications || []
+    };
+  } catch (error) {
+    console.error('خطأ في جلب الإشعارات:', error);
+    return { unread_count: 0, notifications: [] };
+  }
+};
+
+// تحديث إشعار كمقروء
+export const markNotificationAsRead = async (notificationId) => {
+  try {
+    const response = await apiClient.post(`/notifications/${notificationId}/read`);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في تحديث الإشعار:', error);
+    throw error;
+  }
+};
+
+// تحديث كل الإشعارات كمقروءة
+export const markAllNotificationsAsRead = async () => {
+  try {
+    // إذا الـ API يدعم تحديث الكل
+    const response = await apiClient.post('/notifications/mark-all-read');
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في تحديث كل الإشعارات:', error);
+    throw error;
+  }
+};
+
+// ============= دوال الشكاوى =============
 
 export const getComplaints = async () => {
   try {

@@ -4,349 +4,296 @@ import {
   Typography,
   Paper,
   Button,
+  TextField,
   IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  Chip,
-  CircularProgress,
   Alert,
-  Divider,
+  CircularProgress,
   Grid,
   Card,
   CardContent,
-  LinearProgress,
+  Chip,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
-  Poll as PollIcon,
-  AddCircle as AddCircleIcon,
-  RemoveCircle as RemoveCircleIcon,
-  Visibility as VisibilityIcon,
+  Edit as EditIcon,
+  MeetingRoom as MeetingRoomIcon,
+  EventSeat as SeatIcon,
+  Save as SaveIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
+import { getHalls, addHall, updateHall, deleteHall } from '../../services/adminService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
-import {
-  getAllPolls,
-  createPoll,
-  deletePoll,
-  getPollResults,
-} from '../../services/adminService';
 
-function Polls() {
-  const [polls, setPolls] = useState([]);
+function Halls() {
+  const [halls, setHalls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
-  const [openViewDialog, setOpenViewDialog] = useState(false);
-  const [selectedPoll, setSelectedPoll] = useState(null);
-  const [pollResults, setPollResults] = useState([]);
-  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
-  
-  const getDefaultExpiresAt = () => {
-    const date = new Date();
-    date.setDate(date.getDate() + 7);
-    date.setHours(date.getHours() + 1);
-    return date.toISOString().slice(0, 16);
-  };
-
-  const [pollForm, setPollForm] = useState({
-    title: '',
-    description: '',
-    expires_at: getDefaultExpiresAt(),
-    questions: [
-      {
-        question_text: '',
-        options: ['', '']
-      }
-    ]
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentHall, setCurrentHall] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    capacity: '',
   });
+  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-  const fetchPolls = async () => {
+  const fetchHalls = async () => {
     setLoading(true);
     try {
-      const data = await getAllPolls();
-      console.log('بيانات الاستبيانات المستلمة:', data);
-      
-      let pollsArray = [];
-      if (Array.isArray(data)) {
-        pollsArray = data;
-      } else if (data && data.data && Array.isArray(data.data)) {
-        pollsArray = data.data;
-      } else {
-        pollsArray = [];
-      }
-      
-      setPolls(pollsArray);
+      const data = await getHalls();
+      console.log('🏢 القاعات المجلوبة:', data);
+      setHalls(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('خطأ في جلب الاستبيانات:', error);
-      setToast({ open: true, message: 'فشل في جلب الاستبيانات', severity: 'error' });
+      console.error('خطأ في جلب القاعات:', error);
+      setToast({ open: true, message: 'فشل في جلب القاعات', severity: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPolls();
+    fetchHalls();
   }, []);
 
-  const handleAddQuestion = () => {
-    setPollForm({
-      ...pollForm,
-      questions: [
-        ...pollForm.questions,
-        { question_text: '', options: ['', ''] }
-      ]
+  const handleOpenAddDialog = () => {
+    setIsEditing(false);
+    setCurrentHall(null);
+    setFormData({ name: '', capacity: '' });
+    setOpenDialog(true);
+  };
+
+  const handleOpenEditDialog = (hall) => {
+    setIsEditing(true);
+    setCurrentHall(hall);
+    setFormData({
+      name: hall.name,
+      capacity: hall.capacity || '',
     });
+    setOpenDialog(true);
   };
 
-  const handleRemoveQuestion = (questionIndex) => {
-    if (pollForm.questions.length === 1) {
-      setToast({ open: true, message: 'يجب أن يكون هناك سؤال واحد على الأقل', severity: 'warning' });
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setCurrentHall(null);
+    setFormData({ name: '', capacity: '' });
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      setToast({ open: true, message: 'الرجاء إدخال رقم القاعة', severity: 'error' });
       return;
     }
-    setPollForm({
-      ...pollForm,
-      questions: pollForm.questions.filter((_, idx) => idx !== questionIndex)
-    });
-  };
-
-  const handleQuestionChange = (questionIndex, value) => {
-    const updatedQuestions = [...pollForm.questions];
-    updatedQuestions[questionIndex].question_text = value;
-    setPollForm({ ...pollForm, questions: updatedQuestions });
-  };
-
-  const handleAddOption = (questionIndex) => {
-    const updatedQuestions = [...pollForm.questions];
-    updatedQuestions[questionIndex].options.push('');
-    setPollForm({ ...pollForm, questions: updatedQuestions });
-  };
-
-  const handleRemoveOption = (questionIndex, optionIndex) => {
-    const updatedQuestions = [...pollForm.questions];
-    if (updatedQuestions[questionIndex].options.length <= 2) {
-      setToast({ open: true, message: 'يجب أن يكون هناك خياران على الأقل لكل سؤال', severity: 'warning' });
+    if (!formData.capacity || parseInt(formData.capacity) <= 0) {
+      setToast({ open: true, message: 'الرجاء إدخال سعة صحيحة للقاعة', severity: 'error' });
       return;
-    }
-    updatedQuestions[questionIndex].options = updatedQuestions[questionIndex].options.filter((_, idx) => idx !== optionIndex);
-    setPollForm({ ...pollForm, questions: updatedQuestions });
-  };
-
-  const handleOptionChange = (questionIndex, optionIndex, value) => {
-    const updatedQuestions = [...pollForm.questions];
-    updatedQuestions[questionIndex].options[optionIndex] = value;
-    setPollForm({ ...pollForm, questions: updatedQuestions });
-  };
-
-  const formatDateForMySQL = (dateString) => {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-  };
-
-  const handleSavePoll = async () => {
-    if (!pollForm.title.trim()) {
-      setToast({ open: true, message: 'الرجاء إدخال عنوان الاستبيان', severity: 'error' });
-      return;
-    }
-
-    if (!pollForm.expires_at) {
-      setToast({ open: true, message: 'الرجاء تحديد تاريخ انتهاء الاستبيان', severity: 'error' });
-      return;
-    }
-    const expiresAtDate = new Date(pollForm.expires_at);
-    const now = new Date();
-    
-    if (expiresAtDate <= now) {
-      setToast({ open: true, message: 'تاريخ الانتهاء يجب أن يكون بعد الوقت الحالي', severity: 'error' });
-      return;
-    }
-
-    for (let i = 0; i < pollForm.questions.length; i++) {
-      const question = pollForm.questions[i];
-      if (!question.question_text.trim()) {
-        setToast({ open: true, message: `الرجاء إدخال نص السؤال ${i + 1}`, severity: 'error' });
-        return;
-      }
-      const validOptions = question.options.filter(opt => opt.trim() !== '');
-      if (validOptions.length < 2) {
-        setToast({ open: true, message: `السؤال ${i + 1} يحتاج إلى خيارين على الأقل`, severity: 'error' });
-        return;
-      }
     }
 
     try {
-      const formattedExpiresAt = formatDateForMySQL(pollForm.expires_at);
-      
-      const pollData = {
-        title: pollForm.title,
-        description: pollForm.description || '',
-        expires_at: formattedExpiresAt,
-        questions: pollForm.questions.map(q => ({
-          question_text: q.question_text,
-          options: q.options.filter(opt => opt.trim() !== '')
-        }))
-      };
-      
-      console.log('البيانات المرسلة للـ API:', pollData);
-      await createPoll(pollData);
-      setToast({ open: true, message: 'تم إضافة الاستبيان بنجاح', severity: 'success' });
-      setOpenDialog(false);
-      
-      setPollForm({
-        title: '',
-        description: '',
-        expires_at: getDefaultExpiresAt(),
-        questions: [{ question_text: '', options: ['', ''] }]
-      });
-      fetchPolls();
-    } catch (error) {
-      console.error('خطأ في إضافة الاستبيان:', error);
-      setToast({ 
-        open: true, 
-        message: error.response?.data?.message || 'فشل في إضافة الاستبيان', 
-        severity: 'error' 
-      });
-    }
-  };
-
-  const handleDeletePoll = async (id) => {
-    if (window.confirm('هل أنت متأكد من حذف هذا الاستبيان؟')) {
-      try {
-        await deletePoll(id);
-        setToast({ open: true, message: 'تم حذف الاستبيان بنجاح', severity: 'success' });
-        fetchPolls();
-      } catch (error) {
-        console.error('خطأ في حذف الاستبيان:', error);
-        setToast({ open: true, message: error.response?.data?.message || 'فشل في حذف الاستبيان', severity: 'error' });
-      }
-    }
-  };
-
-  const handleViewResults = async (poll) => {
-    setSelectedPoll(poll);
-    try {
-      const results = await getPollResults(poll.id);
-      console.log('نتائج الاستبيان:', results);
-      
-      let resultsArray = [];
-      if (Array.isArray(results)) {
-        resultsArray = results;
-      } else if (results && results.data && Array.isArray(results.data)) {
-        resultsArray = results.data;
+      if (isEditing && currentHall) {
+        // تنبيه: التعديل قد لا يعمل لأن الـ API لا يدعمه حالياً
+        await updateHall(currentHall.id, {
+          name: formData.name,
+          capacity: parseInt(formData.capacity),
+        });
+        setToast({ open: true, message: 'تم تعديل القاعة بنجاح', severity: 'success' });
       } else {
-        resultsArray = [];
+        await addHall({
+          name: formData.name,
+          capacity: parseInt(formData.capacity),
+        });
+        setToast({ open: true, message: 'تم إضافة القاعة بنجاح', severity: 'success' });
+      }
+      handleCloseDialog();
+      fetchHalls();
+    } catch (error) {
+      console.error('خطأ:', error);
+      let errorMessage = error.response?.data?.message || error.message || 'حدث خطأ';
+      
+      // إذا كان الخطأ بسبب عدم وجود endpoint للتعديل/الحذف
+      if (error.response?.status === 404) {
+        if (isEditing) {
+          errorMessage = 'خدمة تعديل القاعة غير متوفرة حالياً. يرجى التواصل مع المشرف.';
+        } else {
+          errorMessage = 'خدمة إضافة القاعة غير متوفرة حالياً. يرجى التواصل مع المشرف.';
+        }
       }
       
-      setPollResults(resultsArray);
-      setOpenViewDialog(true);
-    } catch (error) {
-      console.error('خطأ في جلب النتائج:', error);
-      setPollResults([]);
-      setOpenViewDialog(true);
+      setToast({ open: true, message: errorMessage, severity: 'error' });
     }
+  };
+
+  const handleDelete = async (id, hallName) => {
+    if (window.confirm(`هل أنت متأكد من حذف القاعة "${hallName}"؟`)) {
+      try {
+        await deleteHall(id);
+        setToast({ open: true, message: 'تم حذف القاعة بنجاح', severity: 'success' });
+        fetchHalls();
+      } catch (error) {
+        console.error('خطأ:', error);
+        let errorMessage = error.response?.data?.message || error.message || 'حدث خطأ';
+        
+        if (error.response?.status === 404) {
+          errorMessage = 'خدمة حذف القاعة غير متوفرة حالياً. يرجى التواصل مع المشرف.';
+        }
+        
+        setToast({ open: true, message: errorMessage, severity: 'error' });
+      }
+    }
+  };
+
+  const getCardGradient = (capacity) => {
+    if (capacity >= 40) {
+      return 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)'; 
+    } else if (capacity >= 20) {
+      return 'linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%)'; 
+    } else {
+      return 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)'; 
+    }
+  };
+
+  const getCapacityColor = (capacity) => {
+    if (capacity >= 40) return '#2e7d32';
+    if (capacity >= 20) return '#1565c0';
+    return '#ed6c02';
   };
 
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
-        <Typography sx={{ mr: 2 }}>جاري تحميل الاستبيانات...</Typography>
+        <Typography sx={{ mr: 2 }}>جاري تحميل القاعات...</Typography>
       </Box>
     );
   }
 
   return (
     <Box>
-      <PageHeader 
-        title="إدارة الاستبيانات"
-        subtitle="أنشئ استبيانات لجمع آراء الطلاب وأولياء الأمور"
-        icon={<PollIcon sx={{ fontSize: 20 }} />}
+      <PageHeader
+        title="إدارة القاعات"
+        subtitle="أضف أو عدل أو احذف القاعات الامتحانية"
+        icon={<MeetingRoomIcon sx={{ fontSize: 20 }} />}
       />
 
       <Box display="flex" justifyContent="flex-end" mb={3}>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => setOpenDialog(true)}
+          onClick={handleOpenAddDialog}
           sx={{
-            borderRadius: 2,
-            px: 3,
-            py: 0.8,
-            bgcolor: '#1976d2',
-            '&:hover': { bgcolor: '#1565c0' },
+            borderRadius: 3,
+            px: 4,
+            py: 1,
+            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+            boxShadow: '0 4px 15px rgba(25,118,210,0.3)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)',
+              transform: 'translateY(-2px)',
+            },
+            transition: 'all 0.3s ease',
           }}
         >
-          استبيان جديد
+          إضافة قاعة جديدة
         </Button>
       </Box>
 
-      {polls.length === 0 ? (
-        <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 3 }}>
-          <PollIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+      {halls.length === 0 ? (
+        <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 4, bgcolor: '#f8f9fa' }}>
+          <MeetingRoomIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
           <Typography variant="h6" color="text.secondary">
-            لا توجد استبيانات حالياً
+            لا توجد قاعات حالياً
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            اضغط على "استبيان جديد" لإضافة أول استبيان
+            اضغط على "إضافة قاعة جديدة" لإضافة أول قاعة
           </Typography>
         </Paper>
       ) : (
         <Grid container spacing={3}>
-          {polls.map((poll) => (
-            <Grid item xs={12} md={6} lg={4} key={poll.id}>
-              <Card sx={{ 
-                borderRadius: 3, 
-                transition: '0.3s', 
-                bgcolor: '#ffffff',
-                border: '1px solid #e0e0e0',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                '&:hover': { 
-                  transform: 'translateY(-4px)', 
-                  boxShadow: '0 8px 25px rgba(25,118,210,0.15)',
-                } 
-              }}>
+          {halls.map((hall, index) => (
+            <Grid item xs={12} sm={6} md={4} key={hall.id}>
+              <Card
+                sx={{
+                  borderRadius: 4,
+                  transition: '0.3s',
+                  background: getCardGradient(hall.capacity || 0),
+                  cursor: 'pointer',
+                  '&:hover': {
+                    transform: 'translateY(-5px)',
+                    boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
+                  },
+                }}
+              >
                 <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                    <Chip
-                      label={`${poll.questions_count || poll.questions?.length || 0} أسئلة`}
-                      size="small"
-                      sx={{ bgcolor: '#1976d2', color: '#fff' }}
-                    />
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <MeetingRoomIcon sx={{ color: '#1976d2', fontSize: 28 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
+                        {hall.name}
+                      </Typography>
+                    </Box>
                     <Box>
-                      <IconButton onClick={() => handleViewResults(poll)} color="primary" size="small" title="عرض النتائج">
-                        <VisibilityIcon />
+                      <IconButton
+                        onClick={() => handleOpenEditDialog(hall)}
+                        sx={{ color: '#1976d2', bgcolor: 'rgba(25,118,210,0.1)', mr: 0.5 }}
+                        size="small"
+                        title="تعديل"
+                      >
+                        <EditIcon fontSize="small" />
                       </IconButton>
-                      <IconButton onClick={() => handleDeletePoll(poll.id)} color="error" size="small" title="حذف">
-                        <DeleteIcon />
+                      <IconButton
+                        onClick={() => handleDelete(hall.id, hall.name)}
+                        sx={{ color: '#f44336', bgcolor: 'rgba(244,67,54,0.1)' }}
+                        size="small"
+                        title="حذف"
+                      >
+                        <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
                   </Box>
 
-                  <Typography variant="h6" sx={{ mt: 2, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, color: '#1565c0' }}>
-                    <PollIcon color="primary" fontSize="small" />
-                    {poll.title}
-                  </Typography>
+                  <Box display="flex" alignItems="center" gap={2} mt={2}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <SeatIcon sx={{ color: getCapacityColor(hall.capacity || 0) }} />
+                      <Typography
+                        variant="h4"
+                        sx={{
+                          fontWeight: 'bold',
+                          color: getCapacityColor(hall.capacity || 0),
+                          fontSize: '2rem',
+                        }}
+                      >
+                        {hall.capacity || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        طالب
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={hall.capacity >= 40 ? 'سعة كبيرة' : hall.capacity >= 20 ? 'سعة متوسطة' : 'سعة صغيرة'}
+                      size="small"
+                      sx={{
+                        bgcolor:
+                          hall.capacity >= 40
+                            ? '#4caf50'
+                            : hall.capacity >= 20
+                            ? '#1976d2'
+                            : '#ff9800',
+                        color: '#fff',
+                      }}
+                    />
+                  </Box>
 
-                  {poll.description && (
-                    <Typography variant="body2" sx={{ mt: 1, mb: 2, color: '#555' }}>
-                      {poll.description}
-                    </Typography>
-                  )}
-
-                  <Divider sx={{ my: 1.5 }} />
-
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Typography variant="caption" sx={{ color: '#1565c0' }}>
-                      ينتهي: {poll.expires_at ? new Date(poll.expires_at).toLocaleDateString('ar') : 'غير محدد'}
+                  <Box mt={2}>
+                    <Typography variant="caption" color="text.secondary">
+                      رقم القاعة: {hall.name}
                     </Typography>
                   </Box>
                 </CardContent>
@@ -356,172 +303,74 @@ function Polls() {
         </Grid>
       )}
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 
-          color: '#fff', 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 1 
-        }}>
-          <PollIcon />
-          إضافة استبيان جديد
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle
+          sx={{
+            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Box display="flex" alignItems="center" gap={1}>
+            <MeetingRoomIcon />
+            {isEditing ? '✏️ تعديل قاعة' : '➕ إضافة قاعة جديدة'}
+          </Box>
+          <IconButton onClick={handleCloseDialog} sx={{ color: '#fff' }} size="small">
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           <TextField
-            label="عنوان الاستبيان"
+            name="name"
+            label="رقم القاعة"
             fullWidth
             margin="normal"
-            value={pollForm.title}
-            onChange={(e) => setPollForm({ ...pollForm, title: e.target.value })}
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="مثال: قاعة 101"
             required
             variant="outlined"
+            InputProps={{
+              startAdornment: <MeetingRoomIcon sx={{ color: '#1976d2', mr: 1 }} />,
+            }}
           />
-
           <TextField
-            label="وصف الاستبيان (اختياري)"
+            name="capacity"
+            label="سعة القاعة"
+            type="number"
             fullWidth
             margin="normal"
-            multiline
-            rows={2}
-            value={pollForm.description}
-            onChange={(e) => setPollForm({ ...pollForm, description: e.target.value })}
-            variant="outlined"
-          />
-
-          <TextField
-            label="تاريخ الانتهاء"
-            type="datetime-local"
-            fullWidth
-            margin="normal"
-            InputLabelProps={{ shrink: true }}
-            value={pollForm.expires_at}
-            onChange={(e) => setPollForm({ ...pollForm, expires_at: e.target.value })}
+            value={formData.capacity}
+            onChange={handleChange}
+            placeholder="مثال: 30"
             required
             variant="outlined"
-            helperText="بعد هذا التاريخ لن يتمكن الطلاب من الإجابة"
+            InputProps={{
+              startAdornment: <SeatIcon sx={{ color: '#1976d2', mr: 1 }} />,
+              inputProps: { min: 1 },
+            }}
+            helperText="عدد الطلاب الذين يتسع لهم القاعة"
           />
-
-          <Divider sx={{ my: 2 }} />
-
-          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#1976d2' }}>
-            الأسئلة
-          </Typography>
-
-          {pollForm.questions.map((question, qIndex) => (
-            <Paper key={qIndex} sx={{ p: 2, mb: 3, bgcolor: '#f5f5f5', borderRadius: 3 }}>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="subtitle1" fontWeight="bold" color="#1565c0">
-                  سؤال {qIndex + 1}
-                </Typography>
-                {pollForm.questions.length > 1 && (
-                  <IconButton onClick={() => handleRemoveQuestion(qIndex)} color="error" size="small">
-                    <RemoveCircleIcon />
-                  </IconButton>
-                )}
-              </Box>
-
-              <TextField
-                label="نص السؤال"
-                fullWidth
-                margin="normal"
-                value={question.question_text}
-                onChange={(e) => handleQuestionChange(qIndex, e.target.value)}
-                required
-                variant="outlined"
-              />
-
-              <Typography variant="body2" sx={{ mt: 2, mb: 1, color: '#1565c0' }}>
-                الخيارات:
-              </Typography>
-
-              {question.options.map((option, optIndex) => (
-                <Box key={optIndex} display="flex" alignItems="center" gap={1} mb={1}>
-                  <TextField
-                    label={`خيار ${optIndex + 1}`}
-                    size="small"
-                    fullWidth
-                    value={option}
-                    onChange={(e) => handleOptionChange(qIndex, optIndex, e.target.value)}
-                    variant="outlined"
-                  />
-                  {question.options.length > 2 && (
-                    <IconButton onClick={() => handleRemoveOption(qIndex, optIndex)} color="error" size="small">
-                      <RemoveCircleIcon />
-                    </IconButton>
-                  )}
-                </Box>
-              ))}
-
-              <Button
-                size="small"
-                startIcon={<AddCircleIcon />}
-                onClick={() => handleAddOption(qIndex)}
-                sx={{ mt: 1, color: '#1976d2' }}
-              >
-                إضافة خيار
-              </Button>
-            </Paper>
-          ))}
-
-          <Button
-            variant="outlined"
-            startIcon={<AddCircleIcon />}
-            onClick={handleAddQuestion}
-            fullWidth
-            sx={{ mt: 1, py: 1.5, borderRadius: 3, borderColor: '#1976d2', color: '#1976d2' }}
-          >
-            إضافة سؤال
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button onClick={handleCloseDialog} variant="outlined" sx={{ borderRadius: 2 }}>
+            إلغاء
           </Button>
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setOpenDialog(false)} variant="outlined">إلغاء</Button>
-          <Button onClick={handleSavePoll} variant="contained" sx={{ bgcolor: '#1976d2' }}>حفظ الاستبيان</Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={openViewDialog} onClose={() => setOpenViewDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 
-          color: '#fff' 
-        }}>
-           نتائج الاستبيان: {selectedPoll?.title}
-        </DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          {pollResults && pollResults.length > 0 ? (
-            pollResults.map((result, idx) => (
-              <Paper key={idx} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
-                <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#1565c0' }}>
-                  {result.question_text || result.question}
-                </Typography>
-                {result.options?.map((option, optIdx) => (
-                  <Box key={optIdx} sx={{ mb: 2 }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
-                      <Typography variant="body2">{option.option_text}</Typography>
-                      <Typography variant="body2" fontWeight="bold" color="#1976d2">
-                        {option.percentage || 0}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={option.percentage || 0}
-                      sx={{ height: 8, borderRadius: 4, bgcolor: '#e0e0e0', '& .MuiLinearProgress-bar': { bgcolor: '#1976d2' } }}
-                    />
-                    <Typography variant="caption" color="text.secondary">
-                      {option.votes_count || option.votes || 0} صوت
-                    </Typography>
-                  </Box>
-                ))}
-              </Paper>
-            ))
-          ) : (
-            <Alert severity="info" sx={{ borderRadius: 3 }}>
-              لا توجد إجابات على هذا الاستبيان بعد
-            </Alert>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setOpenViewDialog(false)} variant="contained" sx={{ bgcolor: '#1976d2' }}>إغلاق</Button>
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            sx={{
+              borderRadius: 2,
+              background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)',
+              },
+            }}
+          >
+            {isEditing ? 'تعديل' : 'حفظ'}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -535,4 +384,4 @@ function Polls() {
   );
 }
 
-export default Polls;
+export default Halls;

@@ -13,6 +13,9 @@ import {
   Divider,
   Alert,
   CircularProgress,
+  Button,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   Notifications as NotificationsIcon,
@@ -20,11 +23,16 @@ import {
   Star as StarIcon,
   Poll as PollIcon,
   CheckCircle as CheckCircleIcon,
+  Quiz as QuizIcon,
+  Announcement as AnnouncementIcon,
+  School as SchoolIcon,
+  DoneAll as DoneAllIcon,
+  MarkEmailRead as MarkEmailReadIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import {
-  getComplaints,
-  getReports,
+  getRealNotifications,
+  markNotificationAsRead,
 } from '../../services/adminService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
@@ -32,76 +40,32 @@ import Toast from '../../components/common/Toast';
 function AdminNotifications() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const notificationsList = [];
-
-      const complaints = await getComplaints();
-      const unreadComplaints = complaints.filter(c => !c.replied);
-      if (unreadComplaints.length > 0) {
-        notificationsList.push({
-          id: 'complaints',
-          type: 'complaint',
-          title: 'شكاوى جديدة',
-          message: `لديك ${unreadComplaints.length} شكوى جديدة لم يتم الرد عليها`,
-          count: unreadComplaints.length,
-          icon: <ReportProblemIcon sx={{ color: '#f44336' }} />,
-          action: '/admin/complaints',
-          actionText: 'الذهاب إلى الشكاوى',
-        });
-      }
-
-      const reports = await getReports();
-      const topStudents = reports.topStudents;
-      const allTopStudents = [
-        ...(topStudents.grade9 || []),
-        ...(topStudents.scientific || []),
-        ...(topStudents.literary || []),
-      ];
+      const data = await getRealNotifications();
+      console.log('🔔 الإشعارات المستلمة:', data);
       
-      if (allTopStudents.length > 0) {
-        notificationsList.push({
-          id: 'points',
-          type: 'points',
-          title: 'تحديث النقاط',
-          message: `تم تحديث نقاط الطلاب. يمكنك الاطلاع على أفضل ${allTopStudents.length} طالب`,
-          count: allTopStudents.length,
-          icon: <StarIcon sx={{ color: '#ff9800' }} />,
-          action: '/admin/reports',
-          actionText: 'الذهاب إلى التقارير',
-        });
-      }
-
-      const surveyResults = reports.surveyResults;
-      if (surveyResults && surveyResults.length > 0) {
-        notificationsList.push({
-          id: 'survey',
-          type: 'survey',
-          title: 'نتائج استبيان جديدة',
-          message: `تم نشر نتائج استبيان "${surveyResults[0]?.title || 'تقييم'}" يمكنك الاطلاع عليها`,
-          count: surveyResults.length,
-          icon: <PollIcon sx={{ color: '#4caf50' }} />,
-          action: '/admin/reports',
-          actionText: 'الذهاب إلى التقارير',
-        });
-      }
-
-      if (notificationsList.length === 0) {
-        notificationsList.push({
-          id: 'empty',
-          type: 'empty',
-          title: 'لا توجد إشعارات',
-          message: 'ليس لديك أي إشعارات جديدة حالياً',
-          icon: <CheckCircleIcon sx={{ color: '#9e9e9e' }} />,
-          action: null,
-        });
-      }
-
-      setNotifications(notificationsList);
+      setUnreadCount(data.unread_count || 0);
+      
+      // تنسيق الإشعارات للعرض
+      const formattedNotifications = (data.notifications || []).map(notification => ({
+        id: notification.id,
+        title: notification.data?.title || 'إشعار جديد',
+        message: notification.data?.message || '',
+        type: notification.data?.type || 'general',
+        related_id: notification.data?.related_id,
+        read_at: notification.read_at,
+        created_at: notification.created_at,
+        is_read: notification.read_at !== null,
+        icon: getIconByType(notification.data?.type),
+      }));
+      
+      setNotifications(formattedNotifications);
     } catch (error) {
       console.error('خطأ في جلب الإشعارات:', error);
       setToast({ open: true, message: 'فشل في جلب الإشعارات', severity: 'error' });
@@ -110,15 +74,116 @@ function AdminNotifications() {
     }
   };
 
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  const handleNotificationClick = (notification) => {
-    if (notification.action) {
-      navigate(notification.action);
+  const getIconByType = (type) => {
+    switch (type) {
+      case 'complaint':
+      case 'new_complaint':
+        return <ReportProblemIcon sx={{ color: '#f44336' }} />;
+      case 'points':
+      case 'mark':
+      case 'new_mark':
+        return <StarIcon sx={{ color: '#ff9800' }} />;
+      case 'poll':
+      case 'new_poll':
+        return <PollIcon sx={{ color: '#4caf50' }} />;
+      case 'quiz':
+      case 'new_quiz':
+        return <QuizIcon sx={{ color: '#9c27b0' }} />;
+      case 'announcement':
+      case 'new_announcement':
+        return <AnnouncementIcon sx={{ color: '#2196f3' }} />;
+      case 'course':
+      case 'course_assignment':
+        return <SchoolIcon sx={{ color: '#00bcd4' }} />;
+      default:
+        return <NotificationsIcon sx={{ color: '#1976d2' }} />;
     }
   };
+
+  const handleNotificationClick = async (notification) => {
+    // تحديث الإشعار كمقروء إذا لم يكن مقروءاً
+    if (!notification.is_read) {
+      try {
+        await markNotificationAsRead(notification.id);
+        // تحديث الحالة محلياً
+        setNotifications(prev =>
+          prev.map(n =>
+            n.id === notification.id ? { ...n, is_read: true } : n
+          )
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } catch (error) {
+        console.error('خطأ في تحديث الإشعار:', error);
+      }
+    }
+    
+    // التنقل بناءً على نوع الإشعار
+    if (notification.type === 'complaint' || notification.type === 'new_complaint') {
+      navigate('/admin/complaints');
+    } else if (notification.type === 'poll' || notification.type === 'new_poll') {
+      navigate('/admin/polls');
+    } else if (notification.type === 'quiz' || notification.type === 'new_quiz') {
+      navigate('/admin/quizzes');
+    } else if (notification.type === 'announcement' || notification.type === 'new_announcement') {
+      navigate('/admin/announcements');
+    } else if (notification.type === 'course' || notification.type === 'course_assignment') {
+      navigate('/admin/courses');
+    } else if (notification.related_id) {
+      // إذا كان هناك related_id ننقل للصفحة المناسبة
+      if (notification.type === 'mark') {
+        navigate(`/admin/marks/${notification.related_id}`);
+      } else if (notification.type === 'poll') {
+        navigate(`/admin/polls/${notification.related_id}`);
+      }
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    const unreadNotifications = notifications.filter(n => !n.is_read);
+    if (unreadNotifications.length === 0) {
+      setToast({ open: true, message: 'لا توجد إشعارات غير مقروءة', severity: 'info' });
+      return;
+    }
+    
+    try {
+      // تحديث كل إشعار غير مقروء
+      for (const notification of unreadNotifications) {
+        await markNotificationAsRead(notification.id);
+      }
+      
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, is_read: true }))
+      );
+      setUnreadCount(0);
+      setToast({ open: true, message: 'تم تحديث جميع الإشعارات كمقروءة', severity: 'success' });
+    } catch (error) {
+      console.error('خطأ في تحديث الإشعارات:', error);
+      setToast({ open: true, message: 'فشل في تحديث بعض الإشعارات', severity: 'error' });
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'الآن';
+    if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
+    if (diffHours < 24) return `منذ ${diffHours} ساعة`;
+    if (diffDays < 7) return `منذ ${diffDays} يوم`;
+    return date.toLocaleDateString('ar-EG');
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    // تحديث الإشعارات كل 30 ثانية
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
@@ -129,6 +194,8 @@ function AdminNotifications() {
     );
   }
 
+  const unreadNotifications = notifications.filter(n => !n.is_read);
+
   return (
     <Box>
       <PageHeader 
@@ -137,9 +204,9 @@ function AdminNotifications() {
         icon={<NotificationsIcon sx={{ fontSize: 20 }} />}
       />
 
-      <Box display="flex" justifyContent="flex-end" mb={2}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Badge 
-          badgeContent={notifications.filter(n => n.type !== 'empty').length} 
+          badgeContent={unreadCount} 
           color="error"
           sx={{
             '& .MuiBadge-badge': {
@@ -150,87 +217,109 @@ function AdminNotifications() {
           }}
         >
           <Chip 
-            label={`${notifications.filter(n => n.type !== 'empty').length} إشعار جديد`}
+            label={`${unreadCount} إشعار غير مقروء`}
             size="small"
-            sx={{ bgcolor: '#e3f2fd', color: '#1976d2' }}
+            sx={{ bgcolor: unreadCount > 0 ? '#e3f2fd' : '#f5f5f5', color: '#1976d2' }}
           />
         </Badge>
+        
+        {notifications.length > 0 && (
+          <Tooltip title="تحديد الكل كمقروء">
+            <Button
+              size="small"
+              startIcon={<DoneAllIcon />}
+              onClick={handleMarkAllAsRead}
+              sx={{ textTransform: 'none', color: '#1976d2' }}
+            >
+              تحديد الكل كمقروء
+            </Button>
+          </Tooltip>
+        )}
       </Box>
 
-      <Paper sx={{ borderRadius: 3, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
-        <List>
-          {notifications.map((notification, index) => (
-            <React.Fragment key={notification.id}>
-              <ListItem
-                disablePadding
-                sx={{
-                  backgroundColor: notification.type !== 'empty' ? '#e3f2fd' : 'transparent',
-                  transition: '0.3s',
-                  '&:hover': notification.action ? {
-                    backgroundColor: '#bbdef5',
-                    cursor: 'pointer',
-                  } : {},
-                }}
-              >
-                <ListItemButton
-                  onClick={() => handleNotificationClick(notification)}
-                  disabled={!notification.action}
-                  sx={{ py: 2 }}
+      {notifications.length === 0 ? (
+        <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 3, bgcolor: '#f8f9fa' }}>
+          <NotificationsIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary">
+            لا توجد إشعارات حالياً
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            ستظهر هنا الإشعارات عند حدوث أي حدث جديد (شكاوى، استبيانات، اختبارات...)
+          </Typography>
+        </Paper>
+      ) : (
+        <Paper sx={{ borderRadius: 3, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+          <List>
+            {notifications.map((notification, index) => (
+              <React.Fragment key={notification.id}>
+                <ListItem
+                  disablePadding
+                  sx={{
+                    backgroundColor: !notification.is_read ? '#e3f2fd' : 'transparent',
+                    transition: '0.3s',
+                    '&:hover': {
+                      backgroundColor: !notification.is_read ? '#bbdef5' : '#f5f5f5',
+                      cursor: 'pointer',
+                    },
+                  }}
                 >
-                  <ListItemIcon>
-                    {notification.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                        <Typography variant="subtitle1" fontWeight="bold" sx={{ color: '#1565c0' }}>
-                          {notification.title}
-                        </Typography>
-                        {notification.count && (
-                          <Chip
-                            label={notification.count}
-                            size="small"
-                            color="error"
-                            sx={{ height: 22, fontSize: '0.7rem' }}
-                          />
-                        )}
-                      </Box>
-                    }
-                    secondary={
-                      <Box sx={{ mt: 0.5 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          {notification.message}
-                        </Typography>
-                        {notification.action && (
+                  <ListItemButton onClick={() => handleNotificationClick(notification)}>
+                    <ListItemIcon>
+                      {notification.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                          <Typography 
+                            variant="subtitle1" 
+                            fontWeight={!notification.is_read ? 'bold' : 'normal'} 
+                            sx={{ color: '#1565c0' }}
+                          >
+                            {notification.title}
+                          </Typography>
+                          {!notification.is_read && (
+                            <Chip
+                              label="جديد"
+                              size="small"
+                              color="error"
+                              sx={{ height: 20, fontSize: '0.65rem' }}
+                            />
+                          )}
+                        </Box>
+                      }
+                      secondary={
+                        <Box sx={{ mt: 0.5 }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                            {notification.message}
+                          </Typography>
                           <Typography
                             variant="caption"
                             sx={{ 
                               mt: 1, 
-                              display: 'inline-block',
-                              color: '#1976d2',
-                              fontWeight: 500,
+                              display: 'block',
+                              color: '#999',
                             }}
                           >
-                            {notification.actionText} →
+                            {formatDate(notification.created_at)}
                           </Typography>
-                        )}
-                      </Box>
-                    }
-                  />
-                </ListItemButton>
-              </ListItem>
-              {index < notifications.length - 1 && <Divider />}
-            </React.Fragment>
-          ))}
-        </List>
-      </Paper>
+                        </Box>
+                      }
+                    />
+                  </ListItemButton>
+                </ListItem>
+                {index < notifications.length - 1 && <Divider />}
+              </React.Fragment>
+            ))}
+          </List>
+        </Paper>
+      )}
 
-      {notifications.length === 1 && notifications[0].type === 'empty' && (
+      {notifications.length > 0 && unreadCount === 0 && (
         <Alert 
-          severity="info" 
-          sx={{ mt: 3, borderRadius: 2, bgcolor: '#e3f2fd', color: '#1565c0' }}
+          severity="success" 
+          sx={{ mt: 3, borderRadius: 2, bgcolor: '#e8f5e9', color: '#2e7d32' }}
         >
-          🎉 لا توجد إشعارات جديدة حالياً. سنخبرك عند ظهور أي تحديثات.
+          🎉 جميع الإشعارات مقروءة. ليس لديك إشعارات جديدة حالياً.
         </Alert>
       )}
 
