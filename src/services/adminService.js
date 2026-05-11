@@ -17,7 +17,6 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// بعد تسجيل الدخول، تأكدي من حفظ user_id في localStorage
 export const login = async (email, password) => {
   try {
     const response = await apiClient.post('/login', { email, password });
@@ -80,7 +79,7 @@ export const getReports = async () => {
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب التقارير:', error);
-    throw error;
+    return { topStudents: {}, surveyResults: [] };
   }
 };
 
@@ -130,7 +129,7 @@ export const getAllCourses = async () => {
     }
     return [];
   } catch (error) {
-    console.error('❌ خطأ في جلب المواد:', error);
+    console.error(' خطأ في جلب المواد:', error);
     return [];
   }
 };
@@ -140,7 +139,7 @@ export const getCourses = getAllCourses;
 export const getAllStudents = async () => {
   try {
     const response = await apiClient.get('/admin/simple-students');
-    console.log('✅ الطلاب المستلمة:', response.data);
+    console.log(' الطلاب المستلمة:', response.data);
     
     if (Array.isArray(response.data)) {
       return response.data;
@@ -150,7 +149,7 @@ export const getAllStudents = async () => {
     }
     return [];
   } catch (error) {
-    console.error('❌ خطأ في جلب الطلاب:', error);
+    console.error(' خطأ في جلب الطلاب:', error);
     return [];
   }
 };
@@ -276,10 +275,11 @@ export const deleteSession = async (sessionId) => {
 export const deleteWeeklyProgram = deleteSession;
 export const deleteExamProgram = deleteSession;
 
+
 export const getHalls = async () => {
   try {
     const response = await apiClient.get('/admin/halls');
-    console.log('🏢 القاعات المستلمة:', response.data);
+    console.log(' القاعات المستلمة:', response.data);
     
     if (Array.isArray(response.data)) {
       return response.data;
@@ -299,10 +299,8 @@ export const getRooms = getHalls;
 export const addHall = async (hallData) => {
   try {
     const response = await apiClient.post('/admin/setup-halls', {
-      halls: [{
-        name: hallData.name,
-        capacity: hallData.capacity
-      }]
+      name: hallData.name,
+      capacity: hallData.capacity
     });
     return response.data;
   } catch (error) {
@@ -334,10 +332,11 @@ export const deleteHall = async (id) => {
   }
 };
 
+
 export const getAllPolls = async () => {
   try {
     const response = await apiClient.get('/admin/polls');
-    console.log('📊 الاستبيانات المستلمة:', response.data);
+    console.log(' الاستبيانات المستلمة:', response.data);
     
     if (Array.isArray(response.data)) {
       return response.data;
@@ -390,6 +389,7 @@ export const getPollResults = async (pollId) => {
   }
 };
 
+
 export const getAnnouncements = async () => {
   try {
     const response = await apiClient.get('/announcements');
@@ -430,9 +430,7 @@ export const deleteAnnouncement = async (id) => {
   }
 };
 
-// ============= دوال الإشعارات الحقيقية =============
 
-// جلب الإشعارات من الـ API الحقيقي
 export const getRealNotifications = async () => {
   try {
     const response = await apiClient.get('/notifications');
@@ -447,7 +445,6 @@ export const getRealNotifications = async () => {
   }
 };
 
-// تحديث إشعار كمقروء
 export const markNotificationAsRead = async (notificationId) => {
   try {
     const response = await apiClient.post(`/notifications/${notificationId}/read`);
@@ -458,19 +455,6 @@ export const markNotificationAsRead = async (notificationId) => {
   }
 };
 
-// تحديث كل الإشعارات كمقروءة
-export const markAllNotificationsAsRead = async () => {
-  try {
-    // إذا الـ API يدعم تحديث الكل
-    const response = await apiClient.post('/notifications/mark-all-read');
-    return response.data;
-  } catch (error) {
-    console.error('خطأ في تحديث كل الإشعارات:', error);
-    throw error;
-  }
-};
-
-// ============= دوال الشكاوى =============
 
 export const getComplaints = async () => {
   try {
@@ -528,7 +512,7 @@ export const updateComplaintAnswer = async (complaintId, answer) => {
     console.error('خطأ في تحديث الرد:', error);
     throw error;
   }
-};
+}
 
 export const getUpcomingQuizzes = async () => {
   try {

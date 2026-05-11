@@ -294,7 +294,7 @@ function Halls() {
         >
           <Box display="flex" alignItems="center" gap={1}>
             <MeetingRoomIcon />
-            {isEditing ? '✏️ تعديل قاعة' : '➕ إضافة قاعة جديدة'}
+            {isEditing ? ' تعديل قاعة' : ' إضافة قاعة جديدة'}
           </Box>
           <IconButton onClick={handleCloseDialog} sx={{ color: '#fff' }} size="small">
             <CloseIcon />
