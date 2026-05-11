@@ -32,10 +32,36 @@ import { getReports, getWeeklyProgram, getExamProgram, getDashboardMetrics } fro
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
+// تعريف الأيام
+const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+
+// تعريف الفترات الزمنية
+const timeSlots = [
+  '08:00 - 09:00',
+  '09:00 - 10:00', 
+  '10:00 - 11:00',
+  '11:00 - 12:00',
+  '12:00 - 13:00',
+  '13:00 - 14:00',
+  '14:00 - 15:00',
+];
+
+const timeSlotsDisplay = timeSlots;
+
+const daysMap = {
+  'Sunday': 'الأحد',
+  'Monday': 'الإثنين',
+  'Tuesday': 'الثلاثاء',
+  'Wednesday': 'الأربعاء',
+  'Thursday': 'الخميس',
+  'Friday': 'الجمعة',
+  'Saturday': 'السبت',
+};
+
 function Dashboard() {
   const [reports, setReports] = useState(null);
-  const [weeklyProgram, setWeeklyProgram] = useState([]);
-  const [examProgram, setExamProgram] = useState([]);
+  const [weeklyProgram, setWeeklyProgram] = useState(null);
+  const [examProgram, setExamProgram] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(0);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
@@ -48,18 +74,31 @@ function Dashboard() {
     totalPollsCount: 0,
   });
 
-  const daysMap = {
-    'Sunday': 'الأحد',
-    'Monday': 'الإثنين',
-    'Tuesday': 'الثلاثاء',
-    'Wednesday': 'الأربعاء',
-    'Thursday': 'الخميس'
+  // دالة لمعرفة إذا كان الجدول فارغاً أو غير موجود
+  const isEmptySchedule = (program) => {
+    if (!program) return true;
+    
+    // إذا كان فيه master_grid
+    if (program.master_grid) {
+      const daysWithSessions = Object.keys(program.master_grid).filter(day => {
+        const sessions = program.master_grid[day];
+        return Object.values(sessions).some(session => session.status === 'Occupied');
+      });
+      return daysWithSessions.length === 0;
+    }
+    
+    // إذا كان فيه sessions كمصفوفة
+    if (program.sessions && Array.isArray(program.sessions)) {
+      return program.sessions.length === 0;
+    }
+    
+    // إذا كان مصفوفة مباشرة
+    if (Array.isArray(program)) {
+      return program.length === 0;
+    }
+    
+    return true;
   };
-
-  const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
-  
-  const timeSlots = ['08:00:00', '09:30:00', '11:00:00', '12:30:00', '14:00:00', '15:30:00'];
-  const timeSlotsDisplay = ['08:00-09:30', '09:30-11:00', '11:00-12:30', '12:30-14:00', '14:00-15:30', '15:30-17:00'];
 
   const getScheduleGrid = (scheduleData) => {
     const grid = {};
@@ -222,26 +261,23 @@ function Dashboard() {
           });
         }
 
-        let weeklyData = null;
         try {
-          weeklyData = await getWeeklyProgram();
+          const weeklyData = await getWeeklyProgram();
           console.log('📅 Dashboard - جدول الدوام من API:', weeklyData);
+          setWeeklyProgram(weeklyData);
         } catch (error) {
           console.log('فشل جلب جدول الدوام:', error);
-          weeklyData = null;
+          setWeeklyProgram(null);
         }
 
-        let examData = null;
         try {
-          examData = await getExamProgram();
+          const examData = await getExamProgram();
           console.log('📝 Dashboard - جدول الامتحانات من API:', examData);
+          setExamProgram(examData);
         } catch (error) {
           console.log('فشل جلب جدول الامتحانات:', error);
-          examData = null;
+          setExamProgram(null);
         }
-
-        setWeeklyProgram(weeklyData);
-        setExamProgram(examData);
         
       } catch (error) {
         console.error('خطأ في جلب البيانات:', error);
@@ -255,6 +291,8 @@ function Dashboard() {
 
   const scheduleGrid = getScheduleGrid(weeklyProgram);
   const examList = getExamGrid(examProgram);
+  const isScheduleEmpty = isEmptySchedule(weeklyProgram);
+  const isExamEmpty = isEmptySchedule(examProgram);
 
   if (loading) {
     return (
@@ -362,8 +400,9 @@ function Dashboard() {
       <Paper sx={{ p: 3, borderRadius: 3 }}>
         <Box display="flex" alignItems="center" gap={1} mb={3}>
           <ScheduleIcon color="primary" />
-          <Typography variant="h5"> البرنامج الأسبوعي</Typography>
+          <Typography variant="h5">البرنامج الأسبوعي</Typography>
         </Box>
+
         <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }} centered>
           <Tab label="جدول الدوام" />
           <Tab label="جدول الامتحانات" />
@@ -371,58 +410,91 @@ function Dashboard() {
         
         {tab === 0 && (
           <Box sx={{ overflowX: 'auto' }}>
-            <Table sx={{ minWidth: 800 }}>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                  <TableCell align="center">الوقت / اليوم</TableCell>
-                  {days.map((day) => (
-                    <TableCell key={day} align="center">{day}</TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {timeSlotsDisplay.map((time) => (
-                  <TableRow key={time}>
-                    <TableCell align="center" sx={{ fontWeight: 'bold', backgroundColor: '#fafafa' }}>
-                      {time}
-                    </TableCell>
-                    {days.map((day) => {
-                      const session = scheduleGrid[day]?.[time];
-                      return (
-                        <TableCell key={`${day}-${time}`} align="center" sx={{ py: 1.5 }}>
-                          {session ? (
-                            <Box>
-                              <Typography variant="body2" fontWeight="bold" sx={{ color: '#1976d2' }}>
-                                {session.course_name}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                🏫 {session.halls && session.halls.length > 0 ? session.halls[0] : 'غير محدد'}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                ⏰ {session.start_time?.substring(0, 5)} - {session.end_time?.substring(0, 5)}
-                              </Typography>
-                            </Box>
-                          ) : (
-                            <Typography variant="caption" color="text.disabled">—</Typography>
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            {!weeklyProgram && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                لا يوجد جدول دوام. قم بتوليد جدول من صفحة "البرنامج الأسبوعي"
+            {isScheduleEmpty ? (
+              <Alert 
+                severity="info" 
+                sx={{ 
+                  borderRadius: 3, 
+                  p: 3, 
+                  textAlign: 'center',
+                  '& .MuiAlert-message': { width: '100%' }
+                }}
+              >
+                <Box sx={{ textAlign: 'center' }}>
+                  <ScheduleIcon sx={{ fontSize: 48, color: '#1976d2', mb: 2, opacity: 0.7 }} />
+                  <Typography variant="h6" gutterBottom>لا يوجد برنامج دوام</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    لم يتم إنشاء جدول الدوام بعد. قم بتوليد البرنامج من صفحة "البرنامج الأسبوعي".
+                  </Typography>
+                </Box>
               </Alert>
+            ) : (
+              <Table sx={{ minWidth: 800 }}>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                    <TableCell align="center">الوقت / اليوم</TableCell>
+                    {days.map((day) => (
+                      <TableCell key={day} align="center">{day}</TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {timeSlotsDisplay.map((time) => (
+                    <TableRow key={time}>
+                      <TableCell align="center" sx={{ fontWeight: 'bold', backgroundColor: '#fafafa' }}>
+                        {time}
+                      </TableCell>
+                      {days.map((day) => {
+                        const session = scheduleGrid[day]?.[time];
+                        return (
+                          <TableCell key={`${day}-${time}`} align="center" sx={{ py: 1.5 }}>
+                            {session ? (
+                              <Box>
+                                <Typography variant="body2" fontWeight="bold" sx={{ color: '#1976d2' }}>
+                                  {session.course_name}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                  🏫 {session.halls && session.halls.length > 0 ? session.halls[0] : 'غير محدد'}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                  ⏰ {session.start_time?.substring(0, 5)} - {session.end_time?.substring(0, 5)}
+                                </Typography>
+                              </Box>
+                            ) : (
+                              <Typography variant="caption" color="text.disabled">—</Typography>
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </Box>
         )}
         
         {tab === 1 && (
           <Box sx={{ overflowX: 'auto' }}>
-            {examList.length === 0 ? (
+            {isExamEmpty ? (
+              <Alert 
+                severity="info" 
+                sx={{ 
+                  borderRadius: 3, 
+                  p: 3, 
+                  textAlign: 'center',
+                  '& .MuiAlert-message': { width: '100%' }
+                }}
+              >
+                <Box sx={{ textAlign: 'center' }}>
+                  <ScheduleIcon sx={{ fontSize: 48, color: '#1976d2', mb: 2, opacity: 0.7 }} />
+                  <Typography variant="h6" gutterBottom>لا توجد امتحانات مجدولة حالياً</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    قم بتوليد جدول الامتحانات من صفحة "البرنامج الأسبوعي".
+                  </Typography>
+                </Box>
+              </Alert>
+            ) : examList.length === 0 ? (
               <Alert severity="info">لا توجد امتحانات مجدولة حالياً. قم بتوليد جدول الامتحانات من صفحة "البرنامج الأسبوعي"</Alert>
             ) : (
               <Table>
@@ -452,7 +524,12 @@ function Dashboard() {
         )}
       </Paper>
 
-      <Toast open={toast.open} onClose={() => setToast({ ...toast, open: false })} message={toast.message} severity={toast.severity} />
+      <Toast
+        open={toast.open}
+        onClose={() => setToast({ ...toast, open: false })}
+        message={toast.message}
+        severity={toast.severity}
+      />
     </Box>
   );
 }
