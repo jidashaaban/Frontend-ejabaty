@@ -14,20 +14,14 @@ import {
   Alert,
   CircularProgress,
   Button,
-  IconButton,
   Tooltip,
 } from '@mui/material';
 import {
   Notifications as NotificationsIcon,
   ReportProblem as ReportProblemIcon,
-  Star as StarIcon,
   Poll as PollIcon,
-  CheckCircle as CheckCircleIcon,
-  Quiz as QuizIcon,
-  Announcement as AnnouncementIcon,
   School as SchoolIcon,
   DoneAll as DoneAllIcon,
-  MarkEmailRead as MarkEmailReadIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -48,7 +42,7 @@ function AdminNotifications() {
     setLoading(true);
     try {
       const data = await getRealNotifications();
-      console.log('🔔 الإشعارات المستلمة:', data);
+      console.log('🔔 الإشعارات المستلمة من API:', data);
       
       setUnreadCount(data.unread_count || 0);
       
@@ -61,7 +55,6 @@ function AdminNotifications() {
         read_at: notification.read_at,
         created_at: notification.created_at,
         is_read: notification.read_at !== null,
-        icon: getIconByType(notification.data?.type),
       }));
       
       setNotifications(formattedNotifications);
@@ -74,33 +67,22 @@ function AdminNotifications() {
   };
 
   const getIconByType = (type) => {
-    switch (type) {
-      case 'complaint':
-      case 'new_complaint':
-        return <ReportProblemIcon sx={{ color: '#f44336' }} />;
-      case 'points':
-      case 'mark':
-      case 'new_mark':
-        return <StarIcon sx={{ color: '#ff9800' }} />;
-      case 'poll':
-      case 'new_poll':
-        return <PollIcon sx={{ color: '#4caf50' }} />;
-      case 'quiz':
-      case 'new_quiz':
-        return <QuizIcon sx={{ color: '#9c27b0' }} />;
-      case 'announcement':
-      case 'new_announcement':
-        return <AnnouncementIcon sx={{ color: '#2196f3' }} />;
-      case 'course':
-      case 'course_assignment':
-      case 'new_course':
-        return <SchoolIcon sx={{ color: '#00bcd4' }} />;
-      default:
-        return <NotificationsIcon sx={{ color: '#1976d2' }} />;
+    if (type === 'complaint' || type === 'new_complaint' || type.includes('complaint')) {
+      return <ReportProblemIcon sx={{ color: '#f44336' }} />;
     }
+    if (type === 'poll_result' || type === 'poll_completed' || type.includes('poll')) {
+      return <PollIcon sx={{ color: '#4caf50' }} />;
+    }
+    if (type === 'course_join' || type === 'new_course_request' || type.includes('course')) {
+      return <SchoolIcon sx={{ color: '#00bcd4' }} />;
+    }
+    return <NotificationsIcon sx={{ color: '#1976d2' }} />;
   };
 
   const handleNotificationClick = async (notification) => {
+    console.log('📌 تم الضغط على إشعار:', notification);
+    console.log('📌 نوع الإشعار:', notification.type);
+    
     if (!notification.is_read) {
       try {
         await markNotificationAsRead(notification.id);
@@ -115,24 +97,23 @@ function AdminNotifications() {
       }
     }
     
-    // التنقل بناءً على نوع الإشعار
-    if (notification.type === 'complaint' || notification.type === 'new_complaint') {
+    const type = notification.type;
+    
+    // شكاوى جديدة
+    if (type === 'complaint' || type === 'new_complaint' || type.includes('complaint')) {
       navigate('/admin/complaints');
-    } else if (notification.type === 'poll' || notification.type === 'new_poll') {
+    }
+    // نتائج استبيانات
+    else if (type === 'poll_result' || type === 'poll_completed' || type.includes('poll')) {
       navigate('/admin/polls');
-    } else if (notification.type === 'quiz' || notification.type === 'new_quiz') {
-      navigate('/admin/quizzes');
-    } else if (notification.type === 'announcement' || notification.type === 'new_announcement') {
-      navigate('/admin/announcements');
-    } else if (notification.type === 'course' || notification.type === 'course_assignment' || notification.type === 'new_course') {
+    }
+    // طلب تسجيل في مادة
+    else if (type === 'course_join' || type === 'new_course_request' || type.includes('course')) {
       navigate('/admin/courses');
-    } else if (notification.type === 'mark' || notification.type === 'new_mark') {
-      navigate('/admin/reports');
-    } else if (notification.related_id) {
-      navigate(`/admin/${notification.type}s/${notification.related_id}`);
-    } else {
-      // ✅ إذا لم يتطابق أي نوع، ننقل إلى صفحة الإشعارات نفسها
-      navigate('/admin/notifications');
+    }
+    // أي إشعار آخر
+    else {
+      navigate('/admin/dashboard');
     }
   };
 
@@ -147,7 +128,6 @@ function AdminNotifications() {
       for (const notification of unreadNotifications) {
         await markNotificationAsRead(notification.id);
       }
-      
       setNotifications(prev =>
         prev.map(n => ({ ...n, is_read: true }))
       );
@@ -190,13 +170,11 @@ function AdminNotifications() {
     );
   }
 
-  const unreadNotifications = notifications.filter(n => !n.is_read);
-
   return (
     <Box>
       <PageHeader 
         title="الإشعارات"
-        subtitle="عرض آخر الإشعارات والتحديثات"
+        subtitle="إشعارات الشكاوى وطلبات التسجيل ونتائج الاستبيانات"
         icon={<NotificationsIcon sx={{ fontSize: 20 }} />}
       />
 
@@ -240,7 +218,7 @@ function AdminNotifications() {
             لا توجد إشعارات حالياً
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            ستظهر هنا الإشعارات عند حدوث أي حدث جديد (شكاوى، استبيانات، اختبارات...)
+            ستظهر هنا الإشعارات عند وجود شكاوى جديدة أو طلبات تسجيل أو نتائج استبيانات
           </Typography>
         </Paper>
       ) : (
@@ -261,7 +239,7 @@ function AdminNotifications() {
                 >
                   <ListItemButton onClick={() => handleNotificationClick(notification)}>
                     <ListItemIcon>
-                      {notification.icon}
+                      {getIconByType(notification.type)}
                     </ListItemIcon>
                     <ListItemText
                       primary={
@@ -290,11 +268,7 @@ function AdminNotifications() {
                           </Typography>
                           <Typography
                             variant="caption"
-                            sx={{ 
-                              mt: 1, 
-                              display: 'block',
-                              color: '#999',
-                            }}
+                            sx={{ mt: 1, display: 'block', color: '#999' }}
                           >
                             {formatDate(notification.created_at)}
                           </Typography>
@@ -311,11 +285,8 @@ function AdminNotifications() {
       )}
 
       {notifications.length > 0 && unreadCount === 0 && (
-        <Alert 
-          severity="success" 
-          sx={{ mt: 3, borderRadius: 2, bgcolor: '#e8f5e9', color: '#2e7d32' }}
-        >
-          🎉 جميع الإشعارات مقروءة. ليس لديك إشعارات جديدة حالياً.
+        <Alert severity="success" sx={{ mt: 3, borderRadius: 2 }}>
+          🎉 جميع الإشعارات مقروءة
         </Alert>
       )}
 
