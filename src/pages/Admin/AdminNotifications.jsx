@@ -52,7 +52,6 @@ function AdminNotifications() {
       
       setUnreadCount(data.unread_count || 0);
       
-      // تنسيق الإشعارات للعرض
       const formattedNotifications = (data.notifications || []).map(notification => ({
         id: notification.id,
         title: notification.data?.title || 'إشعار جديد',
@@ -94,6 +93,7 @@ function AdminNotifications() {
         return <AnnouncementIcon sx={{ color: '#2196f3' }} />;
       case 'course':
       case 'course_assignment':
+      case 'new_course':
         return <SchoolIcon sx={{ color: '#00bcd4' }} />;
       default:
         return <NotificationsIcon sx={{ color: '#1976d2' }} />;
@@ -101,11 +101,9 @@ function AdminNotifications() {
   };
 
   const handleNotificationClick = async (notification) => {
-    // تحديث الإشعار كمقروء إذا لم يكن مقروءاً
     if (!notification.is_read) {
       try {
         await markNotificationAsRead(notification.id);
-        // تحديث الحالة محلياً
         setNotifications(prev =>
           prev.map(n =>
             n.id === notification.id ? { ...n, is_read: true } : n
@@ -126,15 +124,15 @@ function AdminNotifications() {
       navigate('/admin/quizzes');
     } else if (notification.type === 'announcement' || notification.type === 'new_announcement') {
       navigate('/admin/announcements');
-    } else if (notification.type === 'course' || notification.type === 'course_assignment') {
+    } else if (notification.type === 'course' || notification.type === 'course_assignment' || notification.type === 'new_course') {
       navigate('/admin/courses');
+    } else if (notification.type === 'mark' || notification.type === 'new_mark') {
+      navigate('/admin/reports');
     } else if (notification.related_id) {
-      // إذا كان هناك related_id ننقل للصفحة المناسبة
-      if (notification.type === 'mark') {
-        navigate(`/admin/marks/${notification.related_id}`);
-      } else if (notification.type === 'poll') {
-        navigate(`/admin/polls/${notification.related_id}`);
-      }
+      navigate(`/admin/${notification.type}s/${notification.related_id}`);
+    } else {
+      // ✅ إذا لم يتطابق أي نوع، ننقل إلى صفحة الإشعارات نفسها
+      navigate('/admin/notifications');
     }
   };
 
@@ -146,7 +144,6 @@ function AdminNotifications() {
     }
     
     try {
-      // تحديث كل إشعار غير مقروء
       for (const notification of unreadNotifications) {
         await markNotificationAsRead(notification.id);
       }
@@ -180,7 +177,6 @@ function AdminNotifications() {
 
   useEffect(() => {
     fetchNotifications();
-    // تحديث الإشعارات كل 30 ثانية
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);

@@ -35,7 +35,8 @@ import { getReports, getWeeklyProgram, getExamProgram, getDashboardMetrics } fro
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
-const dayOrder = ['الأحد' ,'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+// ترتيب الأيام
+const dayOrder = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الأحد'];
 
 const daysMap = {
   'Sunday': 'الأحد',
@@ -63,9 +64,9 @@ function Dashboard() {
   const [scheduleList, setScheduleList] = useState([]);
   const [examList, setExamList] = useState([]);
 
+  // تنسيق بيانات الدوام
   const formatScheduleData = (scheduleRes) => {
     let formatted = [];
-    
     if (!scheduleRes) return [];
     
     if (scheduleRes.master_grid) {
@@ -81,7 +82,7 @@ function Dashboard() {
               start_time: slot.start_time,
               end_time: slot.end_time,
               course_name: slot.course_name,
-              hall_name: slot.halls && slot.halls.length > 0 ? slot.halls[0] : 'غير محدد',
+              hall_name: slot.halls?.[0] || 'غير محدد',
             });
           }
         });
@@ -108,12 +109,17 @@ function Dashboard() {
       }));
     }
     
+    // ترتيب الجلسات حسب الوقت
+    formatted.sort((a, b) => {
+      return (a.start_time || '').localeCompare(b.start_time || '');
+    });
+    
     return formatted;
   };
 
+  // تنسيق بيانات الامتحانات
   const formatExamData = (examRes) => {
     let formatted = [];
-    
     if (!examRes) return [];
     
     if (examRes.master_grid) {
@@ -129,7 +135,7 @@ function Dashboard() {
               start_time: slot.start_time,
               end_time: slot.end_time,
               course_name: slot.course_name,
-              hall_name: slot.halls && slot.halls.length > 0 ? slot.halls[0] : 'غير محدد',
+              hall_name: slot.halls?.[0] || 'غير محدد',
             });
           }
         });
@@ -156,9 +162,15 @@ function Dashboard() {
       }));
     }
     
+    // ترتيب الجلسات حسب الوقت
+    formatted.sort((a, b) => {
+      return (a.start_time || '').localeCompare(b.start_time || '');
+    });
+    
     return formatted;
   };
 
+  // دالة لمعرفة إذا كان الجدول فارغاً
   const isEmptySchedule = (program) => {
     if (!program) return true;
     if (program.master_grid) {
@@ -177,6 +189,7 @@ function Dashboard() {
     return true;
   };
 
+  // تجميع الجلسات حسب اليوم
   const groupByDay = (list) => {
     const grouped = {};
     dayOrder.forEach(day => { grouped[day] = []; });
@@ -187,11 +200,6 @@ function Dashboard() {
         grouped[item.day] = [item];
       }
     });
-    Object.keys(grouped).forEach(day => {
-      grouped[day].sort((a, b) => {
-        return (a.start_time || '').localeCompare(b.start_time || '');
-      });
-    });
     return grouped;
   };
 
@@ -199,7 +207,7 @@ function Dashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-      try {
+        try {
           const metricsData = await getDashboardMetrics();
           setMetrics({
             studentsCount: metricsData.studentsCount || 0,
@@ -225,7 +233,6 @@ function Dashboard() {
         let weeklyData = null;
         try {
           weeklyData = await getWeeklyProgram();
-          console.log(' جدول الدوام:', weeklyData);
           setWeeklyProgram(weeklyData);
           const formatted = formatScheduleData(weeklyData);
           setScheduleList(formatted);
@@ -238,7 +245,6 @@ function Dashboard() {
         let examData = null;
         try {
           examData = await getExamProgram();
-          console.log('جدول الامتحانات:', examData);
           setExamProgram(examData);
           const formatted = formatExamData(examData);
           setExamList(formatted);
@@ -247,7 +253,6 @@ function Dashboard() {
           setExamProgram(null);
           setExamList([]);
         }
-        
       } catch (error) {
         console.error('خطأ في جلب البيانات:', error);
         setToast({ open: true, message: 'فشل في جلب البيانات', severity: 'error' });
@@ -287,9 +292,9 @@ function Dashboard() {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>عدد الطلاب</Typography>
-                  <Typography variant="h4" component="div" color="primary" fontWeight="bold">{metrics.studentsCount}</Typography>
+                  <Typography variant="h4" fontWeight="bold" color="primary">{metrics.studentsCount}</Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: '#1976d2', width: 50, height: 50 }}><PeopleIcon sx={{ fontSize: 28 }} /></Avatar>
+                <Avatar sx={{ bgcolor: '#1976d2', width: 50, height: 50 }}><PeopleIcon /></Avatar>
               </Box>
             </CardContent>
           </Card>
@@ -301,9 +306,9 @@ function Dashboard() {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>عدد الأساتذة</Typography>
-                  <Typography variant="h4" component="div" color="success.main" fontWeight="bold">{metrics.teachersCount}</Typography>
+                  <Typography variant="h4" fontWeight="bold" color="success.main">{metrics.teachersCount}</Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: '#2e7d32', width: 50, height: 50 }}><SchoolIcon sx={{ fontSize: 28 }} /></Avatar>
+                <Avatar sx={{ bgcolor: '#2e7d32', width: 50, height: 50 }}><SchoolIcon /></Avatar>
               </Box>
             </CardContent>
           </Card>
@@ -315,9 +320,9 @@ function Dashboard() {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>أولياء الأمور</Typography>
-                  <Typography variant="h4" component="div" color="#9c27b0" fontWeight="bold">{metrics.parentsCount}</Typography>
+                  <Typography variant="h4" fontWeight="bold" color="#9c27b0">{metrics.parentsCount}</Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: '#9c27b0', width: 50, height: 50 }}><ParentsIcon sx={{ fontSize: 28 }} /></Avatar>
+                <Avatar sx={{ bgcolor: '#9c27b0', width: 50, height: 50 }}><ParentsIcon /></Avatar>
               </Box>
             </CardContent>
           </Card>
@@ -329,9 +334,9 @@ function Dashboard() {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>شكاوى معلقة</Typography>
-                  <Typography variant="h4" component="div" color="#f44336" fontWeight="bold">{metrics.pendingComplaintsCount}</Typography>
+                  <Typography variant="h4" fontWeight="bold" color="#f44336">{metrics.pendingComplaintsCount}</Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: '#f44336', width: 50, height: 50 }}><ReportProblemIcon sx={{ fontSize: 28 }} /></Avatar>
+                <Avatar sx={{ bgcolor: '#f44336', width: 50, height: 50 }}><ReportProblemIcon /></Avatar>
               </Box>
             </CardContent>
           </Card>
@@ -343,9 +348,9 @@ function Dashboard() {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>دورات نشطة</Typography>
-                  <Typography variant="h4" component="div" color="warning.main" fontWeight="bold">{metrics.totalCoursesCount}</Typography>
+                  <Typography variant="h4" fontWeight="bold" color="warning.main">{metrics.totalCoursesCount}</Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: '#ed6c02', width: 50, height: 50 }}><MenuBookIcon sx={{ fontSize: 28 }} /></Avatar>
+                <Avatar sx={{ bgcolor: '#ed6c02', width: 50, height: 50 }}><MenuBookIcon /></Avatar>
               </Box>
             </CardContent>
           </Card>
@@ -357,9 +362,9 @@ function Dashboard() {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>استبيانات</Typography>
-                  <Typography variant="h4" component="div" color="#00838f" fontWeight="bold">{metrics.totalPollsCount}</Typography>
+                  <Typography variant="h4" fontWeight="bold" color="#00838f">{metrics.totalPollsCount}</Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: '#00838f', width: 50, height: 50 }}><PollIcon sx={{ fontSize: 28 }} /></Avatar>
+                <Avatar sx={{ bgcolor: '#00838f', width: 50, height: 50 }}><PollIcon /></Avatar>
               </Box>
             </CardContent>
           </Card>
@@ -376,7 +381,7 @@ function Dashboard() {
             size="small"
             startIcon={<RefreshIcon />}
             onClick={() => navigate('/admin/weekly-program')}
-            sx={{ textTransform: 'none' }}
+            sx={{ textTransform: 'none', borderRadius: 2 }}
           >
             إدارة البرنامج
           </Button>
@@ -390,15 +395,25 @@ function Dashboard() {
         {tab === 0 && (
           <Box>
             {!hasSchedule ? (
-              <Alert severity="info" sx={{ borderRadius: 2, py: 2 }}>
-                <Box sx={{ textAlign: 'center' }}>
-                  <ScheduleIcon sx={{ fontSize: 48, color: '#1976d2', mb: 2, opacity: 0.7 }} />
-                  <Typography variant="h6" gutterBottom>لا يوجد برنامج دوام</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    لم يتم إنشاء جدول الدوام بعد. قم بتوليد البرنامج من صفحة "البرنامج الأسبوعي".
-                  </Typography>
-                </Box>
-              </Alert>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  py: 8,
+                  bgcolor: '#f5f5f5',
+                  borderRadius: 2
+                }}
+              >
+                <ScheduleIcon sx={{ fontSize: 64, color: '#1976d2', mb: 2, opacity: 0.5 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  لا يوجد برنامج دوام
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  لم يتم إنشاء جدول الدوام بعد. قم بتوليد البرنامج من صفحة "البرنامج الأسبوعي".
+                </Typography>
+              </Box>
             ) : (
               <Box>
                 {dayOrder.map(day => {
@@ -418,7 +433,7 @@ function Dashboard() {
                           color: '#1565c0'
                         }}
                       >
-                         {day} ({sessions.length} مواد)
+                        📅 {day} ({sessions.length} مواد)
                       </Typography>
                       
                       <Table sx={{ minWidth: 600 }}>
@@ -433,7 +448,7 @@ function Dashboard() {
                           {sessions.map((item, idx) => (
                             <TableRow key={item.id || idx} hover>
                               <TableCell>
-                                {item.start_time?.substring(0, 5) || item.start_time} - {item.end_time?.substring(0, 5) || item.end_time}
+                                {item.start_time?.substring(0, 5)} - {item.end_time?.substring(0, 5)}
                               </TableCell>
                               <TableCell>
                                 <Chip 
@@ -459,15 +474,25 @@ function Dashboard() {
         {tab === 1 && (
           <Box>
             {!hasExams ? (
-              <Alert severity="info" sx={{ borderRadius: 2, py: 2 }}>
-                <Box sx={{ textAlign: 'center' }}>
-                  <ScheduleIcon sx={{ fontSize: 48, color: '#1976d2', mb: 2, opacity: 0.7 }} />
-                  <Typography variant="h6" gutterBottom>لا توجد امتحانات مجدولة حالياً</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    قم بتوليد جدول الامتحانات من صفحة "البرنامج الأسبوعي".
-                  </Typography>
-                </Box>
-              </Alert>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  py: 8,
+                  bgcolor: '#f5f5f5',
+                  borderRadius: 2
+                }}
+              >
+                <ScheduleIcon sx={{ fontSize: 64, color: '#ed6c02', mb: 2, opacity: 0.5 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  لا توجد امتحانات مجدولة حالياً
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  قم بتوليد جدول الامتحانات من صفحة "البرنامج الأسبوعي".
+                </Typography>
+              </Box>
             ) : (
               <Box>
                 {dayOrder.map(day => {
@@ -487,7 +512,7 @@ function Dashboard() {
                           color: '#ed6c02'
                         }}
                       >
-                         {day} ({exams.length} امتحانات)
+                        📅 {day} ({exams.length} امتحانات)
                       </Typography>
                       
                       <Table sx={{ minWidth: 600 }}>
@@ -502,7 +527,7 @@ function Dashboard() {
                           {exams.map((item, idx) => (
                             <TableRow key={item.id || idx} hover>
                               <TableCell>
-                                {item.start_time?.substring(0, 5) || item.start_time} - {item.end_time?.substring(0, 5) || item.end_time}
+                                {item.start_time?.substring(0, 5)} - {item.end_time?.substring(0, 5)}
                               </TableCell>
                               <TableCell>
                                 <Chip 

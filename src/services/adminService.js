@@ -86,6 +86,7 @@ export const getReports = async () => {
 export const getReportsByRole = async (role) => {
   try {
     const response = await apiClient.get('/admin/reports', { params: { role } });
+    console.log('📊 تقرير الدور:', response.data);
     return response.data;
   } catch (error) {
     console.error(`خطأ في جلب تقارير ${role}:`, error);
@@ -95,7 +96,10 @@ export const getReportsByRole = async (role) => {
 
 export const saveReport = async (role) => {
   try {
-    const response = await apiClient.post('/admin/reports/save', null, { params: { role } });
+    const response = await apiClient.post('/admin/reports/save', null, { 
+      params: { role } 
+    });
+    console.log(' حفظ التقرير:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في حفظ التقرير:', error);
@@ -106,17 +110,27 @@ export const saveReport = async (role) => {
 export const getReportsHistory = async () => {
   try {
     const response = await apiClient.get('/admin/reports/history');
-    return response.data;
+    console.log(' تاريخ التقارير من API:', response.data);
+    
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+    if (response.data && response.data.reports && Array.isArray(response.data.reports)) {
+      return response.data.reports;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   } catch (error) {
     console.error('خطأ في جلب تاريخ التقارير:', error);
     return [];
   }
 };
-
 export const getAllCourses = async () => {
   try {
     const response = await apiClient.get('/admin/courses');
-    console.log('✅ المواد المستلمة:', response.data);
+    console.log(' المواد المستلمة:', response.data);
     
     if (response.data && response.data.data && Array.isArray(response.data.data)) {
       return response.data.data;
@@ -124,17 +138,61 @@ export const getAllCourses = async () => {
     if (Array.isArray(response.data)) {
       return response.data;
     }
-    if (response.data && response.data.courses && Array.isArray(response.data.courses)) {
-      return response.data.courses;
-    }
     return [];
   } catch (error) {
-    console.error(' خطأ في جلب المواد:', error);
+    console.error('خطأ في جلب المواد:', error);
     return [];
   }
 };
 
 export const getCourses = getAllCourses;
+export const addCourse = async (courseData) => {
+  try {
+    const response = await apiClient.post('/admin/add-course', {
+      name: courseData.name,
+      code: courseData.code,
+      capacity: courseData.capacity,
+      teacher_id: courseData.teacher_id,
+    });
+    console.log(' تم إضافة المادة:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في إضافة المادة:', error);
+    throw error;
+  }
+};
+
+export const updateCourse = async (id, courseData) => {
+  try {
+    const response = await apiClient.put(`/admin/courses/${id}`, {
+      name: courseData.name,
+      code: courseData.code,
+      capacity: courseData.capacity,
+      teacher_id: courseData.teacher_id,
+    });
+    console.log('تم تعديل المادة:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في تعديل المادة:', error);
+    throw error;
+  }
+};
+
+export const deleteCourse = async (id) => {
+  try {
+    const response = await apiClient.delete(`/admin/courses/${id}`);
+    console.log(' تم حذف المادة:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في حذف المادة:', error);
+    throw error;
+  }
+};
+
+export const getAnnouncements = getAllCourses;
+export const createAnnouncement = addCourse;
+export const updateAnnouncement = updateCourse;
+export const deleteAnnouncement = deleteCourse;
 
 export const getAllStudents = async () => {
   try {
@@ -274,8 +332,6 @@ export const deleteSession = async (sessionId) => {
 
 export const deleteWeeklyProgram = deleteSession;
 export const deleteExamProgram = deleteSession;
-
-
 export const getHalls = async () => {
   try {
     const response = await apiClient.get('/admin/halls');
@@ -331,7 +387,6 @@ export const deleteHall = async (id) => {
     throw error;
   }
 };
-
 
 export const getAllPolls = async () => {
   try {
@@ -390,51 +445,10 @@ export const getPollResults = async (pollId) => {
 };
 
 
-export const getAnnouncements = async () => {
-  try {
-    const response = await apiClient.get('/announcements');
-    return response.data;
-  } catch (error) {
-    console.error('خطأ في جلب الإعلانات:', error);
-    return [];
-  }
-};
-
-export const createAnnouncement = async (data) => {
-  try {
-    const response = await apiClient.post('/announcements', data);
-    return response.data;
-  } catch (error) {
-    console.error('خطأ في إنشاء الإعلان:', error);
-    throw error;
-  }
-};
-
-export const updateAnnouncement = async (id, data) => {
-  try {
-    const response = await apiClient.put(`/announcements/${id}`, data);
-    return response.data;
-  } catch (error) {
-    console.error('خطأ في تحديث الإعلان:', error);
-    throw error;
-  }
-};
-
-export const deleteAnnouncement = async (id) => {
-  try {
-    const response = await apiClient.delete(`/announcements/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error('خطأ في حذف الإعلان:', error);
-    throw error;
-  }
-};
-
-
 export const getRealNotifications = async () => {
   try {
     const response = await apiClient.get('/notifications');
-    console.log('🔔 الإشعارات المستلمة:', response.data);
+    console.log(' الإشعارات المستلمة:', response.data);
     return {
       unread_count: response.data.unread_count || 0,
       notifications: response.data.notifications || []
@@ -512,7 +526,8 @@ export const updateComplaintAnswer = async (complaintId, answer) => {
     console.error('خطأ في تحديث الرد:', error);
     throw error;
   }
-}
+};
+
 
 export const getUpcomingQuizzes = async () => {
   try {

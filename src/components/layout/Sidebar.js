@@ -35,7 +35,7 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
 
   const adminItems = [
     { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
-    { text: 'الإعلانات', path: 'announcements', icon: <AnnouncementIcon /> },
+    { text: 'الإعلان عن دورات', path: 'announcements', icon: <AnnouncementIcon /> },
     { text: 'إضافة مستخدم', path: 'add-user', icon: <PersonAddIcon /> },
     { text: 'الاستبيانات', path: 'polls', icon: <PollIcon /> },
     { text: 'التقارير', path: 'reports', icon: <AssessmentIcon /> },

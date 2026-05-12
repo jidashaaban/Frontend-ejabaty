@@ -29,7 +29,7 @@ const Navbar = ({ toggleSidebar, sidebarOpen, handleLogout }) => {
     const titles = {
       '': 'لوحة التحكم',
       'dashboard': 'لوحة التحكم',
-      'announcements': 'الإعلانات',
+      'announcements': 'الإعلان عن دورات',
       'add-user': 'إضافة مستخدم',
       'polls': 'الاستبيانات',
       'reports': 'التقارير',

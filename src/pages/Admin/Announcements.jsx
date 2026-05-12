@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Typography,
   Button,
-  Switch,
-  FormControlLabel,
   TextField,
   IconButton,
   Box,
@@ -21,18 +19,16 @@ import {
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Announcement as AnnouncementIcon,
+  MenuBook as MenuBookIcon,
   Add as AddIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 import {
-  getAnnouncements,
-  createAnnouncement,
-  updateAnnouncement,
-  deleteAnnouncement,
+  getAllCourses,
+  addCourse,
+  updateCourse,
+  deleteCourse,
 } from '../../services/adminService';
 
 const Announcements = () => {
@@ -46,24 +42,22 @@ const Announcements = () => {
   const fetchData = async () => {
     setFetching(true);
     try {
-      const data = await getAnnouncements();
-      console.log('📢 الإعلانات المستلمة:', data);
+      const data = await getAllCourses();
+      console.log(' المواد المستلمة:', data);
       
-      let announcementsArray = [];
+      let coursesArray = [];
       if (Array.isArray(data)) {
-        announcementsArray = data;
+        coursesArray = data;
       } else if (data && data.data && Array.isArray(data.data)) {
-        announcementsArray = data.data;
-      } else if (data && data.announcements && Array.isArray(data.announcements)) {
-        announcementsArray = data.announcements;
+        coursesArray = data.data;
       } else {
-        announcementsArray = [];
+        coursesArray = [];
       }
       
-      setAnnouncements(announcementsArray);
+      setAnnouncements(coursesArray);
     } catch (error) {
-      console.error('خطأ في جلب الإعلانات:', error);
-      setToast({ open: true, message: 'فشل في جلب الإعلانات', severity: 'error' });
+      console.error('خطأ في جلب المواد:', error);
+      setToast({ open: true, message: 'فشل في جلب المواد', severity: 'error' });
     } finally {
       setFetching(false);
     }
@@ -76,29 +70,34 @@ const Announcements = () => {
   const handleAdd = () => {
     setCurrent({ 
       id: null,
-      title: '', 
-      description: '', 
-      date: new Date().toISOString().split('T')[0], 
-      published: false, 
-      image: '' 
+      name: '',
+      code: '',
+      capacity: '',
+      teacher_id: '',
     });
     setModalOpen(true);
   };
 
   const handleEdit = (row) => {
-    setCurrent({ ...row });
+    setCurrent({ 
+      id: row.id,
+      name: row.name,
+      code: row.code || '',
+      capacity: row.capacity || '',
+      teacher_id: row.teacher_id || '',
+    });
     setModalOpen(true);
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
+    if (window.confirm('هل أنت متأكد من حذف هذه المادة؟')) {
       setLoading(true);
       try {
-        await deleteAnnouncement(id);
-        setToast({ open: true, message: 'تم حذف الإعلان بنجاح', severity: 'success' });
+        await deleteCourse(id);
+        setToast({ open: true, message: 'تم حذف المادة بنجاح', severity: 'success' });
         fetchData();
       } catch (error) {
-        setToast({ open: true, message: error.response?.data?.message || 'فشل في حذف الإعلان', severity: 'error' });
+        setToast({ open: true, message: error.response?.data?.message || 'فشل في حذف المادة', severity: 'error' });
       } finally {
         setLoading(false);
       }
@@ -106,49 +105,44 @@ const Announcements = () => {
   };
 
   const handleSave = async () => {
-    if (!current.title || !current.title.trim()) {
-      setToast({ open: true, message: 'الرجاء إدخال عنوان الإعلان', severity: 'error' });
+    if (!current.name || !current.name.trim()) {
+      setToast({ open: true, message: 'الرجاء إدخال اسم المادة', severity: 'error' });
       return;
     }
-    if (!current.description || !current.description.trim()) {
-      setToast({ open: true, message: 'الرجاء إدخال نص الإعلان', severity: 'error' });
+    if (!current.code || !current.code.trim()) {
+      setToast({ open: true, message: 'الرجاء إدخال كود المادة', severity: 'error' });
+      return;
+    }
+    if (!current.capacity || parseInt(current.capacity) <= 0) {
+      setToast({ open: true, message: 'الرجاء إدخال سعة صحيحة للمادة', severity: 'error' });
+      return;
+    }
+    if (!current.teacher_id) {
+      setToast({ open: true, message: 'الرجاء إدخال معرف المعلم', severity: 'error' });
       return;
     }
     
     setLoading(true);
     try {
       const payload = {
-        title: current.title,
-        description: current.description,
-        date: current.date,
-        published: current.published || false,
-        image: current.image || '',
+        name: current.name,
+        code: current.code,
+        capacity: parseInt(current.capacity),
+        teacher_id: parseInt(current.teacher_id),
       };
       
       if (current.id) {
-        await updateAnnouncement(current.id, payload);
-        setToast({ open: true, message: 'تم تعديل الإعلان بنجاح', severity: 'success' });
+        await updateCourse(current.id, payload);
+        setToast({ open: true, message: 'تم تعديل المادة بنجاح', severity: 'success' });
       } else {
-        await createAnnouncement(payload);
-        setToast({ open: true, message: 'تم إضافة الإعلان بنجاح', severity: 'success' });
+        await addCourse(payload);
+        setToast({ open: true, message: 'تم إضافة المادة بنجاح', severity: 'success' });
       }
       setModalOpen(false);
       fetchData();
     } catch (err) {
-      setToast({ open: true, message: err.response?.data?.message || 'فشل في حفظ الإعلان', severity: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTogglePublish = async (row) => {
-    setLoading(true);
-    try {
-      await updateAnnouncement(row.id, { published: !row.published });
-      setToast({ open: true, message: row.published ? 'تم إلغاء نشر الإعلان' : 'تم نشر الإعلان', severity: 'success' });
-      fetchData();
-    } catch (error) {
-      setToast({ open: true, message: error.response?.data?.message || 'فشل في تغيير حالة النشر', severity: 'error' });
+      console.error('خطأ:', err);
+      setToast({ open: true, message: err.response?.data?.message || 'فشل في حفظ المادة', severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -158,7 +152,7 @@ const Announcements = () => {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
-        <Typography sx={{ mr: 2 }}>جاري تحميل الإعلانات...</Typography>
+        <Typography sx={{ mr: 2 }}>جاري تحميل المواد...</Typography>
       </Box>
     );
   }
@@ -166,9 +160,9 @@ const Announcements = () => {
   return (
     <Box>
       <PageHeader 
-        title="الإعلانات"
-        subtitle="أضف أو عدل أو احذف الإعلانات"
-        icon={<AnnouncementIcon sx={{ fontSize: 20 }} />}
+        title="المواد الدراسية"
+        subtitle="أضف أو عدل أو احذف المواد الدراسية"
+        icon={<MenuBookIcon sx={{ fontSize: 20 }} />}
       />
 
       <Box display="flex" justifyContent="flex-end" mb={3}>
@@ -188,27 +182,27 @@ const Announcements = () => {
             transition: 'all 0.3s ease',
           }}
         >
-          إعلان جديد
+          مادة جديدة
         </Button>
       </Box>
 
       {announcements.length === 0 ? (
         <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 3 }}>
-          <AnnouncementIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary">لا توجد إعلانات حالياً</Typography>
+          <MenuBookIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary">لا توجد مواد حالياً</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            اضغط على "إعلان جديد" لإضافة أول إعلان
+            اضغط على "مادة جديدة" لإضافة أول مادة
           </Typography>
         </Paper>
       ) : (
         <Grid container spacing={3}>
-          {announcements.map((announcement) => (
-            <Grid item xs={12} md={6} lg={4} key={announcement.id}>
+          {announcements.map((course) => (
+            <Grid item xs={12} md={6} lg={4} key={course.id}>
               <Card sx={{
                 borderRadius: 3,
                 transition: '0.3s',
                 bgcolor: '#ffffff',
-                border: announcement.published ? '1px solid #4caf50' : '1px solid #e0e0e0',
+                border: '1px solid #e0e0e0',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 '&:hover': { 
                   transform: 'translateY(-4px)', 
@@ -216,51 +210,43 @@ const Announcements = () => {
                 }
               }}>
                 <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                    <Chip
-                      label={announcement.published ? 'منشور' : 'مسودة'}
-                      size="small"
-                      color={announcement.published ? 'success' : 'default'}
-                      icon={announcement.published ? <VisibilityIcon sx={{ fontSize: 16 }} /> : <VisibilityOffIcon sx={{ fontSize: 16 }} />}
-                    />
+                  <Box display="flex" justifyContent="flex-end" alignItems="flex-start" mb={1}>
                     <Box>
-                      <IconButton onClick={() => handleEdit(announcement)} color="primary" size="small" title="تعديل">
+                      <IconButton onClick={() => handleEdit(course)} color="primary" size="small" title="تعديل">
                         <EditIcon fontSize="small" />
                       </IconButton>
-                      <IconButton onClick={() => handleDelete(announcement.id)} color="error" size="small" title="حذف">
+                      <IconButton onClick={() => handleDelete(course.id)} color="error" size="small" title="حذف">
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
                   </Box>
 
                   <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: '#1565c0' }}>
-                    <AnnouncementIcon color="primary" fontSize="small" />
-                    {announcement.title}
+                    <MenuBookIcon color="primary" fontSize="small" />
+                    {course.name}
                   </Typography>
 
-                  <Typography variant="body2" sx={{ mb: 2, color: '#37474f', lineHeight: 1.6 }}>
-                    {announcement.description.length > 100 
-                      ? `${announcement.description.substring(0, 100)}...` 
-                      : announcement.description}
+                  <Typography variant="body2" sx={{ mb: 1, color: '#37474f' }}>
+                    <strong>الكود:</strong> {course.code}
                   </Typography>
 
-                  <Box display="flex" alignItems="center" justifyContent="space-between" mt={2}>
+                  <Typography variant="body2" sx={{ mb: 1, color: '#37474f' }}>
+                    <strong>السعة:</strong> {course.capacity} طالب
+                  </Typography>
+
+                  {course.teacher && (
+                    <Typography variant="body2" sx={{ mb: 2, color: '#37474f' }}>
+                      <strong>المعلم:</strong> {course.teacher.name}
+                    </Typography>
+                  )}
+
+                  <Box display="flex" alignItems="center" justifyContent="flex-end" mt={2}>
                     <Chip 
-                      label={announcement.date || (announcement.created_at ? new Date(announcement.created_at).toLocaleDateString('ar') : 'تاريخ غير محدد')} 
+                      label={`تمت الإضافة: ${new Date(course.created_at).toLocaleDateString('ar')}`} 
                       size="small" 
                       variant="outlined"
                       sx={{ borderColor: '#1976d2', color: '#1976d2' }}
                     />
-                    <Button
-                      size="small"
-                      onClick={() => handleTogglePublish(announcement)}
-                      sx={{ 
-                        textTransform: 'none',
-                        color: announcement.published ? '#f44336' : '#4caf50',
-                      }}
-                    >
-                      {announcement.published ? 'إلغاء النشر' : 'نشر'}
-                    </Button>
                   </Box>
                 </CardContent>
               </Card>
@@ -277,62 +263,53 @@ const Announcements = () => {
           alignItems: 'center', 
           gap: 1 
         }}>
-          <AnnouncementIcon />
-          {current?.id ? 'تعديل إعلان' : 'إضافة إعلان جديد'}
+          <MenuBookIcon />
+          {current?.id ? 'تعديل مادة' : 'إضافة مادة جديدة'}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           <TextField
-            label="عنوان الإعلان"
+            label="اسم المادة"
             fullWidth
             margin="normal"
-            value={current?.title || ''}
-            onChange={(e) => setCurrent({ ...current, title: e.target.value })}
+            value={current?.name || ''}
+            onChange={(e) => setCurrent({ ...current, name: e.target.value })}
             required
             variant="outlined"
-            placeholder="أدخل عنوان الإعلان"
+            placeholder="مثال: الرياضيات"
           />
           <TextField
-            label="نص الإعلان"
+            label="كود المادة"
             fullWidth
             margin="normal"
-            multiline
-            rows={4}
-            value={current?.description || ''}
-            onChange={(e) => setCurrent({ ...current, description: e.target.value })}
+            value={current?.code || ''}
+            onChange={(e) => setCurrent({ ...current, code: e.target.value })}
             required
             variant="outlined"
-            placeholder="أدخل محتوى الإعلان"
+            placeholder="مثال: MATH101"
           />
           <TextField
-            label="التاريخ"
-            type="date"
+            label="السعة (عدد الطلاب)"
+            type="number"
             fullWidth
             margin="normal"
-            InputLabelProps={{ shrink: true }}
-            value={current?.date || new Date().toISOString().split('T')[0]}
-            onChange={(e) => setCurrent({ ...current, date: e.target.value })}
+            value={current?.capacity || ''}
+            onChange={(e) => setCurrent({ ...current, capacity: e.target.value })}
+            required
             variant="outlined"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={current?.published || false}
-                onChange={(e) => setCurrent({ ...current, published: e.target.checked })}
-                color="primary"
-              />
-            }
-            label={current?.published ? 'منشور (مرئي للجميع)' : 'مسودة (غير منشور)'}
-            sx={{ mt: 1 }}
+            placeholder="مثال: 30"
+            inputProps={{ min: 1 }}
           />
           <TextField
-            label="رابط الصورة (اختياري)"
+            label="معرف المعلم (Teacher ID)"
+            type="number"
             fullWidth
             margin="normal"
-            value={current?.image || ''}
-            onChange={(e) => setCurrent({ ...current, image: e.target.value })}
+            value={current?.teacher_id || ''}
+            onChange={(e) => setCurrent({ ...current, teacher_id: e.target.value })}
+            required
             variant="outlined"
-            helperText="أدخل رابط صورة للإعلان (اختياري)"
-            placeholder="https://example.com/image.jpg"
+            placeholder="مثال: 1"
+            helperText="أدخل ID المعلم المسؤول عن هذه المادة"
           />
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
