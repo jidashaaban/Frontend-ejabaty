@@ -26,52 +26,87 @@ import {
   School as SchoolIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
-import { getTeacherSchedule, getExamModels, getAnnouncedTests } from '../../services/teacherService';
+import { getTeacherDashboardStats } from '../../services/teacherService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
-  const [schedule, setSchedule] = useState([]);
-  const [examModels, setExamModels] = useState([]);
-  const [announcedTests, setAnnouncedTests] = useState([]);
+  const [dashboardData, setDashboardData] = useState({
+    teacher_name: '',
+    metrics: {
+      courses_count: 0,
+      quizzes_count: 0,
+      marking_schemes_count: 0,
+    },
+    schedule: [],
+  });
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+
+  // أيام الأسبوع بالعربية (لتحويل الأسماء الإنجليزية)
+  const daysMap = {
+    'Sunday': 'الأحد',
+    'Monday': 'الإثنين',
+    'Tuesday': 'الثلاثاء',
+    'Wednesday': 'الأربعاء',
+    'Thursday': 'الخميس',
+  };
+
+  const dayOrder = { 'الأحد': 0, 'الإثنين': 1, 'الثلاثاء': 2, 'الأربعاء': 3, 'الخميس': 4 };
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const scheduleData = await getTeacherSchedule(user.id);
-        setSchedule(scheduleData || []);
-        const modelsData = await getExamModels();
-        setExamModels(modelsData || []);
-        const testsData = await getAnnouncedTests();
-        setAnnouncedTests(testsData || []);
+        const response = await getTeacherDashboardStats();
+        console.log('📊 بيانات لوحة التحكم:', response);
+        
+        if (response && response.success && response.data) {
+          // تنسيق جدول الأستاذ
+          let formattedSchedule = [];
+          if (response.data.schedule && Array.isArray(response.data.schedule)) {
+            formattedSchedule = response.data.schedule.map(session => ({
+              id: session.id,
+              day: daysMap[session.day] || session.day,
+              subject: session.course?.name || 'غير محدد',
+              start_time: session.start_time,
+              end_time: session.end_time,
+              time: `${session.start_time?.substring(0, 5) || ''} - ${session.end_time?.substring(0, 5) || ''}`,
+              room: session.hall?.name || 'غير محدد',
+              class: session.course?.code || '',
+            }));
+          }
+          
+          setDashboardData({
+            teacher_name: response.data.teacher_name || user?.name || 'الأستاذ',
+            metrics: {
+              courses_count: response.data.metrics?.courses_count || 0,
+              quizzes_count: response.data.metrics?.quizzes_count || 0,
+              marking_schemes_count: response.data.metrics?.marking_schemes_count || 0,
+            },
+            schedule: formattedSchedule,
+          });
+        } else {
+          throw new Error('بيانات غير صالحة من الخادم');
+        }
       } catch (error) {
-        setSchedule([
-          { id: 1, subject: 'الرياضيات', day: 'الأحد', time: '09:00-11:00', room: 'قاعة 101', class: 'الثاني علمي' },
-          { id: 2, subject: 'الفيزياء', day: 'الثلاثاء', time: '11:00-13:00', room: 'قاعة 102', class: 'الثالث علمي' },
-          { id: 3, subject: 'الكيمياء', day: 'الخميس', time: '10:00-12:00', room: 'مختبر الكيمياء', class: 'الثاني علمي' },
-        ]);
-        setExamModels([
-          { id: 1, title: 'نموذج امتحان الرياضيات', subject: 'الرياضيات', date: '2026-04-20' },
-          { id: 2, title: 'نموذج امتحان الفيزياء', subject: 'الفيزياء', date: '2026-04-18' },
-          { id: 3, title: 'نموذج امتحان الكيمياء', subject: 'الكيمياء', date: '2026-04-15' },
-        ]);
-        setAnnouncedTests([
-          { id: 1, title: 'اختبار الرياضيات', subject: 'الرياضيات', date: '2026-04-25', time: '10:00-12:00' },
-          { id: 2, title: 'اختبار الفيزياء', subject: 'الفيزياء', date: '2026-04-27', time: '10:00-12:00' },
-        ]);
+        console.error('خطأ في جلب البيانات:', error);
+        setToast({ open: true, message: 'فشل في جلب البيانات من الخادم', severity: 'error' });
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, [user.id]);
+    
+    if (user?.id) {
+      fetchData();
+    }
+  }, [user?.id, user?.name]);
 
-  const dayOrder = { 'الأحد': 0, 'الإثنين': 1, 'الثلاثاء': 2, 'الأربعاء': 3, 'الخميس': 4 };
-  const sortedSchedule = [...schedule].sort((a, b) => dayOrder[a.day] - dayOrder[b.day]);
+  // ترتيب الجدول حسب الأيام
+  const sortedSchedule = [...dashboardData.schedule].sort((a, b) => 
+    (dayOrder[a.day] || 99) - (dayOrder[b.day] || 99)
+  );
 
   if (loading) {
     return (
@@ -86,7 +121,7 @@ const Dashboard = () => {
     <Box>
       <PageHeader
         title="لوحة التحكم"
-        subtitle="مرحباً بك في لوحة تحكم الأستاذ"
+        subtitle={`مرحباً بك في لوحة تحكم الأستاذ, ${dashboardData.teacher_name}`}
         icon={<DashboardIcon sx={{ fontSize: 20 }} />}
       />
 
@@ -104,37 +139,10 @@ const Dashboard = () => {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="caption" color="#1565c0" gutterBottom>
-                    الحصص الأسبوعية
+                    المواد التي أدرسها
                   </Typography>
                   <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                    {schedule.length}
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: '#1976d2', width: 45, height: 45 }}>
-                  <CalendarMonthIcon sx={{ fontSize: 24 }} />
-                </Avatar>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={4}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%)',
-              transition: '0.3s',
-              '&:hover': { transform: 'translateY(-3px)', boxShadow: 4 },
-            }}
-          >
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography variant="caption" color="#1565c0" gutterBottom>
-                    النماذج الامتحانية
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                    {examModels.length}
+                    {dashboardData.metrics.courses_count}
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: '#1976d2', width: 45, height: 45 }}>
@@ -161,11 +169,38 @@ const Dashboard = () => {
                     الاختبارات المعلنة
                   </Typography>
                   <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                    {announcedTests.length}
+                    {dashboardData.metrics.quizzes_count}
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: '#1976d2', width: 45, height: 45 }}>
                   <AnnouncementIcon sx={{ fontSize: 24 }} />
+                </Avatar>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={4}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%)',
+              transition: '0.3s',
+              '&:hover': { transform: 'translateY(-3px)', boxShadow: 4 },
+            }}
+          >
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="caption" color="#1565c0" gutterBottom>
+                    نماذج التصحيح
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                    {dashboardData.metrics.marking_schemes_count}
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: '#1976d2', width: 45, height: 45 }}>
+                  <SchoolIcon sx={{ fontSize: 24 }} />
                 </Avatar>
               </Box>
             </CardContent>
@@ -198,8 +233,10 @@ const Dashboard = () => {
         </Box>
 
         <Box sx={{ p: 2 }}>
-          {schedule.length === 0 ? (
-            <Alert severity="info" sx={{ borderRadius: 2 }}>لا توجد حصص في جدولك الأسبوعي</Alert>
+          {sortedSchedule.length === 0 ? (
+            <Alert severity="info" sx={{ borderRadius: 2 }}>
+              لا توجد حصص في جدولك الأسبوعي حالياً. سيظهر هنا برنامج الدوام بعد توليده من قبل الإدارة.
+            </Alert>
           ) : (
             <Table size="small">
               <TableHead>
@@ -245,7 +282,9 @@ const Dashboard = () => {
                         {session.room}
                       </Box>
                     </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid #e0e0e0' }}>{session.class}</TableCell>
+                    <TableCell sx={{ borderBottom: '1px solid #e0e0e0' }}>
+                      {session.class}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

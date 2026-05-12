@@ -22,6 +22,7 @@ import {
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
   Poll as PollIcon,
   AddCircle as AddCircleIcon,
   RemoveCircle as RemoveCircleIcon,
@@ -32,8 +33,10 @@ import Toast from '../../components/common/Toast';
 import {
   getAllPolls,
   createPoll,
+  updatePoll,
   deletePoll,
   getPollResults,
+  getPollById,
 } from '../../services/adminService';
 
 function Polls() {
@@ -44,6 +47,8 @@ function Polls() {
   const [selectedPoll, setSelectedPoll] = useState(null);
   const [pollResults, setPollResults] = useState([]);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+  const [editMode, setEditMode] = useState(false);
+  const [editingPollId, setEditingPollId] = useState(null);
   
   const getDefaultExpiresAt = () => {
     const date = new Date();
@@ -152,6 +157,78 @@ function Polls() {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setEditMode(false);
+    setEditingPollId(null);
+    setPollForm({
+      title: '',
+      description: '',
+      expires_at: getDefaultExpiresAt(),
+      questions: [{ question_text: '', options: ['', ''] }]
+    });
+  };
+
+  // ✅ دالة التعديل المعدلة - تستخدم getPollById
+  const handleEditPoll = async (poll) => {
+    setLoading(true);
+    try {
+      // جلب الاستبيان كامل مع الأسئلة من API
+      const fullPoll = await getPollById(poll.id);
+      console.log('📝 الاستبيان الكامل للتعديل:', fullPoll);
+      
+      setEditMode(true);
+      setEditingPollId(fullPoll.id);
+      
+      // تنسيق تاريخ الانتهاء
+      let expiresAtFormatted = '';
+      if (fullPoll.expires_at) {
+        const date = new Date(fullPoll.expires_at);
+        expiresAtFormatted = date.toISOString().slice(0, 16);
+      }
+      
+      // تحويل الأسئلة
+      let questions = [];
+      if (fullPoll.questions && Array.isArray(fullPoll.questions) && fullPoll.questions.length > 0) {
+        questions = fullPoll.questions.map(q => {
+          let options = [];
+          if (q.options && Array.isArray(q.options)) {
+            options = q.options.map(opt => {
+              if (typeof opt === 'string') return opt;
+              return opt.option_text || opt.text || '';
+            });
+          }
+          // التأكد من وجود خيارين على الأقل
+          while (options.length < 2) {
+            options.push('');
+          }
+          return {
+            question_text: q.question_text || q.text || '',
+            options: options
+          };
+        });
+      }
+      
+      if (questions.length === 0) {
+        questions = [{ question_text: '', options: ['', ''] }];
+      }
+      
+      setPollForm({
+        title: fullPoll.title || '',
+        description: fullPoll.description || '',
+        expires_at: expiresAtFormatted || getDefaultExpiresAt(),
+        questions: questions
+      });
+      
+      setOpenDialog(true);
+    } catch (error) {
+      console.error('خطأ في جلب الاستبيان للتعديل:', error);
+      setToast({ open: true, message: 'فشل في جلب بيانات الاستبيان', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSavePoll = async () => {
     if (!pollForm.title.trim()) {
       setToast({ open: true, message: 'الرجاء إدخال عنوان الاستبيان', severity: 'error' });
@@ -162,6 +239,7 @@ function Polls() {
       setToast({ open: true, message: 'الرجاء تحديد تاريخ انتهاء الاستبيان', severity: 'error' });
       return;
     }
+    
     const expiresAtDate = new Date(pollForm.expires_at);
     const now = new Date();
     
@@ -196,10 +274,17 @@ function Polls() {
         }))
       };
       
-      console.log('البيانات المرسلة للـ API:', pollData);
-      await createPoll(pollData);
-      setToast({ open: true, message: 'تم إضافة الاستبيان بنجاح', severity: 'success' });
+      if (editMode && editingPollId) {
+        await updatePoll(editingPollId, pollData);
+        setToast({ open: true, message: 'تم تعديل الاستبيان بنجاح', severity: 'success' });
+      } else {
+        await createPoll(pollData);
+        setToast({ open: true, message: 'تم إضافة الاستبيان بنجاح', severity: 'success' });
+      }
+      
       setOpenDialog(false);
+      setEditMode(false);
+      setEditingPollId(null);
       
       setPollForm({
         title: '',
@@ -207,12 +292,13 @@ function Polls() {
         expires_at: getDefaultExpiresAt(),
         questions: [{ question_text: '', options: ['', ''] }]
       });
+      
       fetchPolls();
     } catch (error) {
-      console.error('خطأ في إضافة الاستبيان:', error);
+      console.error('خطأ:', error);
       setToast({ 
         open: true, 
-        message: error.response?.data?.message || 'فشل في إضافة الاستبيان', 
+        message: error.response?.data?.message || (editMode ? 'فشل في تعديل الاستبيان' : 'فشل في إضافة الاستبيان'), 
         severity: 'error' 
       });
     }
@@ -276,7 +362,17 @@ function Polls() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => setOpenDialog(true)}
+          onClick={() => {
+            setEditMode(false);
+            setEditingPollId(null);
+            setPollForm({
+              title: '',
+              description: '',
+              expires_at: getDefaultExpiresAt(),
+              questions: [{ question_text: '', options: ['', ''] }]
+            });
+            setOpenDialog(true);
+          }}
           sx={{
             borderRadius: 2,
             px: 3,
@@ -322,7 +418,10 @@ function Polls() {
                       sx={{ bgcolor: '#1976d2', color: '#fff' }}
                     />
                     <Box>
-                      <IconButton onClick={() => handleViewResults(poll)} color="primary" size="small" title="عرض النتائج">
+                      <IconButton onClick={() => handleEditPoll(poll)} color="primary" size="small" title="تعديل">
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton onClick={() => handleViewResults(poll)} color="info" size="small" title="عرض النتائج">
                         <VisibilityIcon />
                       </IconButton>
                       <IconButton onClick={() => handleDeletePoll(poll.id)} color="error" size="small" title="حذف">
@@ -356,7 +455,7 @@ function Polls() {
         </Grid>
       )}
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle sx={{ 
           background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 
           color: '#fff', 
@@ -365,7 +464,7 @@ function Polls() {
           gap: 1 
         }}>
           <PollIcon />
-          إضافة استبيان جديد
+          {editMode ? 'تعديل استبيان' : 'إضافة استبيان جديد'}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           <TextField
@@ -475,8 +574,10 @@ function Polls() {
           </Button>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setOpenDialog(false)} variant="outlined">إلغاء</Button>
-          <Button onClick={handleSavePoll} variant="contained" sx={{ bgcolor: '#1976d2' }}>حفظ الاستبيان</Button>
+          <Button onClick={handleCloseDialog} variant="outlined">إلغاء</Button>
+          <Button onClick={handleSavePoll} variant="contained" sx={{ bgcolor: '#1976d2' }}>
+            {editMode ? 'تعديل' : 'حفظ'}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -485,7 +586,7 @@ function Polls() {
           background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 
           color: '#fff' 
         }}>
-           نتائج الاستبيان: {selectedPoll?.title}
+          📊 نتائج الاستبيان: {selectedPoll?.title}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           {pollResults && pollResults.length > 0 ? (

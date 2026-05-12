@@ -17,6 +17,8 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// ============= دوال المصادقة =============
+
 export const login = async (email, password) => {
   try {
     const response = await apiClient.post('/login', { email, password });
@@ -54,6 +56,8 @@ export const getCurrentUser = async () => {
     throw error;
   }
 };
+
+// ============= دوال لوحة التحكم والتقارير =============
 
 export const getDashboardMetrics = async () => {
   try {
@@ -99,7 +103,7 @@ export const saveReport = async (role) => {
     const response = await apiClient.post('/admin/reports/save', null, { 
       params: { role } 
     });
-    console.log(' حفظ التقرير:', response.data);
+    console.log('📝 حفظ التقرير:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في حفظ التقرير:', error);
@@ -110,7 +114,7 @@ export const saveReport = async (role) => {
 export const getReportsHistory = async () => {
   try {
     const response = await apiClient.get('/admin/reports/history');
-    console.log(' تاريخ التقارير من API:', response.data);
+    console.log('📋 تاريخ التقارير من API:', response.data);
     
     if (response.data && response.data.data && Array.isArray(response.data.data)) {
       return response.data.data;
@@ -127,10 +131,13 @@ export const getReportsHistory = async () => {
     return [];
   }
 };
+
+// ============= دوال المواد (Courses) =============
+
 export const getAllCourses = async () => {
   try {
     const response = await apiClient.get('/admin/courses');
-    console.log(' المواد المستلمة:', response.data);
+    console.log('📚 المواد المستلمة:', response.data);
     
     if (response.data && response.data.data && Array.isArray(response.data.data)) {
       return response.data.data;
@@ -146,6 +153,7 @@ export const getAllCourses = async () => {
 };
 
 export const getCourses = getAllCourses;
+
 export const addCourse = async (courseData) => {
   try {
     const response = await apiClient.post('/admin/add-course', {
@@ -154,7 +162,7 @@ export const addCourse = async (courseData) => {
       capacity: courseData.capacity,
       teacher_id: courseData.teacher_id,
     });
-    console.log(' تم إضافة المادة:', response.data);
+    console.log('✅ تم إضافة المادة:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في إضافة المادة:', error);
@@ -170,7 +178,7 @@ export const updateCourse = async (id, courseData) => {
       capacity: courseData.capacity,
       teacher_id: courseData.teacher_id,
     });
-    console.log('تم تعديل المادة:', response.data);
+    console.log('✅ تم تعديل المادة:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في تعديل المادة:', error);
@@ -181,7 +189,7 @@ export const updateCourse = async (id, courseData) => {
 export const deleteCourse = async (id) => {
   try {
     const response = await apiClient.delete(`/admin/courses/${id}`);
-    console.log(' تم حذف المادة:', response.data);
+    console.log('✅ تم حذف المادة:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في حذف المادة:', error);
@@ -189,15 +197,18 @@ export const deleteCourse = async (id) => {
   }
 };
 
+// ============= Aliases للإعلانات =============
 export const getAnnouncements = getAllCourses;
 export const createAnnouncement = addCourse;
 export const updateAnnouncement = updateCourse;
 export const deleteAnnouncement = deleteCourse;
 
+// ============= دوال الطلاب =============
+
 export const getAllStudents = async () => {
   try {
     const response = await apiClient.get('/admin/simple-students');
-    console.log(' الطلاب المستلمة:', response.data);
+    console.log('✅ الطلاب المستلمة:', response.data);
     
     if (Array.isArray(response.data)) {
       return response.data;
@@ -207,10 +218,12 @@ export const getAllStudents = async () => {
     }
     return [];
   } catch (error) {
-    console.error(' خطأ في جلب الطلاب:', error);
+    console.error('❌ خطأ في جلب الطلاب:', error);
     return [];
   }
 };
+
+// ============= دوال المستخدمين (إضافة) =============
 
 export const addTeacherViaAPI = async (teacherData) => {
   try {
@@ -290,6 +303,8 @@ export const getAllUsers = async (role = null) => {
   }
 };
 
+// ============= دوال الجداول (البرنامج الأسبوعي) =============
+
 export const getWeeklyProgram = async () => {
   try {
     const response = await apiClient.get('/admin-schedule', { params: { type: 'course' } });
@@ -332,10 +347,13 @@ export const deleteSession = async (sessionId) => {
 
 export const deleteWeeklyProgram = deleteSession;
 export const deleteExamProgram = deleteSession;
+
+// ============= دوال القاعات =============
+
 export const getHalls = async () => {
   try {
     const response = await apiClient.get('/admin/halls');
-    console.log(' القاعات المستلمة:', response.data);
+    console.log('🏢 القاعات المستلمة:', response.data);
     
     if (Array.isArray(response.data)) {
       return response.data;
@@ -388,10 +406,12 @@ export const deleteHall = async (id) => {
   }
 };
 
+// ============= دوال الاستبيانات =============
+
 export const getAllPolls = async () => {
   try {
     const response = await apiClient.get('/admin/polls');
-    console.log(' الاستبيانات المستلمة:', response.data);
+    console.log('📊 الاستبيانات المستلمة:', response.data);
     
     if (Array.isArray(response.data)) {
       return response.data;
@@ -424,6 +444,21 @@ export const createPoll = async (pollData) => {
   }
 };
 
+export const updatePoll = async (id, pollData) => {
+  try {
+    const response = await apiClient.put(`/admin/polls/${id}`, {
+      title: pollData.title,
+      description: pollData.description || '',
+      expires_at: pollData.expires_at,
+      questions: pollData.questions
+    });
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في تحديث الاستبيان:', error);
+    throw error;
+  }
+};
+
 export const deletePoll = async (id) => {
   try {
     const response = await apiClient.delete(`/admin/polls/${id}`);
@@ -444,11 +479,24 @@ export const getPollResults = async (pollId) => {
   }
 };
 
+// ✅ دالة جديدة لجلب استبيان واحد كامل (للتعديل)
+export const getPollById = async (id) => {
+  try {
+    const response = await apiClient.get(`/admin/polls/${id}`);
+    console.log('📊 استبيان واحد:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب الاستبيان:', error);
+    throw error;
+  }
+};
+
+// ============= دوال الإشعارات =============
 
 export const getRealNotifications = async () => {
   try {
     const response = await apiClient.get('/notifications');
-    console.log(' الإشعارات المستلمة:', response.data);
+    console.log('🔔 الإشعارات المستلمة:', response.data);
     return {
       unread_count: response.data.unread_count || 0,
       notifications: response.data.notifications || []
@@ -469,6 +517,7 @@ export const markNotificationAsRead = async (notificationId) => {
   }
 };
 
+// ============= دوال الشكاوى =============
 
 export const getComplaints = async () => {
   try {
@@ -528,6 +577,7 @@ export const updateComplaintAnswer = async (complaintId, answer) => {
   }
 };
 
+// ============= دوال إضافية =============
 
 export const getUpcomingQuizzes = async () => {
   try {

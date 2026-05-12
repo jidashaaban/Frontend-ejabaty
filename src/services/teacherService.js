@@ -1,7 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -18,294 +17,253 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-let teacherStudents = [
-  { id: uuidv4(), name: 'طارق', course: 'الرياضيات', notes: [] },
-  { id: uuidv4(), name: 'ليلى', course: 'الفيزياء', notes: [] },
-];
+// ============= دوال الأستاذ (Teacher) =============
 
-let teacherSchedule = [
-  {
-    id: uuidv4(),
-    day: 'الأحد',
-    startTime: '09:00',
-    endTime: '11:00',
-    subject: 'الرياضيات',
-    className: 'السنة الأولى',
-    roomName: 'قاعة 1',
-    teacherId: 1,
-  },
-  {
-    id: uuidv4(),
-    day: 'الثلاثاء',
-    startTime: '11:00',
-    endTime: '13:00',
-    subject: 'الفيزياء',
-    className: 'السنة الثانية',
-    roomName: 'قاعة 3',
-    teacherId: 1,
-  },
-];
-
-let examModels = [];
-let announcedTests = [];
-let studentEvaluations = [];
-
-export const getStudents = async () => {
-  return Promise.resolve([...teacherStudents]);
-};
-
-export const addNote = async (studentId, note) => {
-  teacherStudents = teacherStudents.map((student) => {
-    if (student.id === studentId) {
-      return {
-        ...student,
-        notes: [...student.notes, { id: uuidv4(), text: note }],
-      };
-    }
-    return student;
-  });
-  return Promise.resolve(
-    teacherStudents.find((student) => student.id === studentId)
-  );
-};
-
-export const getTeacherSchedule = async (teacherId) => {
-  const filteredSchedule = teacherSchedule.filter(
-    (session) => session.teacherId === teacherId
-  );
-  return Promise.resolve([...filteredSchedule]);
-};
-
-export const getSchedule = async () => {
-  return Promise.resolve([...teacherSchedule]);
-};
-
-export const addTeacherSchedule = async (session) => {
-  const newSession = { id: uuidv4(), ...session };
-  teacherSchedule.push(newSession);
-  return Promise.resolve(newSession);
-};
-
-export const updateTeacherSchedule = async (id, data) => {
-  const index = teacherSchedule.findIndex(s => s.id === id);
-  if (index !== -1) {
-    teacherSchedule[index] = { ...teacherSchedule[index], ...data };
-    return Promise.resolve(teacherSchedule[index]);
+// جلب إحصائيات لوحة تحكم الأستاذ
+export const getTeacherDashboardStats = async () => {
+  try {
+    const response = await apiClient.get('/teacher/dashboard');
+    console.log('📊 إحصائيات لوحة التحكم:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب إحصائيات لوحة التحكم:', error);
+    throw error;
   }
-  return Promise.resolve(null);
 };
 
+// جلب طلاب الأستاذ
+export const getStudents = async () => {
+  try {
+    const response = await apiClient.get('/teacher/students');
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب الطلاب:', error);
+    throw error;
+  }
+};
+
+// إضافة ملاحظة على طالب
+export const addNote = async (studentId, note) => {
+  try {
+    const response = await apiClient.post(`/teacher/students/${studentId}/notes`, { note });
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في إضافة الملاحظة:', error);
+    throw error;
+  }
+};
+
+// جلب جدول الأستاذ (الدوام)
+export const getTeacherSchedule = async (teacherId) => {
+  try {
+    const response = await apiClient.get(`/teacher/${teacherId}/schedule`);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب جدول الأستاذ:', error);
+    throw error;
+  }
+};
+
+// جلب جميع الجداول
+export const getSchedule = async () => {
+  try {
+    const response = await apiClient.get('/teacher/schedule');
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب الجداول:', error);
+    throw error;
+  }
+};
+
+// إضافة جدول جديد للأستاذ
+export const addTeacherSchedule = async (session) => {
+  try {
+    const response = await apiClient.post('/teacher/schedule', session);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في إضافة الجدول:', error);
+    throw error;
+  }
+};
+
+// تحديث جدول الأستاذ
+export const updateTeacherSchedule = async (id, data) => {
+  try {
+    const response = await apiClient.put(`/teacher/schedule/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في تحديث الجدول:', error);
+    throw error;
+  }
+};
+
+// حذف جدول الأستاذ
 export const deleteTeacherSchedule = async (id) => {
-  teacherSchedule = teacherSchedule.filter(s => s.id !== id);
-  return Promise.resolve();
+  try {
+    const response = await apiClient.delete(`/teacher/schedule/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في حذف الجدول:', error);
+    throw error;
+  }
 };
 
+// جلب المواد التي يدرسها الأستاذ
 export const getTeacherSubjects = async (teacherId) => {
   try {
     const response = await apiClient.get(`/teacher/${teacherId}/subjects`);
     return response.data;
   } catch (error) {
-    return [
-      { id: 1, name: 'الرياضيات' },
-      { id: 2, name: 'الفيزياء' },
-      { id: 3, name: 'الكيمياء' },
-      { id: 4, name: 'اللغة العربية' },
-      { id: 5, name: 'اللغة الإنجليزية' },
-    ];
+    console.error('خطأ في جلب المواد:', error);
+    throw error;
   }
 };
 
+// جلب نماذج الامتحانات
 export const getExamModels = async (teacherId) => {
   try {
     const response = await apiClient.get(`/teacher/${teacherId}/exam-models`);
     return response.data;
   } catch (error) {
-    return [
-      { 
-        id: 1, 
-        title: 'نموذج امتحان الرياضيات - الفصل الأول', 
-        subject: 'الرياضيات', 
-        description: 'أسئلة شاملة للمنهج',
-        questions: [
-          { id: 1, text: 'حل المعادلة: 2x + 5 = 15', answer: '' },
-          { id: 2, text: 'أوجد مشتقة: f(x) = x² + 3x', answer: '' },
-          { id: 3, text: 'باستخدام النظرية: احسب قيمة x في المعادلة 3x - 7 = 8', answer: '' },
-        ],
-        date: '2026-04-20',
-      },
-      { 
-        id: 2, 
-        title: 'نموذج امتحان الفيزياء - الوحدة الأولى', 
-        subject: 'الفيزياء', 
-        description: 'أسئلة في قوانين نيوتن والحركة',
-        questions: [
-          { id: 1, text: 'ما هو قانون نيوتن الأول؟', answer: '' },
-          { id: 2, text: 'احسب القوة المؤثرة على جسم كتلته 5kg ويسارع بمقدار 2m/s²', answer: '' },
-          { id: 3, text: 'ما هي وحدة قياس السرعة؟', answer: '' },
-        ],
-        date: '2026-04-18',
-      },
-      { 
-        id: 3, 
-        title: 'نموذج امتحان الكيمياء - التفاعلات', 
-        subject: 'الكيمياء', 
-        description: 'أسئلة في التفاعلات الكيميائية',
-        questions: [
-          { id: 1, text: 'ما هو التفاعل الكيميائي؟', answer: '' },
-          { id: 2, text: 'اذكر أنواع التفاعلات الكيميائية', answer: '' },
-        ],
-        date: '2026-04-15',
-      },
-    ];
+    console.error('خطأ في جلب نماذج الامتحانات:', error);
+    throw error;
   }
 };
 
+// حفظ إجابات نموذج امتحان
 export const saveAnswers = async (modelId, answers) => {
   try {
     const response = await apiClient.post(`/teacher/exam-models/${modelId}/answers`, { answers });
     return response.data;
   } catch (error) {
-    console.log('تم حفظ الإجابات للنموذج:', modelId, answers);
-    return { success: true };
+    console.error('خطأ في حفظ الإجابات:', error);
+    throw error;
   }
 };
 
+// جلب تقييمات الطلاب
 export const getStudentEvaluations = async (teacherId) => {
   try {
     const response = await apiClient.get(`/teacher/${teacherId}/evaluations`);
     return response.data;
   } catch (error) {
-    return [];
+    console.error('خطأ في جلب التقييمات:', error);
+    throw error;
   }
 };
 
+// إضافة تقييم طالب
 export const addStudentEvaluation = async (evaluationData) => {
   try {
     const response = await apiClient.post('/teacher/evaluations', evaluationData);
     return response.data;
   } catch (error) {
-    const newEvaluation = { id: Date.now(), ...evaluationData };
-    studentEvaluations.push(newEvaluation);
-    return newEvaluation;
+    console.error('خطأ في إضافة التقييم:', error);
+    throw error;
   }
 };
 
+// تحديث تقييم طالب
 export const updateStudentEvaluation = async (id, evaluationData) => {
   try {
     const response = await apiClient.put(`/teacher/evaluations/${id}`, evaluationData);
     return response.data;
   } catch (error) {
-    const index = studentEvaluations.findIndex(e => e.id === id);
-    if (index !== -1) {
-      studentEvaluations[index] = { ...studentEvaluations[index], ...evaluationData };
-      return studentEvaluations[index];
-    }
-    return { id, ...evaluationData, success: true };
+    console.error('خطأ في تحديث التقييم:', error);
+    throw error;
   }
 };
 
+// حذف تقييم طالب
 export const deleteStudentEvaluation = async (id) => {
   try {
     const response = await apiClient.delete(`/teacher/evaluations/${id}`);
     return response.data;
   } catch (error) {
-    const index = studentEvaluations.findIndex(e => e.id === id);
-    if (index !== -1) {
-      studentEvaluations.splice(index, 1);
-    }
-    return { success: true };
+    console.error('خطأ في حذف التقييم:', error);
+    throw error;
   }
 };
 
+// جلب امتحانات الأستاذ
 export const getTeacherExams = async (teacherId) => {
   try {
     const response = await apiClient.get(`/teacher/${teacherId}/exams`);
     return response.data;
   } catch (error) {
-    return [
-      { id: 1, subject: 'الرياضيات', date: '2026-04-25', day: 'الأحد', time: '10:00-12:00', room: 'قاعة 101' },
-      { id: 2, subject: 'الفيزياء', date: '2026-04-27', day: 'الثلاثاء', time: '10:00-12:00', room: 'قاعة 102' },
-      { id: 3, subject: 'الكيمياء', date: '2026-04-29', day: 'الخميس', time: '10:00-12:00', room: 'مختبر الكيمياء' },
-    ];
+    console.error('خطأ في جلب الامتحانات:', error);
+    throw error;
   }
 };
 
+// إعلان اختبار جديد
 export const announceTest = async (test) => {
-  const newTest = { id: uuidv4(), ...test };
-  announcedTests.push(newTest);
-  return Promise.resolve(newTest);
+  try {
+    const response = await apiClient.post('/teacher/announce-quiz', test);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في إعلان الاختبار:', error);
+    throw error;
+  }
 };
 
+// جلب الاختبارات المعلنة
 export const getAnnouncedTests = async () => {
-  return Promise.resolve([...announcedTests]);
+  try {
+    const response = await apiClient.get('/teacher/quizzes');
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب الاختبارات المعلنة:', error);
+    throw error;
+  }
 };
 
+// حذف اختبار معلن
 export const deleteAnnouncedTest = async (id) => {
-  announcedTests = announcedTests.filter(test => test.id !== id);
-  return Promise.resolve({ success: true });
+  try {
+    const response = await apiClient.delete(`/teacher/quizzes/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في حذف الاختبار:', error);
+    throw error;
+  }
 };
 
+// جلب إحصائيات الأستاذ
 export const getTeacherStats = async (teacherId) => {
-  const schedule = await getTeacherSchedule(teacherId);
-  const models = await getExamModels(teacherId);
-  const tests = await getAnnouncedTests();
-  
-  return Promise.resolve({
-    totalSessions: schedule.length,
-    totalExamModels: models.length,
-    totalAnnouncedTests: tests.length,
-    schedule: schedule,
-    examModels: models,
-    announcedTests: tests,
-  });
+  try {
+    const response = await apiClient.get(`/teacher/${teacherId}/stats`);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب الإحصائيات:', error);
+    throw error;
+  }
 };
 
+// جلب إشعارات الأستاذ
 export const getTeacherNotifications = async (teacherId) => {
   try {
     const response = await apiClient.get(`/teacher/${teacherId}/notifications`);
     return response.data;
   } catch (error) {
-    return [
-      {
-        id: 1,
-        type: 'exam',
-        title: 'برنامج امتحان جديد',
-        message: 'تم إضافة امتحان جديد في مادة الرياضيات بتاريخ 2026-05-10',
-        date: '2026-04-28',
-        time: '10:30',
-        icon: 'EventNoteIcon',
-        color: '#1976d2',
-        bgColor: '#e3f2fd',
-        action: '/teacher/exams',
-        actionText: 'الذهاب إلى جدول الامتحانات',
-        read: false,
-      },
-      {
-        id: 2,
-        type: 'inquiry',
-        title: 'استفسار جديد من طالب',
-        message: 'لديك استفسار جديد من الطالب أحمد محمد بخصوص مادة الرياضيات',
-        date: '2026-04-27',
-        time: '14:15',
-        icon: 'QuestionAnswerIcon',
-        color: '#ff9800',
-        bgColor: '#fff3e0',
-        action: '/teacher/inquiries',
-        actionText: 'الذهاب إلى الاستفسارات',
-        read: false,
-      },
-    ];
+    console.error('خطأ في جلب الإشعارات:', error);
+    throw error;
   }
 };
 
-export const markNotificationAsRead = async (notificationId) => {
+// تحديث إشعار كمقروء
+export const markTeacherNotificationAsRead = async (notificationId) => {
   try {
     const response = await apiClient.put(`/teacher/notifications/${notificationId}/read`);
     return response.data;
   } catch (error) {
-    return { success: true };
+    console.error('خطأ في تحديث الإشعار:', error);
+    throw error;
   }
 };
+
+// Alias للتوافق مع الكود القديم
+export const markNotificationAsRead = markTeacherNotificationAsRead;
 
 // ========== دوال الاستفسارات ==========
 
@@ -315,22 +273,8 @@ export const getInquiries = async (teacherId) => {
     const response = await apiClient.get(`/teacher/${teacherId}/inquiries`);
     return response.data;
   } catch (error) {
-    // بيانات تجريبية
-    return [
-      {
-        id: 1,
-        studentId: 1,
-        studentName: 'أحمد محمد',
-        studentClass: 'الثاني علمي',
-        subject: 'الرياضيات',
-        question: 'أستاذ، عندي سؤال في درس المشتقات...',
-        date: '2026-04-28',
-        time: '10:30',
-        replied: false,
-        reply: '',
-        replyDate: null,
-      },
-    ];
+    console.error('خطأ في جلب الاستفسارات:', error);
+    throw error;
   }
 };
 
@@ -340,6 +284,9 @@ export const replyToInquiry = async (inquiryId, reply) => {
     const response = await apiClient.put(`/teacher/inquiries/${inquiryId}/reply`, { reply });
     return response.data;
   } catch (error) {
-    return { success: true };
+    console.error('خطأ في الرد على الاستفسار:', error);
+    throw error;
   }
 };
+
+export { apiClient };

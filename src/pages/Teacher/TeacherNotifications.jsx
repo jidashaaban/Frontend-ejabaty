@@ -22,7 +22,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { getTeacherNotifications, markNotificationAsRead } from '../../services/teacherService';
+import { getTeacherNotifications, markTeacherNotificationAsRead } from '../../services/teacherService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
@@ -33,84 +33,125 @@ const TeacherNotifications = () => {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
+  const getIconByType = (type) => {
+    switch (type) {
+      case 'exam':
+        return <EventNoteIcon />;
+      case 'inquiry':
+        return <QuestionAnswerIcon />;
+      case 'schedule':
+        return <ScheduleIcon />;
+      default:
+        return <NotificationsIcon />;
+    }
+  };
+
+  const getColorByType = (type) => {
+    switch (type) {
+      case 'exam':
+        return '#1976d2';
+      case 'inquiry':
+        return '#ff9800';
+      case 'schedule':
+        return '#4caf50';
+      default:
+        return '#1976d2';
+    }
+  };
+
+  const getBgColorByType = (type) => {
+    switch (type) {
+      case 'exam':
+        return '#e3f2fd';
+      case 'inquiry':
+        return '#fff3e0';
+      case 'schedule':
+        return '#e8f5e9';
+      default:
+        return '#f5f5f5';
+    }
+  };
+
   useEffect(() => {
     const fetchNotifications = async () => {
       setLoading(true);
       try {
-        const data = await getTeacherNotifications(user?.id || 1);
-        setNotifications(data);
+        const data = await getTeacherNotifications(user?.id);
+        console.log('🔔 الإشعارات المستلمة:', data);
+        
+        let notificationsArray = [];
+        if (Array.isArray(data)) {
+          notificationsArray = data;
+        } else if (data && data.data && Array.isArray(data.data)) {
+          notificationsArray = data.data;
+        } else if (data && data.notifications && Array.isArray(data.notifications)) {
+          notificationsArray = data.notifications;
+        } else {
+          notificationsArray = [];
+        }
+        
+        // تنسيق الإشعارات للعرض
+        const formattedNotifications = notificationsArray.map(notif => ({
+          id: notif.id,
+          type: notif.type || 'general',
+          title: notif.title || 'إشعار جديد',
+          message: notif.message || '',
+          date: notif.created_at ? new Date(notif.created_at).toLocaleDateString('ar') : '',
+          time: notif.created_at ? new Date(notif.created_at).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) : '',
+          icon: getIconByType(notif.type),
+          color: getColorByType(notif.type),
+          bgColor: getBgColorByType(notif.type),
+          action: notif.action || getActionByType(notif.type),
+          actionText: notif.actionText || getActionTextByType(notif.type),
+          read: notif.read_at !== null,
+        }));
+        
+        setNotifications(formattedNotifications);
       } catch (error) {
         console.error('خطأ في جلب الإشعارات:', error);
-        setNotifications([
-          {
-            id: 1,
-            type: 'exam',
-            title: 'برنامج امتحان جديد',
-            message: 'تم إضافة امتحان جديد في مادة الرياضيات بتاريخ 2026-05-10',
-            date: '2026-04-28',
-            time: '10:30',
-            icon: <EventNoteIcon />,
-            color: '#1976d2',
-            bgColor: '#e3f2fd',
-            action: '/teacher/exams',
-            actionText: 'الذهاب إلى جدول الامتحانات',
-            read: false,
-          },
-          {
-            id: 2,
-            type: 'inquiry',
-            title: 'استفسار جديد من طالب',
-            message: 'لديك استفسار جديد من الطالب أحمد محمد بخصوص مادة الرياضيات',
-            date: '2026-04-27',
-            time: '14:15',
-            icon: <QuestionAnswerIcon />,
-            color: '#ff9800',
-            bgColor: '#fff3e0',
-            action: '/teacher/inquiries',
-            actionText: 'الذهاب إلى الاستفسارات',
-            read: false,
-          },
-          {
-            id: 3,
-            type: 'exam',
-            title: 'تحديث في جدول الامتحانات',
-            message: 'تم تعديل موعد امتحان مادة الفيزياء إلى 2026-05-15',
-            date: '2026-04-26',
-            time: '09:45',
-            icon: <ScheduleIcon />,
-            color: '#4caf50',
-            bgColor: '#e8f5e9',
-            action: '/teacher/exams',
-            actionText: 'الذهاب إلى جدول الامتحانات',
-            read: true,
-          },
-          {
-            id: 4,
-            type: 'inquiry',
-            title: 'استفسار جديد من طالب',
-            message: 'لديك استفسار جديد من الطالبة سارة خالد بخصوص مادة الفيزياء',
-            date: '2026-04-25',
-            time: '11:00',
-            icon: <QuestionAnswerIcon />,
-            color: '#ff9800',
-            bgColor: '#fff3e0',
-            action: '/teacher/inquiries',
-            actionText: 'الذهاب إلى الاستفسارات',
-            read: true,
-          },
-        ]);
+        setToast({ open: true, message: 'فشل في جلب الإشعارات', severity: 'error' });
+        setNotifications([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchNotifications();
+    
+    const getActionByType = (type) => {
+      switch (type) {
+        case 'exam':
+          return '/teacher/exams';
+        case 'inquiry':
+          return '/teacher/inquiries';
+        case 'schedule':
+          return '/teacher/schedule';
+        default:
+          return '/teacher/dashboard';
+      }
+    };
+    
+    const getActionTextByType = (type) => {
+      switch (type) {
+        case 'exam':
+          return 'الذهاب إلى الامتحانات';
+        case 'inquiry':
+          return 'الذهاب إلى الاستفسارات';
+        case 'schedule':
+          return 'الذهاب إلى الجدول';
+        default:
+          return 'عرض التفاصيل';
+      }
+    };
+    
+    if (user?.id) {
+      fetchNotifications();
+    }
   }, [user?.id]);
 
   const handleNotificationClick = async (notification) => {
     if (notification.action) {
       if (!notification.read) {
         try {
-          await markNotificationAsRead(notification.id);
+          await markTeacherNotificationAsRead(notification.id);
           setNotifications(prev =>
             prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
           );
@@ -198,9 +239,11 @@ const TeacherNotifications = () => {
                           {notification.message}
                         </Typography>
                         <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
-                          <Typography variant="caption" color="text.secondary">
-                            {notification.date} - {notification.time}
-                          </Typography>
+                          {notification.date && (
+                            <Typography variant="caption" color="text.secondary">
+                              {notification.date} {notification.time && `- ${notification.time}`}
+                            </Typography>
+                          )}
                           <Chip
                             label={notification.actionText}
                             size="small"
