@@ -3,11 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   Button,
   IconButton,
   Dialog,
@@ -15,81 +10,96 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Switch,
-  FormControlLabel,
+  MenuItem,
   Chip,
   CircularProgress,
   Alert,
+  Card,
+  CardContent,
+  Avatar,
+  Grid,
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Edit as EditIcon,
   Delete as DeleteIcon,
+  Quiz as QuizIcon,
   Announcement as AnnouncementIcon,
+  AccessTime as AccessTimeIcon,
+  School as SchoolIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
-import {
-  getAnnouncements,
-  createAnnouncement,
-  updateAnnouncement,
-  deleteAnnouncement,
-} from '../../services/adminService';
+import { useSelector } from 'react-redux';
+import { announceTest, getUpcomingQuizzesForStudent } from '../../services/teacherService';
 import Toast from '../../components/common/Toast';
+import PageHeader from '../../components/common/PageHeader';
 
-function Announcements() {
-  const [announcements, setAnnouncements] = useState([]);
+function AnnounceTest() {
+  const { user } = useSelector((state) => state.auth);
+  const [quizzes, setQuizzes] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
-  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0],
-    published: true,
+    course_name: '',
+    quiz_date: new Date().toISOString().split('T')[0],
+    start_time: '08:00',
+    included_content: '',
+    teacher_name: '',
   });
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-  const fetchAnnouncements = async () => {
+  const fetchQuizzes = async () => {
     setLoading(true);
     try {
-      const data = await getAnnouncements();
-      setAnnouncements(data);
+      const storedQuizzes = localStorage.getItem('teacher_quizzes');
+      let localQuizzes = storedQuizzes ? JSON.parse(storedQuizzes) : [];
+      
+      const studentId = user?.id;
+      if (studentId) {
+        try {
+          const data = await getUpcomingQuizzesForStudent(studentId);
+          if (data && data.success && data.upcoming_quizzes) {
+            const apiQuizzes = data.upcoming_quizzes.filter(
+              apiQuiz => !localQuizzes.some(localQuiz => localQuiz.id === apiQuiz.id)
+            );
+            localQuizzes = [...apiQuizzes, ...localQuizzes];
+          }
+        } catch (error) {
+          console.log('API غير متاح، نستخدم localStorage فقط');
+        }
+      }
+      
+      setQuizzes(localQuizzes);
     } catch (error) {
-      console.error('خطأ في جلب الإعلانات:', error);
-      setToast({ open: true, message: 'فشل في جلب الإعلانات', severity: 'error' });
+      console.error('خطأ في جلب الاختبارات:', error);
+      setQuizzes([]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchAnnouncements();
-  }, []);
-
-  const handleOpenAddDialog = () => {
-    setEditingAnnouncement(null);
-    setFormData({
-      title: '',
-      description: '',
-      date: new Date().toISOString().split('T')[0],
-      published: true,
-    });
-    setOpenDialog(true);
+  const saveQuizzesToLocalStorage = (updatedQuizzes) => {
+    localStorage.setItem('teacher_quizzes', JSON.stringify(updatedQuizzes));
   };
 
-  const handleOpenEditDialog = (announcement) => {
-    setEditingAnnouncement(announcement);
+  useEffect(() => {
+    fetchQuizzes();
+  }, [user?.id]);
+
+  const handleOpenAddDialog = () => {
     setFormData({
-      title: announcement.title,
-      description: announcement.description,
-      date: announcement.date,
-      published: announcement.published,
+      course_name: '',
+      quiz_date: new Date().toISOString().split('T')[0],
+      start_time: '08:00',
+      included_content: '',
+      teacher_name: user?.name || '',
     });
+    setTeachers([]);
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
-    setEditingAnnouncement(null);
   };
 
   const handleChange = (e) => {
@@ -98,190 +108,387 @@ function Announcements() {
   };
 
   const handleSave = async () => {
-    if (!formData.title || !formData.description) {
-      setToast({ open: true, message: 'الرجاء تعبئة العنوان والوصف', severity: 'error' });
+    if (!formData.course_name) {
+      setToast({ open: true, message: 'الرجاء إدخال اسم المادة', severity: 'error' });
+      return;
+    }
+    if (!formData.teacher_name) {
+      setToast({ open: true, message: 'الرجاء اختيار اسم الأستاذ', severity: 'error' });
+      return;
+    }
+    if (!formData.included_content) {
+      setToast({ open: true, message: 'الرجاء إدخال محتوى الاختبار', severity: 'error' });
       return;
     }
 
     try {
-      if (editingAnnouncement) {
-        await updateAnnouncement(editingAnnouncement.id, formData);
-        setToast({ open: true, message: 'تم تعديل الإعلان بنجاح', severity: 'success' });
+      const quizData = {
+        course_name: formData.course_name,
+        quiz_date: formData.quiz_date,
+        start_time: formData.start_time,
+        included_content: formData.included_content,
+        teacher_name: formData.teacher_name,
+      };
+      
+      console.log('📤 إرسال بيانات الاختبار:', quizData);
+      const response = await announceTest(quizData);
+      
+      if (response && response.success) {
+        const newQuiz = {
+          id: Date.now(),
+          course_name: formData.course_name,
+          course: { name: formData.course_name },
+          included_content: formData.included_content,
+          quiz_date: formData.quiz_date,
+          start_time: formData.start_time,
+          teacher_name: formData.teacher_name,
+          created_at: new Date().toISOString(),
+        };
+        
+        const updatedQuizzes = [newQuiz, ...quizzes];
+        setQuizzes(updatedQuizzes);
+        saveQuizzesToLocalStorage(updatedQuizzes);
+        
+        setToast({ open: true, message: 'تم إعلان الاختبار بنجاح! سيتم إشعار الطلاب', severity: 'success' });
+        handleCloseDialog();
       } else {
-        await createAnnouncement(formData);
-        setToast({ open: true, message: 'تم إضافة الإعلان بنجاح', severity: 'success' });
+        throw new Error(response?.message || 'حدث خطأ');
       }
-      handleCloseDialog();
-      fetchAnnouncements();
     } catch (error) {
-      setToast({ open: true, message: error.message || 'حدث خطأ', severity: 'error' });
+      console.error('خطأ:', error);
+      setToast({ 
+        open: true, 
+        message: error.response?.data?.message || error.message || 'حدث خطأ في إضافة الاختبار', 
+        severity: 'error' 
+      });
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
-      try {
-        await deleteAnnouncement(id);
-        setToast({ open: true, message: 'تم حذف الإعلان بنجاح', severity: 'success' });
-        fetchAnnouncements();
-      } catch (error) {
-        setToast({ open: true, message: error.message || 'حدث خطأ', severity: 'error' });
-      }
-    }
+  const handleDelete = (id) => {
+    const updatedQuizzes = quizzes.filter(quiz => quiz.id !== id);
+    setQuizzes(updatedQuizzes);
+    saveQuizzesToLocalStorage(updatedQuizzes);
+    setToast({ 
+      open: true, 
+      message: 'تم حذف الاختبار من القائمة', 
+      severity: 'success' 
+    });
+  };
+
+  const stats = {
+    total: quizzes.length,
+    upcoming: quizzes.filter(q => new Date(q.quiz_date) >= new Date()).length,
   };
 
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
-        <Typography sx={{ mr: 2 }}>جاري تحميل الإعلانات...</Typography>
+        <Typography sx={{ mr: 2 }}>جاري تحميل الاختبارات...</Typography>
       </Box>
     );
   }
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">
-          📢 إدارة الإعلانات
-        </Typography>
+      <PageHeader
+        title="إعلان الاختبارات"
+        subtitle="إدارة اختبارات المواد وإشعار الطلاب بها"
+        icon={<QuizIcon sx={{ fontSize: 20 }} />}
+      />
+
+      <Grid container spacing={2} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%)',
+              transition: '0.3s',
+              '&:hover': { transform: 'translateY(-3px)', boxShadow: 4 },
+            }}
+          >
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="caption" color="#1565c0" gutterBottom>
+                    إجمالي الاختبارات
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                    {stats.total}
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: '#1976d2', width: 45, height: 45 }}>
+                  <QuizIcon sx={{ fontSize: 24 }} />
+                </Avatar>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+              transition: '0.3s',
+              '&:hover': { transform: 'translateY(-3px)', boxShadow: 4 },
+            }}
+          >
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="caption" color="#2e7d32" gutterBottom>
+                    اختبارات قادمة
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#388e3c' }}>
+                    {stats.upcoming}
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: '#388e3c', width: 45, height: 45 }}>
+                  <AccessTimeIcon sx={{ fontSize: 24 }} />
+                </Avatar>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Box display="flex" justifyContent="flex-end" sx={{ mb: 2 }}>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleOpenAddDialog}
-          sx={{ borderRadius: 2 }}
+          sx={{
+            borderRadius: 2,
+            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+            '&:hover': { background: 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)' },
+          }}
         >
-          إعلان جديد
+          إعلان اختبار جديد
         </Button>
       </Box>
 
-      <Paper sx={{ p: 3, borderRadius: 3 }}>
-        {announcements.length === 0 ? (
-          <Alert severity="info" sx={{ borderRadius: 2 }}>
-            لا توجد إعلانات حالياً. اضغط على "إعلان جديد" لإضافة أول إعلان.
-          </Alert>
-        ) : (
-          <Table>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                <TableCell sx={{ fontWeight: 'bold' }}>العنوان</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>الوصف</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>التاريخ</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>الحالة</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="center">
-                  إجراءات
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {announcements.map((announcement) => (
-                <TableRow key={announcement.id} hover>
-                  <TableCell>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <AnnouncementIcon color="primary" fontSize="small" />
-                      <Typography fontWeight="medium">{announcement.title}</Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ maxWidth: 300, wordBreak: 'break-word' }}>
-                      {announcement.description}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={announcement.date}
-                      size="small"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={announcement.published ? 'منشور' : 'مسودة'}
-                      color={announcement.published ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      onClick={() => handleOpenEditDialog(announcement)}
-                      color="primary"
-                      size="small"
-                      title="تعديل"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDelete(announcement.id)}
-                      color="error"
-                      size="small"
-                      title="حذف"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
+      <Paper
+        sx={{
+          borderRadius: 3,
+          overflow: 'hidden',
+          border: '1px solid #1976d2',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+        }}
+      >
+        <Box
+          sx={{
+            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+            p: 1.5,
+            px: 2,
+            color: '#fff',
+          }}
+        >
+          <Box display="flex" alignItems="center" gap={1}>
+            <AnnouncementIcon sx={{ fontSize: 20 }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+              قائمة الاختبارات المعلنة
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ p: 2 }}>
+          {quizzes.length === 0 ? (
+            <Alert severity="info" sx={{ borderRadius: 2 }}>
+              لا توجد اختبارات معلنة حالياً. اضغط على "إعلان اختبار جديد" لإضافة أول اختبار.
+            </Alert>
+          ) : (
+            <Grid container spacing={2}>
+              {quizzes.map((quiz, index) => (
+                <Grid item xs={12} key={quiz.id || index}>
+                  <Card 
+                    sx={{ 
+                      borderRadius: 2, 
+                      border: '1px solid #e0e0e0', 
+                      transition: '0.2s',
+                      '&:hover': { 
+                        boxShadow: 3,
+                        borderColor: '#1976d2'
+                      }
+                    }}
+                  >
+                    <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                      <Grid container spacing={2} alignItems="center">
+                        <Grid item xs={12} sm={2}>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <SchoolIcon color="primary" fontSize="small" />
+                            <Typography fontWeight="bold" variant="body2">
+                              {quiz.course?.name || quiz.course_name}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        
+                        <Grid item xs={12} sm={2}>
+                          <Box display="flex" alignItems="center" gap={0.5}>
+                            <PersonIcon sx={{ color: '#1976d2', fontSize: 14 }} />
+                            <Typography variant="body2" color="text.primary">
+                              {quiz.teacher_name || quiz.teacher?.name || 'غير محدد'}
+                            </Typography>
+                          </Box>
+                        </Grid>
+
+                        <Grid item xs={ 12 } sm={ 4 }>
+                          <Typography variant="body2" color="text.secondary">
+                            {quiz.included_content?.length > 60 
+                              ? quiz.included_content.substring(0, 60) + '...' 
+                              : quiz.included_content}
+                          </Typography>
+                        </Grid>
+                        
+                        <Grid item xs={6} sm={2}>
+                          <Chip 
+                            label={quiz.quiz_date} 
+                            size="small" 
+                            variant="outlined"
+                            sx={{ 
+                              borderColor: '#1976d2',
+                              color: '#1976d2',
+                              fontWeight: 500,
+                              height: 28
+                            }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={4} sm={1}>
+                          <Box display="flex" alignItems="center" gap={0.5}>
+                            <AccessTimeIcon sx={{ color: '#1976d2', fontSize: 14 }} />
+                            <Typography variant="body2" fontWeight={500}>
+                              {quiz.start_time}
+                            </Typography>
+                          </Box>
+                        </Grid>
+
+                        <Grid item xs={2} sm={1} sx={{ textAlign: 'center' }}>
+                          <IconButton
+                            onClick={() => handleDelete(quiz.id)}
+                            color="error"
+                            size="small"
+                            title="حذف الاختبار"
+                            sx={{
+                              '&:hover': { backgroundColor: '#ffebee' }
+                            }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                </Grid>
               ))}
-            </TableBody>
-          </Table>
-        )}
+            </Grid>
+          )}
+        </Box>
       </Paper>
 
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {editingAnnouncement ? '✏️ تعديل إعلان' : '➕ إضافة إعلان جديد'}
+        <DialogTitle sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', color: '#fff' }}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <QuizIcon />
+            <Typography variant="h6">إعلان اختبار جديد</Typography>
+          </Box>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ mt: 2 }}>
           <TextField
-            name="title"
-            label="عنوان الإعلان"
+            name="course_name"
+            label="اسم المادة"
             fullWidth
             margin="normal"
-            value={formData.title}
+            value={formData.course_name}
             onChange={handleChange}
             required
             variant="outlined"
+            placeholder="مثال: رياضيات، علوم، لغة عربية"
+            helperText="أدخل اسم المادة كما هو مسجل في النظام"
           />
+          
           <TextField
-            name="description"
-            label="وصف الإعلان"
+            name="teacher_name"
+            label="اسم الأستاذ"
+            select={teachers.length > 0}
             fullWidth
             margin="normal"
-            value={formData.description}
+            value={formData.teacher_name}
+            onChange={handleChange}
+            required
+            variant="outlined"
+            helperText="اختر اسم الأستاذ الذي سيعلن الاختبار"
+            InputProps={{
+              startAdornment: <PersonIcon sx={{ color: '#1976d2', mr: 1 }} />,
+            }}
+          >
+            {teachers.length > 0 ? (
+              teachers.map((teacher, index) => (
+                <MenuItem key={teacher.id || index} value={teacher.name}>
+                  {teacher.name}
+                </MenuItem>
+              ))
+            ) : (
+              <MenuItem value={formData.teacher_name}>{formData.teacher_name || 'أدخل اسم الأستاذ'}</MenuItem>
+            )}
+          </TextField>
+          
+          <TextField
+            name="included_content"
+            label="محتوى الاختبار"
+            fullWidth
+            margin="normal"
+            value={formData.included_content}
             onChange={handleChange}
             required
             multiline
-            rows={4}
+            rows={3}
             variant="outlined"
+            placeholder="مثال: الوحدة الأولى - الدرس الثاني، اختبار منتصف الفصل..."
           />
-          <TextField
-            name="date"
-            label="التاريخ"
-            type="date"
-            fullWidth
-            margin="normal"
-            value={formData.date}
-            onChange={handleChange}
-            InputLabelProps={{ shrink: true }}
-            variant="outlined"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.published}
-                onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
-                color="primary"
+          
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="quiz_date"
+                label="تاريخ الاختبار"
+                type="date"
+                fullWidth
+                margin="normal"
+                value={formData.quiz_date}
+                onChange={handleChange}
+                required
+                InputLabelProps={{ shrink: true }}
+                variant="outlined"
               />
-            }
-            label={formData.published ? 'منشور (مرئي للجميع)' : 'مسودة (غير منشور)'}
-            sx={{ mt: 2 }}
-          />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                name="start_time"
+                label="وقت البدء"
+                type="time"
+                fullWidth
+                margin="normal"
+                value={formData.start_time}
+                onChange={handleChange}
+                required
+                InputLabelProps={{ shrink: true }}
+                variant="outlined"
+                helperText="يجب أن يتوافق مع وقت الحصة في الجدول (مثال: 08:00)"
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
           <Button onClick={handleCloseDialog} color="inherit">
             إلغاء
           </Button>
-          <Button onClick={handleSave} variant="contained" color="primary">
-            {editingAnnouncement ? 'تعديل' : 'إضافة'}
+          <Button 
+            onClick={handleSave} 
+            variant="contained" 
+            sx={{ background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)' }}
+          >
+            إعلان الاختبار
           </Button>
         </DialogActions>
       </Dialog>
@@ -296,4 +503,4 @@ function Announcements() {
   );
 }
 
-export default Announcements;
+export default AnnounceTest;

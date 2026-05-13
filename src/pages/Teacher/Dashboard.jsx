@@ -44,7 +44,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-  // أيام الأسبوع بالعربية (لتحويل الأسماء الإنجليزية)
   const daysMap = {
     'Sunday': 'الأحد',
     'Monday': 'الإثنين',
@@ -60,10 +59,9 @@ const Dashboard = () => {
       setLoading(true);
       try {
         const response = await getTeacherDashboardStats();
-        console.log('📊 بيانات لوحة التحكم:', response);
+        console.log(' بيانات لوحة التحكم:', response);
         
         if (response && response.success && response.data) {
-          // تنسيق جدول الأستاذ
           let formattedSchedule = [];
           if (response.data.schedule && Array.isArray(response.data.schedule)) {
             formattedSchedule = response.data.schedule.map(session => ({
@@ -103,7 +101,6 @@ const Dashboard = () => {
     }
   }, [user?.id, user?.name]);
 
-  // ترتيب الجدول حسب الأيام
   const sortedSchedule = [...dashboardData.schedule].sort((a, b) => 
     (dayOrder[a.day] || 99) - (dayOrder[b.day] || 99)
   );
