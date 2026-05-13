@@ -17,13 +17,10 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// ============= دوال الأستاذ (Teacher) =============
-
-// جلب إحصائيات لوحة تحكم الأستاذ
 export const getTeacherDashboardStats = async () => {
   try {
     const response = await apiClient.get('/teacher/dashboard');
-    console.log('📊 إحصائيات لوحة التحكم:', response.data);
+    console.log('إحصائيات لوحة التحكم:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب إحصائيات لوحة التحكم:', error);
@@ -31,7 +28,6 @@ export const getTeacherDashboardStats = async () => {
   }
 };
 
-// جلب طلاب الأستاذ
 export const getStudents = async () => {
   try {
     const response = await apiClient.get('/teacher/students');
@@ -42,7 +38,6 @@ export const getStudents = async () => {
   }
 };
 
-// إضافة ملاحظة على طالب
 export const addNote = async (studentId, note) => {
   try {
     const response = await apiClient.post(`/teacher/students/${studentId}/notes`, { note });
@@ -53,7 +48,6 @@ export const addNote = async (studentId, note) => {
   }
 };
 
-// جلب جدول الأستاذ
 export const getTeacherSchedule = async (teacherId) => {
   try {
     const response = await apiClient.get(`/teacher/${teacherId}/schedule`);
@@ -104,11 +98,10 @@ export const deleteTeacherSchedule = async (id) => {
   }
 };
 
-// جلب المواد التي يدرسها الأستاذ
 export const getTeacherSubjects = async () => {
   try {
     const response = await apiClient.get('/my-courses');
-    console.log('📚 المواد المستلمة:', response.data);
+    console.log(' المواد المستلمة:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب المواد:', error);
@@ -116,11 +109,10 @@ export const getTeacherSubjects = async () => {
   }
 };
 
-// جلب أسئلة الامتحان
 export const getExamForMarking = async (examId) => {
   try {
     const response = await apiClient.get(`/teacher/exams/${examId}/questions`);
-    console.log('📝 أسئلة الامتحان:', response.data);
+    console.log(' أسئلة الامتحان:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب أسئلة الامتحان:', error);
@@ -128,7 +120,6 @@ export const getExamForMarking = async (examId) => {
   }
 };
 
-// حفظ إجابات نموذج امتحان
 export const saveAnswers = async (examId, answersData) => {
   try {
     const response = await apiClient.post(`/teacher/exams/${examId}/submit-marking`, answersData);
@@ -142,11 +133,10 @@ export const saveAnswers = async (examId, answersData) => {
 
 export const submitMarkingScheme = saveAnswers;
 
-// جلب نماذج التصحيح لمادة معينة
 export const getMarkingSchemesByCourse = async (courseName) => {
   try {
     const response = await apiClient.get(`/teacher/courses/${encodeURIComponent(courseName)}/marking-schemes`);
-    console.log('📋 نماذج التصحيح:', response.data);
+    console.log(' نماذج التصحيح:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب نماذج التصحيح:', error);
@@ -154,7 +144,6 @@ export const getMarkingSchemesByCourse = async (courseName) => {
   }
 };
 
-// إنشاء امتحان جديد
 export const createExam = async (examData) => {
   try {
     const response = await apiClient.post('/teacher/exams/create', examData);
@@ -166,9 +155,6 @@ export const createExam = async (examData) => {
   }
 };
 
-// ========== ✅ دوال الاستفسارات (Inquiries) ✅ ==========
-
-// جلب الاستفسارات المعلقة
 export const getInquiries = async () => {
   try {
     const response = await apiClient.get('/teacher/questions/pending');
@@ -180,7 +166,6 @@ export const getInquiries = async () => {
   }
 };
 
-// الرد على استفسار
 export const replyToInquiry = async (questionId, reply) => {
   try {
     const response = await apiClient.post(`/questions/${questionId}/answer`, { answer: reply });
@@ -192,12 +177,10 @@ export const replyToInquiry = async (questionId, reply) => {
   }
 };
 
-// ============= دوال الإشعارات (Notifications) =============
-
-export const getTeacherNotifications = async (teacherId) => {
+export const getTeacherNotifications = async () => {
   try {
-    const response = await apiClient.get(`/teacher/${teacherId}/notifications`);
-    console.log('🔔 الإشعارات:', response.data);
+    const response = await apiClient.get('/notifications');
+    console.log(' الإشعارات:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب الإشعارات:', error);
@@ -207,7 +190,7 @@ export const getTeacherNotifications = async (teacherId) => {
 
 export const markTeacherNotificationAsRead = async (notificationId) => {
   try {
-    const response = await apiClient.put(`/teacher/notifications/${notificationId}/read`);
+    const response = await apiClient.post(`/notifications/${notificationId}/read`);
     console.log('✅ تم تحديث الإشعار:', response.data);
     return response.data;
   } catch (error) {
@@ -217,8 +200,6 @@ export const markTeacherNotificationAsRead = async (notificationId) => {
 };
 
 export const markNotificationAsRead = markTeacherNotificationAsRead;
-
-// ============= دوال التقييمات =============
 
 export const getStudentEvaluations = async (teacherId) => {
   try {
@@ -260,7 +241,6 @@ export const deleteStudentEvaluation = async (id) => {
   }
 };
 
-// ============= دوال الاختبارات المعلنة =============
 
 export const announceTest = async (test) => {
   try {
@@ -272,7 +252,7 @@ export const announceTest = async (test) => {
       teacher_name: test.teacher_name,
     };
     
-    console.log('📤 إرسال بيانات الاختبار:', payload);
+    console.log(' إرسال بيانات الاختبار:', payload);
     const response = await apiClient.post('/teacher/announce-quiz', payload);
     console.log('✅ تم إعلان الاختبار:', response.data);
     return response.data;
@@ -338,7 +318,6 @@ export const submitQuizPoints = async (data) => {
   }
 };
 
-// ============= جلب جميع الطلاب =============
 export const getAllStudents = async () => {
   try {
     const response = await apiClient.get('/admin/simple-students');

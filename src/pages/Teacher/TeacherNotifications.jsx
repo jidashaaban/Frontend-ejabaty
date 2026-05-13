@@ -8,17 +8,12 @@ import {
   ListItemText,
   Badge,
   Chip,
-  Alert,
   CircularProgress,
   Avatar,
   Grid,
 } from '@mui/material';
 import {
   Notifications as NotificationsIcon,
-  EventNote as EventNoteIcon,
-  QuestionAnswer as QuestionAnswerIcon,
-  CheckCircle as CheckCircleIcon,
-  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -33,133 +28,55 @@ const TeacherNotifications = () => {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-  const getIconByType = (type) => {
-    switch (type) {
-      case 'exam':
-        return <EventNoteIcon />;
-      case 'inquiry':
-        return <QuestionAnswerIcon />;
-      case 'schedule':
-        return <ScheduleIcon />;
-      default:
-        return <NotificationsIcon />;
-    }
-  };
-
-  const getColorByType = (type) => {
-    switch (type) {
-      case 'exam':
-        return '#1976d2';
-      case 'inquiry':
-        return '#ff9800';
-      case 'schedule':
-        return '#4caf50';
-      default:
-        return '#1976d2';
-    }
-  };
-
-  const getBgColorByType = (type) => {
-    switch (type) {
-      case 'exam':
-        return '#e3f2fd';
-      case 'inquiry':
-        return '#fff3e0';
-      case 'schedule':
-        return '#e8f5e9';
-      default:
-        return '#f5f5f5';
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const data = await getTeacherNotifications();
+      console.log(' الإشعارات المستلمة:', data);
+      
+      let notificationsArray = [];
+      if (Array.isArray(data)) {
+        notificationsArray = data;
+      } else if (data && data.data && Array.isArray(data.data)) {
+        notificationsArray = data.data;
+      } else if (data && data.notifications && Array.isArray(data.notifications)) {
+        notificationsArray = data.notifications;
+      }
+      
+      const formattedNotifications = notificationsArray.map(notif => ({
+        id: notif.id,
+        title: notif.title || notif.data?.title || 'إشعار جديد',
+        message: notif.message || notif.data?.message || '',
+        date: notif.created_at ? new Date(notif.created_at).toLocaleDateString('ar-EG') : '',
+        time: notif.created_at ? new Date(notif.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '',
+        read: notif.read_at !== null,
+      }));
+      
+      setNotifications(formattedNotifications);
+      
+    } catch (error) {
+      console.error(' خطأ في جلب الإشعارات:', error);
+      setToast({ open: true, message: 'فشل في جلب الإشعارات', severity: 'error' });
+      setNotifications([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      setLoading(true);
-      try {
-        const data = await getTeacherNotifications(user?.id);
-        console.log('🔔 الإشعارات المستلمة:', data);
-        
-        let notificationsArray = [];
-        if (Array.isArray(data)) {
-          notificationsArray = data;
-        } else if (data && data.data && Array.isArray(data.data)) {
-          notificationsArray = data.data;
-        } else if (data && data.notifications && Array.isArray(data.notifications)) {
-          notificationsArray = data.notifications;
-        } else {
-          notificationsArray = [];
-        }
-        
-        // تنسيق الإشعارات للعرض
-        const formattedNotifications = notificationsArray.map(notif => ({
-          id: notif.id,
-          type: notif.type || 'general',
-          title: notif.title || 'إشعار جديد',
-          message: notif.message || '',
-          date: notif.created_at ? new Date(notif.created_at).toLocaleDateString('ar') : '',
-          time: notif.created_at ? new Date(notif.created_at).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) : '',
-          icon: getIconByType(notif.type),
-          color: getColorByType(notif.type),
-          bgColor: getBgColorByType(notif.type),
-          action: notif.action || getActionByType(notif.type),
-          actionText: notif.actionText || getActionTextByType(notif.type),
-          read: notif.read_at !== null,
-        }));
-        
-        setNotifications(formattedNotifications);
-      } catch (error) {
-        console.error('خطأ في جلب الإشعارات:', error);
-        setToast({ open: true, message: 'فشل في جلب الإشعارات', severity: 'error' });
-        setNotifications([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    const getActionByType = (type) => {
-      switch (type) {
-        case 'exam':
-          return '/teacher/exams';
-        case 'inquiry':
-          return '/teacher/inquiries';
-        case 'schedule':
-          return '/teacher/schedule';
-        default:
-          return '/teacher/dashboard';
-      }
-    };
-    
-    const getActionTextByType = (type) => {
-      switch (type) {
-        case 'exam':
-          return 'الذهاب إلى الامتحانات';
-        case 'inquiry':
-          return 'الذهاب إلى الاستفسارات';
-        case 'schedule':
-          return 'الذهاب إلى الجدول';
-        default:
-          return 'عرض التفاصيل';
-      }
-    };
-    
-    if (user?.id) {
-      fetchNotifications();
-    }
-  }, [user?.id]);
+    fetchNotifications();
+  }, []);
 
   const handleNotificationClick = async (notification) => {
-    if (notification.action) {
-      if (!notification.read) {
-        try {
-          await markTeacherNotificationAsRead(notification.id);
-          setNotifications(prev =>
-            prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
-          );
-        } catch (error) {
-          console.error('خطأ في تحديث حالة الإشعار:', error);
-        }
+    if (!notification.read) {
+      try {
+        await markTeacherNotificationAsRead(notification.id);
+        setNotifications(prev =>
+          prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
+        );
+      } catch (error) {
+        console.error('خطأ في تحديث حالة الإشعار:', error);
       }
-      navigate(notification.action);
     }
   };
 
@@ -208,8 +125,8 @@ const TeacherNotifications = () => {
                 sx={{
                   borderRadius: 3,
                   transition: '0.3s',
-                  backgroundColor: notification.read ? '#fff' : notification.bgColor,
-                  borderRight: `4px solid ${notification.color}`,
+                  backgroundColor: notification.read ? '#fff' : '#f5f5f5',
+                  borderRight: `4px solid ${notification.read ? '#9e9e9e' : '#1976d2'}`,
                   '&:hover': {
                     transform: 'translateX(-5px)',
                     boxShadow: 3,
@@ -218,14 +135,14 @@ const TeacherNotifications = () => {
               >
                 <ListItemButton onClick={() => handleNotificationClick(notification)} sx={{ p: 2 }}>
                   <ListItemIcon>
-                    <Avatar sx={{ bgcolor: notification.color }}>
-                      {notification.icon}
+                    <Avatar sx={{ bgcolor: notification.read ? '#9e9e9e' : '#1976d2' }}>
+                      <NotificationsIcon />
                     </Avatar>
                   </ListItemIcon>
                   <ListItemText
                     primary={
                       <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                        <Typography variant="subtitle1" sx={{ fontWeight: notification.read ? 'normal' : 'bold', color: notification.color }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: notification.read ? 'normal' : 'bold' }}>
                           {notification.title}
                         </Typography>
                         {!notification.read && (
@@ -238,22 +155,11 @@ const TeacherNotifications = () => {
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                           {notification.message}
                         </Typography>
-                        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
-                          {notification.date && (
-                            <Typography variant="caption" color="text.secondary">
-                              {notification.date} {notification.time && `- ${notification.time}`}
-                            </Typography>
-                          )}
-                          <Chip
-                            label={notification.actionText}
-                            size="small"
-                            sx={{
-                              bgcolor: notification.color,
-                              color: '#fff',
-                              '&:hover': { opacity: 0.9 },
-                            }}
-                          />
-                        </Box>
+                        {notification.date && (
+                          <Typography variant="caption" color="text.secondary">
+                            {notification.date} {notification.time && `- ${notification.time}`}
+                          </Typography>
+                        )}
                       </Box>
                     }
                   />
