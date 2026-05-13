@@ -14,8 +14,6 @@ import {
   AccordionDetails,
   Avatar,
   Divider,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
 import {
   QuestionAnswer as QuestionAnswerIcon,
@@ -43,53 +41,38 @@ const Inquiries = () => {
   const fetchInquiries = async () => {
     setLoading(true);
     try {
-      const data = await getInquiries(user?.id || 1);
-      setInquiries(data);
+      const data = await getInquiries();
+      console.log('📋 الاستفسارات المستلمة:', data);
+      
+      let inquiriesList = [];
+      if (Array.isArray(data)) {
+        inquiriesList = data;
+      } else if (data && data.data && Array.isArray(data.data)) {
+        inquiriesList = data.data;
+      }
+      
+      // تنسيق البيانات للواجهة
+      const formattedInquiries = inquiriesList.map((item, index) => ({
+        id: item.id || index,
+        studentId: item.student_id || item.student?.id,
+        studentName: item.student?.name || 'طالب',
+        studentClass: item.student?.class || item.grade || '-',
+        subject: item.course_name || item.course?.name || item.subject || '-',
+        question: item.question,
+        date: item.created_at?.substring(0, 10) || new Date().toISOString().substring(0, 10),
+        time: item.created_at?.substring(11, 16) || '',
+        replied: item.is_answered === 1 || item.is_answered === true,
+        reply: item.answer || '',
+        replyDate: item.updated_at?.substring(0, 10) || '',
+        replyTime: item.updated_at?.substring(11, 16) || '',
+      }));
+      
+      setInquiries(formattedInquiries);
+      
     } catch (error) {
-      console.error('خطأ في جلب الاستفسارات:', error);
-      // بيانات تجريبية
-      setInquiries([
-        {
-          id: 1,
-          studentId: 1,
-          studentName: 'أحمد محمد',
-          studentClass: 'الثاني علمي',
-          subject: 'الرياضيات',
-          question: 'أستاذ، عندي سؤال في درس المشتقات، كيف أجد مشتقة الدالة f(x) = x² sin(x)?',
-          date: '2026-04-28',
-          time: '10:30',
-          replied: false,
-          reply: '',
-          replyDate: null,
-        },
-        {
-          id: 2,
-          studentId: 2,
-          studentName: 'سارة خالد',
-          studentClass: 'الثالث علمي',
-          subject: 'الفيزياء',
-          question: 'أستاذ، هل يمكنك شرح قانون نيوتن الثاني مع أمثلة؟',
-          date: '2026-04-27',
-          time: '14:15',
-          replied: true,
-          reply: 'قانون نيوتن الثاني: القوة = الكتلة × التسارع (F = ma). مثلاً إذا كانت كتلة الجسم 5kg ويتسارع بمقدار 2m/s²، فإن القوة المؤثرة = 10 نيوتن.',
-          replyDate: '2026-04-27',
-          replyTime: '16:00',
-        },
-        {
-          id: 3,
-          studentId: 3,
-          studentName: 'محمد علي',
-          studentClass: 'الثاني علمي',
-          subject: 'الكيمياء',
-          question: 'ما الفرق بين التفاعل الطارد للحرارة والتفاعل الماص للحرارة؟',
-          date: '2026-04-26',
-          time: '09:45',
-          replied: false,
-          reply: '',
-          replyDate: null,
-        },
-      ]);
+      console.error('❌ خطأ في جلب الاستفسارات:', error);
+      setToast({ open: true, message: 'فشل في جلب الاستفسارات', severity: 'error' });
+      setInquiries([]);
     } finally {
       setLoading(false);
     }
@@ -97,7 +80,7 @@ const Inquiries = () => {
 
   useEffect(() => {
     fetchInquiries();
-  }, [user?.id]);
+  }, []);
 
   // الرد على استفسار
   const handleReply = async (id) => {
@@ -112,23 +95,13 @@ const Inquiries = () => {
       await replyToInquiry(id, reply);
       setToast({ open: true, message: 'تم إرسال الرد بنجاح', severity: 'success' });
       setReplyTexts((prev) => ({ ...prev, [id]: '' }));
-      fetchInquiries(); // تحديث القائمة
+      fetchInquiries();
     } catch (error) {
-      setToast({ open: true, message: error.message || 'فشل في إرسال الرد', severity: 'error' });
+      console.error('❌ خطأ في إرسال الرد:', error);
+      setToast({ open: true, message: error.response?.data?.message || 'فشل في إرسال الرد', severity: 'error' });
     } finally {
       setSending(false);
     }
-  };
-
-  // تنسيق التاريخ
-  const formatDate = (dateString, timeString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ar-EG', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
   };
 
   if (loading) {
@@ -140,7 +113,6 @@ const Inquiries = () => {
     );
   }
 
-  // حساب الإحصائيات
   const totalInquiries = inquiries.length;
   const answeredCount = inquiries.filter(i => i.replied).length;
   const pendingCount = totalInquiries - answeredCount;
@@ -153,7 +125,6 @@ const Inquiries = () => {
         icon={<QuestionAnswerIcon sx={{ fontSize: 20 }} />}
       />
 
-      {/* بطاقات الإحصائيات */}
       <Box display="flex" gap={2} mb={3} flexWrap="wrap">
         <Paper
           sx={{
@@ -199,7 +170,6 @@ const Inquiries = () => {
         </Paper>
       </Box>
 
-      {/* قائمة الاستفسارات */}
       {inquiries.length === 0 ? (
         <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 4 }}>
           <QuestionAnswerIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
@@ -256,7 +226,6 @@ const Inquiries = () => {
               </Box>
             </AccordionSummary>
             <AccordionDetails sx={{ p: 3 }}>
-              {/* سؤال الطالب */}
               <Paper
                 variant="outlined"
                 sx={{
@@ -278,7 +247,6 @@ const Inquiries = () => {
                 </Typography>
               </Paper>
 
-              {/* الرد (إذا كان موجوداً) */}
               {inquiry.replied ? (
                 <Paper
                   variant="outlined"

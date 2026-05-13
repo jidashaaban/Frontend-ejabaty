@@ -3,10 +3,9 @@ import { Routes, Route } from 'react-router-dom';
 import TeacherLayout from '../../components/layout/TeacherLayout';
 import Dashboard from './Dashboard';
 import StudentsRate from './StudentsRate';
-import Schedule from './inquiries';
 import ExamModels from './ExamModels';
 import AnnounceTest from './AnnounceTest';
-import Inquiries from '../Admin/Complaints';
+import Inquiries from './Inquiries';
 import TeacherNotifications from './TeacherNotifications';
 
 const TeacherRoutes = () => {
