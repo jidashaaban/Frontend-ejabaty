@@ -125,7 +125,7 @@ export const getStudentGrades = async (studentId) => {
 
 // ============= ✅ دوال الشكاوى (Complaints) ✅ =============
 
-// إرسال شكوى - مع أسماء الحقول الصحيحة
+// إرسال شكوى
 export const submitComplaint = async (subject, complaintText) => {
   try {
     const payload = {
@@ -179,6 +179,32 @@ export const updateComplaint = async (id, complaintData) => {
     return response.data;
   } catch (error) {
     console.error('خطأ في تحديث الشكوى:', error);
+    throw error;
+  }
+};
+
+// ============= ✅ دوال الإشعارات (Notifications) ✅ =============
+
+// جلب إشعارات ولي الأمر
+export const getParentNotifications = async () => {
+  try {
+    const response = await apiClient.get('/notifications');
+    console.log('🔔 إشعارات ولي الأمر:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في جلب الإشعارات:', error);
+    throw error;
+  }
+};
+
+// تحديث إشعار كمقروء
+export const markParentNotificationAsRead = async (notificationId) => {
+  try {
+    const response = await apiClient.post(`/notifications/${notificationId}/read`);
+    console.log('✅ تم تحديث الإشعار:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في تحديث الإشعار:', error);
     throw error;
   }
 };

@@ -18,69 +18,91 @@ import {
   Star as StarIcon,
   EventNote as EventNoteIcon,
   Reply as ReplyIcon,
+  School as SchoolIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { getParentNotifications, markParentNotificationAsRead } from '../../services/parentService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
 const ParentNotifications = () => {
-  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const data = await getParentNotifications();
+      console.log('🔔 الإشعارات المستلمة:', data);
+      
+      let notificationsArray = [];
+      if (Array.isArray(data)) {
+        notificationsArray = data;
+      } else if (data && data.data && Array.isArray(data.data)) {
+        notificationsArray = data.data;
+      } else if (data && data.notifications && Array.isArray(data.notifications)) {
+        notificationsArray = data.notifications;
+      }
+      
+      const formattedNotifications = notificationsArray.map(notif => {
+        const type = notif.type || notif.data?.type || 'general';
+        let icon = <NotificationsIcon />;
+        let color = '#1976d2';
+        let bgColor = '#e3f2fd';
+        
+        if (type.includes('points') || type.includes('نقاط')) {
+          icon = <StarIcon />;
+          color = '#ff9800';
+          bgColor = '#fff3e0';
+        } else if (type.includes('exam') || type.includes('امتحان')) {
+          icon = <EventNoteIcon />;
+          color = '#1976d2';
+          bgColor = '#e3f2fd';
+        } else if (type.includes('complaint') || type.includes('شكوى')) {
+          icon = <ReplyIcon />;
+          color = '#4caf50';
+          bgColor = '#e8f5e9';
+        }
+        
+        return {
+          id: notif.id,
+          type: type,
+          title: notif.title || notif.data?.title || 'إشعار جديد',
+          message: notif.message || notif.data?.message || '',
+          date: notif.created_at ? new Date(notif.created_at).toLocaleDateString('ar-EG') : '',
+          time: notif.created_at ? new Date(notif.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '',
+          icon: icon,
+          color: color,
+          bgColor: bgColor,
+          read: notif.read_at !== null,
+        };
+      });
+      
+      setNotifications(formattedNotifications);
+    } catch (error) {
+      console.error('❌ خطأ في جلب الإشعارات:', error);
+      setToast({ open: true, message: 'فشل في جلب الإشعارات', severity: 'error' });
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const notificationsList = [
-      {
-        id: 1,
-        type: 'points',
-        title: 'نقاط جديدة',
-        message: 'تم إضافة 15 نقطة للطالب أحمد محمد',
-        date: '2026-04-25',
-        time: '10:30',
-        icon: <StarIcon />,
-        color: '#ff9800',
-        bgColor: '#fff3e0',
-        action: '/parent/points',
-        actionText: 'الذهاب إلى نقاط الطالب',
-        read: false,
-      },
-      {
-        id: 2,
-        type: 'exam',
-        title: 'برنامج امتحان جديد',
-        message: 'تم إضافة امتحان جديد في مادة الرياضيات بتاريخ 2026-04-27',
-        date: '2026-04-24',
-        time: '14:15',
-        icon: <EventNoteIcon />,
-        color: '#1976d2',
-        bgColor: '#e3f2fd',
-        action: '/parent/exams',
-        actionText: 'الذهاب إلى برنامج الامتحانات',
-        read: false,
-      },
-      {
-        id: 3,
-        type: 'complaint',
-        title: 'تم الرد على شكواك',
-        message: 'تم الرد على شكواك بخصوص تأخر المواصلات المدرسية',
-        date: '2026-04-23',
-        time: '09:45',
-        icon: <ReplyIcon />,
-        color: '#4caf50',
-        bgColor: '#e8f5e9',
-        action: '/parent/complaints',
-        actionText: 'الذهاب إلى الشكاوى',
-        read: true,
-      },
-    ];
-    setNotifications(notificationsList);
-    setLoading(false);
+    fetchNotifications();
   }, []);
 
-  const handleNotificationClick = (notification) => {
-    if (notification.action) {
-      navigate(notification.action);
+  // ✅ فقط تحديث حالة القراءة بدون تنقل
+  const handleNotificationClick = async (notification) => {
+    if (!notification.read) {
+      try {
+        await markParentNotificationAsRead(notification.id);
+        setNotifications(prev =>
+          prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
+        );
+      } catch (error) {
+        console.error('خطأ في تحديث حالة الإشعار:', error);
+      }
     }
   };
 
@@ -117,6 +139,9 @@ const ParentNotifications = () => {
         <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 4 }}>
           <NotificationsIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
           <Typography variant="h6" color="text.secondary">لا توجد إشعارات حالياً</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            سيتم إشعارك عند وجود تحديثات جديدة
+          </Typography>
         </Paper>
       ) : (
         <Grid container spacing={2}>
@@ -149,11 +174,12 @@ const ParentNotifications = () => {
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                           {notification.message}
                         </Typography>
-                        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
-                          <Typography variant="caption" color="text.secondary">
-                            {notification.date} - {notification.time}
-                          </Typography>
-                          <Chip label={notification.actionText} size="small" sx={{ bgcolor: notification.color, color: '#fff' }} />
+                        <Box display="flex" alignItems="center" flexWrap="wrap" gap={1}>
+                          {notification.date && (
+                            <Typography variant="caption" color="text.secondary">
+                              {notification.date} {notification.time && `- ${notification.time}`}
+                            </Typography>
+                          )}
                         </Box>
                       </Box>
                     }
