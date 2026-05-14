@@ -479,7 +479,6 @@ export const getPollResults = async (pollId) => {
   }
 };
 
-// ✅ دالة جديدة لجلب استبيان واحد كامل (للتعديل)
 export const getPollById = async (id) => {
   try {
     const response = await apiClient.get(`/admin/polls/${id}`);
@@ -517,33 +516,27 @@ export const markNotificationAsRead = async (notificationId) => {
   }
 };
 
-// ============= دوال الشكاوى =============
+// ============= دوال الشكاوى (Complaints) - للأدمن فقط =============
 
+// جلب جميع الشكاوى
 export const getComplaints = async () => {
   try {
-    const userRole = localStorage.getItem('role');
-    const userId = localStorage.getItem('user_id');
-    
-    if (userRole === 'parent') {
-      const response = await apiClient.get(`/parent/${userId}/complaints`);
-      return response.data.complaints || [];
-    } else if (userRole === 'admin') {
-      const response = await apiClient.get('/admin/complaints');
-      return response.data.data || [];
-    }
-    return [];
+    const response = await apiClient.get('/admin/complaints');
+    console.log('📋 الشكاوى:', response.data);
+    return response.data;
   } catch (error) {
     console.error('خطأ في جلب الشكاوى:', error);
     return [];
   }
 };
 
+// الرد على شكوى
 export const replyToComplaint = async (complaintId, answer) => {
   try {
-    const adminId = localStorage.getItem('user_id');
-    const response = await apiClient.post(`/admin/${adminId}/complaints/${complaintId}/answer`, {
+    const response = await apiClient.post(`/admin/complaints/${complaintId}/answer`, {
       answer_text: answer
     });
+    console.log('✅ تم إرسال الرد:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في الرد على الشكوى:', error);
@@ -551,28 +544,28 @@ export const replyToComplaint = async (complaintId, answer) => {
   }
 };
 
-export const submitComplaint = async (subject, complaintText) => {
-  try {
-    const parentId = localStorage.getItem('user_id');
-    const response = await apiClient.post(`/parent/${parentId}/complaints/submit`, {
-      subject: subject,
-      complaint_text: complaintText
-    });
-    return response.data;
-  } catch (error) {
-    console.error('خطأ في إرسال الشكوى:', error);
-    throw error;
-  }
-};
-
+// تعديل الرد على شكوى
 export const updateComplaintAnswer = async (complaintId, answer) => {
   try {
     const response = await apiClient.put(`/admin/complaints/${complaintId}/answer`, {
       answer_text: answer
     });
+    console.log('✏️ تم تحديث الرد:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في تحديث الرد:', error);
+    throw error;
+  }
+};
+
+// حذف شكوى
+export const deleteComplaint = async (id) => {
+  try {
+    const response = await apiClient.delete(`/admin/complaints/${id}`);
+    console.log('🗑️ تم حذف الشكوى:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('خطأ في حذف الشكوى:', error);
     throw error;
   }
 };
@@ -586,16 +579,6 @@ export const getUpcomingQuizzes = async () => {
   } catch (error) {
     console.error('خطأ في جلب الاختبارات القادمة:', error);
     return [];
-  }
-};
-
-export const submitQuizPoints = async (data) => {
-  try {
-    const response = await apiClient.post('/quiz/submit-points', data);
-    return response.data;
-  } catch (error) {
-    console.error('خطأ في إضافة نقاط الاختبار:', error);
-    throw error;
   }
 };
 

@@ -15,7 +15,6 @@ import {
   TableBody,
   CircularProgress,
   Alert,
-  Divider,
 } from '@mui/material';
 import {
   Star as StarIcon,
@@ -26,41 +25,102 @@ import {
   AccessTime as AccessTimeIcon,
   MeetingRoom as MeetingRoomIcon,
 } from '@mui/icons-material';
-import { getStudentInfo, getStudentPoints, getStudentExams } from '../../services/parentService';
+import { useSelector } from 'react-redux';
+import { getChildProgress, getChildExamSchedule } from '../../services/parentService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
 const Dashboard = () => {
-  const [studentInfo, setStudentInfo] = useState(null);
-  const [points, setPoints] = useState(0);
-  const [exams, setExams] = useState([]);
+  const { user } = useSelector((state) => state.auth);
+  // ✅ استخدمي ID الطالب الصحيح (من tinker كان 4)
+  const [childId] = useState(4);
+  const [studentName, setStudentName] = useState('');
+  const [studentGrade, setStudentGrade] = useState('');
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [avgGrade, setAvgGrade] = useState(0);
+  const [examSchedule, setExamSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-  const fetchData = async () => {
+  // جلب تقدم الطالب (الدرجات والنقاط)
+  const fetchChildProgress = async () => {
     try {
-      const studentData = await getStudentInfo();
-      setStudentInfo(studentData);
-      const pointsData = await getStudentPoints(studentData.id);
-      setPoints(pointsData.points || 0);
-      const examsData = await getStudentExams(studentData.id);
-      setExams(examsData || []);
+      const data = await getChildProgress(childId);
+      console.log('📊 تقدم الطالب:', data);
+      
+      if (data && data.success === true) {
+        setStudentName(data.student_name || 'الطالب');
+        
+        // ✅ معالجة النقاط من الاختبارات (quiz_progress)
+        let points = 0;
+        if (data.quiz_progress && Array.isArray(data.quiz_progress)) {
+          points = data.quiz_progress.reduce((sum, quiz) => sum + (parseInt(quiz.points) || 0), 0);
+          console.log('📝 تفاصيل النقاط:', data.quiz_progress);
+        }
+        
+        // ✅ معالجة درجات الامتحانات (exam_progress) - قد يكون نصاً أو مصفوفة
+        let examMarks = [];
+        if (data.exam_progress && Array.isArray(data.exam_progress)) {
+          examMarks = data.exam_progress.map(e => e.mark || 0);
+        } else if (data.exam_progress === "No exam history") {
+          examMarks = [];
+        }
+        
+        const avg = examMarks.length > 0 ? Math.round(examMarks.reduce((a, b) => a + b, 0) / examMarks.length) : 0;
+        setAvgGrade(avg);
+        setTotalPoints(points);
+      }
     } catch (error) {
-      setStudentInfo({ id: 1, name: 'أحمد محمد', class: 'الصف التاسع' });
-      setPoints(250);
-      setExams([
-        { id: 1, subject: 'الرياضيات', date: '2026-04-25', time: '10:00-12:00', room: 'قاعة 101', teacher: 'أ. أحمد' },
-        { id: 2, subject: 'الفيزياء', date: '2026-04-27', time: '10:00-12:00', room: 'قاعة 102', teacher: 'أ. سارة' },
-        { id: 3, subject: 'الكيمياء', date: '2026-04-29', time: '10:00-12:00', room: 'مختبر الكيمياء', teacher: 'أ. خالد' },
+      console.error('خطأ في جلب تقدم الطالب:', error);
+      setToast({ open: true, message: 'فشل في جلب بيانات الطالب', severity: 'error' });
+    }
+  };
+
+  // جلب جدول امتحانات الطالب
+  const fetchChildExamSchedule = async () => {
+    try {
+      const data = await getChildExamSchedule(childId);
+      console.log('📚 جدول امتحانات الطالب:', data);
+      
+      let examsList = [];
+      
+      if (data && data.success === true && data.exam_schedule) {
+        examsList = data.exam_schedule.map(session => ({
+          id: session.id,
+          subject: session.course?.name || 'غير محدد',
+          date: session.date || session.exam_date || '',
+          time: session.start_time && session.end_time 
+            ? `${session.start_time.substring(0, 5)} - ${session.end_time.substring(0, 5)}` 
+            : (session.time || ''),
+          room: session.hall?.name || session.room || 'غير محدد',
+          teacher: session.course?.teacher?.name || 'غير محدد',
+        }));
+      }
+      
+      setExamSchedule(examsList);
+    } catch (error) {
+      console.error('خطأ في جلب جدول امتحانات الطالب:', error);
+      setExamSchedule([]);
+    }
+  };
+
+  // تحميل جميع البيانات
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        fetchChildProgress(),
+        fetchChildExamSchedule(),
       ]);
+    } catch (error) {
+      console.error('خطأ في تحميل البيانات:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    setLoading(true);
-    fetchData();
+    loadData();
   }, []);
 
   if (loading) {
@@ -80,6 +140,7 @@ const Dashboard = () => {
         icon={<SchoolIcon sx={{ fontSize: 20 }} />}
       />
 
+      {/* معلومات الطالب */}
       <Paper
         sx={{
           p: 3,
@@ -94,67 +155,78 @@ const Dashboard = () => {
           </Avatar>
           <Box>
             <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
-              {studentInfo?.name || 'الطالب'}
+              {studentName || 'الطالب'}
             </Typography>
             <Typography variant="body2" sx={{ color: '#1976d2' }}>
-              الصف: {studentInfo?.class || 'غير محدد'}
+              الصف: {studentGrade || 'غير محدد'}
             </Typography>
           </Box>
           <Box flexGrow={1} />
           <Box textAlign="center">
             <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
-              {points}
+              {totalPoints}
             </Typography>
             <Typography variant="body2" sx={{ color: '#1976d2' }}>نقطة</Typography>
           </Box>
         </Box>
       </Paper>
 
+      {/* نقاط الطالب التفصيلية */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12}>
+        <Grid item xs={12} md={6}>
           <Card
             sx={{
               borderRadius: 3,
               boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
               background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%)',
+              height: '100%',
             }}
           >
-            <CardContent sx={{ p: 3 }}>
+            <CardContent>
               <Box display="flex" alignItems="center" gap={2} mb={2}>
                 <StarIcon sx={{ color: '#1565c0' }} />
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
-                  نقاط الطالب
+                  نقاط الاختبارات
                 </Typography>
               </Box>
-              <Typography variant="body2" sx={{ color: '#1976d2', mb: 1 }}>
-                إجمالي النقاط المحصلة
+              <Typography variant="h2" sx={{ fontWeight: 'bold', color: '#1565c0', mb: 1 }}>
+                {totalPoints}
               </Typography>
-              <Typography variant="h2" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
-                {points}
+              <Typography variant="body2" sx={{ color: '#1976d2' }}>
+                إجمالي النقاط المحصلة من الاختبارات
               </Typography>
-              <Divider sx={{ my: 2, borderColor: '#90caf9' }} />
-              <Box display="flex" gap={2} flexWrap="wrap">
-                <Chip
-                  label="حضور يومي +5"
-                  size="small"
-                  sx={{ bgcolor: '#bbdef5', color: '#1565c0' }}
-                />
-                <Chip
-                  label="درجة امتياز +15"
-                  size="small"
-                  sx={{ bgcolor: '#bbdef5', color: '#1565c0' }}
-                />
-                <Chip
-                  label="سلوك ممتاز +10"
-                  size="small"
-                  sx={{ bgcolor: '#bbdef5', color: '#1565c0' }}
-                />
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+              height: '100%',
+            }}
+          >
+            <CardContent>
+              <Box display="flex" alignItems="center" gap={2} mb={2}>
+                <SchoolIcon sx={{ color: '#2e7d32' }} />
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
+                  متوسط الدرجات
+                </Typography>
               </Box>
+              <Typography variant="h2" sx={{ fontWeight: 'bold', color: '#2e7d32', mb: 1 }}>
+                {avgGrade}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#2e7d32' }}>
+                متوسط درجات الامتحانات
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
+      {/* جدول الامتحانات */}
       <Paper
         sx={{
           borderRadius: 4,
@@ -193,14 +265,14 @@ const Dashboard = () => {
             </Box>
             <Chip
               icon={<EventNoteIcon />}
-              label={`${exams.length} امتحان${exams.length !== 1 ? 'ات' : ''}`}
+              label={`${examSchedule.length} امتحان${examSchedule.length !== 1 ? 'ات' : ''}`}
               sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#fff' }}
             />
           </Box>
         </Box>
 
         <Box sx={{ p: 3 }}>
-          {exams.length === 0 ? (
+          {examSchedule.length === 0 ? (
             <Alert severity="info" sx={{ borderRadius: 2 }}>
               لا توجد امتحانات مسجلة حالياً
             </Alert>
@@ -217,8 +289,8 @@ const Dashboard = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {exams.map((exam, index) => (
-                  <TableRow key={exam.id} hover>
+                {examSchedule.map((exam, index) => (
+                  <TableRow key={exam.id || index} hover>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>
                       <Chip

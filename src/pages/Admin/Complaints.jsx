@@ -9,7 +9,6 @@ import {
   Divider,
   CircularProgress,
   Alert,
-  IconButton,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -35,34 +34,36 @@ const Complaints = () => {
     setLoading(true);
     try {
       const data = await getComplaints();
-      console.log('📋 الشكاوى المستلمة:', data);
+      console.log('📋 البيانات من adminService:', data);
       
       let complaintsArray = [];
-      if (Array.isArray(data)) {
-        complaintsArray = data;
-      } else if (data && data.data && Array.isArray(data.data)) {
+      
+      // ✅ البيانات موجودة في data.data
+      if (data && data.data && Array.isArray(data.data)) {
         complaintsArray = data.data;
-      } else if (data && data.complaints && Array.isArray(data.complaints)) {
-        complaintsArray = data.complaints;
-      } else {
-        complaintsArray = [];
+        console.log('✅ تم استخراج الشكاوى من data.data');
+      } else if (Array.isArray(data)) {
+        complaintsArray = data;
+        console.log('✅ تم استخراج الشكاوى من data (مصفوفة)');
       }
       
-      const formattedComplaints = complaintsArray.map(complaint => ({
-        id: complaint.id,
-        parentName: complaint.parent?.name || 'ولي أمر',
-        studentName: complaint.student_name || '',
-        message: complaint.complaint_text || complaint.message,
-        subject: complaint.subject,
-        reply: complaint.answer_text || complaint.reply,
-        replied: !!complaint.answer_text || !!complaint.reply,
-        replyDate: complaint.updated_at,
-        date: complaint.created_at,
+      console.log('📋 عدد الشكاوى:', complaintsArray.length);
+      
+      const formatted = complaintsArray.map(c => ({
+        id: c.id,
+        parentName: c.parent?.name || 'ولي أمر',
+        subject: c.subject || 'بدون عنوان',
+        message: c.complaint_text || c.message,
+        reply: c.answer_text || c.reply,
+        replied: !!(c.answer_text || c.reply),
+        date: c.created_at,
+        replyDate: c.updated_at,
       }));
       
-      setComplaints(formattedComplaints);
+      setComplaints(formatted);
+      
     } catch (error) {
-      console.error('خطأ في جلب الشكاوى:', error);
+      console.error('❌ خطأ:', error);
       setToast({ open: true, message: 'فشل في جلب الشكاوى', severity: 'error' });
     } finally {
       setLoading(false);
@@ -76,35 +77,23 @@ const Complaints = () => {
   const handleReply = async (id) => {
     const reply = replyTexts[id] || '';
     if (!reply.trim()) {
-      setToast({ open: true, message: 'الرجاء كتابة رد قبل الإرسال', severity: 'warning' });
+      setToast({ open: true, message: 'الرجاء كتابة رد', severity: 'warning' });
       return;
     }
-
     try {
       await replyToComplaint(id, reply);
-      setToast({ open: true, message: 'تم إرسال الرد بنجاح', severity: 'success' });
-      setReplyTexts((prev) => ({ ...prev, [id]: '' }));
-      fetchComplaints(); 
+      setToast({ open: true, message: 'تم إرسال الرد', severity: 'success' });
+      setReplyTexts(prev => ({ ...prev, [id]: '' }));
+      fetchComplaints();
     } catch (error) {
       console.error('خطأ:', error);
-      setToast({ 
-        open: true, 
-        message: error.response?.data?.message || error.message || 'فشل في إرسال الرد', 
-        severity: 'error' 
-      });
+      setToast({ open: true, message: 'فشل في إرسال الرد', severity: 'error' });
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ar-EG', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const formatDate = (d) => {
+    if (!d) return '';
+    return new Date(d).toLocaleDateString('ar-EG');
   };
 
   if (loading) {
@@ -165,11 +154,6 @@ const Complaints = () => {
                     {formatDate(complaint.date)}
                   </Typography>
                 </Box>
-                {complaint.studentName && (
-                  <Typography variant="caption" color="text.secondary">
-                    عن الطالب: {complaint.studentName}
-                  </Typography>
-                )}
               </Box>
             </AccordionSummary>
             <AccordionDetails>
