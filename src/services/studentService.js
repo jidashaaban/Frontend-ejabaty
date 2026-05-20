@@ -1,263 +1,301 @@
-import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
 
-let studentSchedule = [
-  { 
-    id: uuidv4(), 
-    day: 'الأحد', 
-    startTime: '09:00', 
-    endTime: '10:00', 
-    subject: 'الرياضيات', 
-    roomName: 'قاعة 1',
-    classId: 1,
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
   },
-  { 
-    id: uuidv4(), 
-    day: 'الإثنين', 
-    startTime: '10:00', 
-    endTime: '11:00', 
-    subject: 'اللغة العربية', 
-    roomName: 'قاعة 2',
-    classId: 1,
-  },
-];
+});
 
-let studentExams = [
-  { 
-    id: uuidv4(), 
-    subject: 'الرياضيات', 
-    day: 'الأحد',
-    date: '2026-04-15', 
-    startTime: '09:00', 
-    endTime: '11:00',
-    roomName: 'قاعة 1',
-  },
-  { 
-    id: uuidv4(), 
-    subject: 'الفيزياء', 
-    day: 'الثلاثاء',
-    date: '2026-04-20', 
-    startTime: '11:00', 
-    endTime: '13:00',
-    roomName: 'قاعة 3',
-  },
-];
-
-const studentTasks = [
-  { id: uuidv4(), title: 'حل تمارين الوحدة الأولى', dueDate: '2026-04-05', priority: 'عالية' },
-  { id: uuidv4(), title: 'كتابة تقرير عن الكهرباء', dueDate: '2026-04-07', priority: 'متوسطة' },
-];
-
-const studentGrades = [
-  { id: uuidv4(), course: 'الرياضيات', grade: 85 },
-  { id: uuidv4(), course: 'الفيزياء', grade: 90 },
-];
-
-const studentInstallments = [
-  { id: uuidv4(), label: 'القسط الأول', amount: 1000, paid: 800 },
-  { id: uuidv4(), label: 'القسط الثاني', amount: 1000, paid: 0 },
-];
-
-
-let studentComplaints = [];
-
-
-const studentSurveys = [
-  { id: uuidv4(), title: 'تقييم خدمات المكتبة', questions: [ { id: uuidv4(), type: 'rating', question: 'قيم نظافة المكتبة' } ] },
-];
-
-
-let studentPoints = 10;
-
-
-let studentNotifications = [
-  { id: uuidv4(), message: 'تم إضافة اختبار جديد في مادة الفيزياء', date: '2026-03-30', isRead: false },
-];
-
-
-
-/**
- * @param {number} studentId - معرف الطالب
- * @returns {Promise<Array>} - قائمة الجلسات الخاصة بالطالب
- */
-export const getStudentSchedule = async (studentId) => {
-  return Promise.resolve([...studentSchedule]);
-};
-
-/**
- * @param {number} studentId - معرف الطالب
- * @returns {Promise<Array>} - قائمة الامتحانات الخاصة بالطالب
- */
-export const getStudentExams = async (studentId) => {
-  return Promise.resolve([...studentExams]);
-};
-
-export const getSchedule = async () => {
-  return Promise.resolve([...studentSchedule]);
-};
-
-export const getExams = async () => {
-  return Promise.resolve([...studentExams]);
-};
-
-
-export const getTasks = async () => {
-  return Promise.resolve([...studentTasks]);
-};
-
-export const addTask = async (task) => {
-  const newTask = { id: uuidv4(), ...task };
-  studentTasks.push(newTask);
-  return Promise.resolve(newTask);
-};
-
-export const updateTask = async (id, data) => {
-  const index = studentTasks.findIndex(t => t.id === id);
-  if (index !== -1) {
-    studentTasks[index] = { ...studentTasks[index], ...data };
-    return Promise.resolve(studentTasks[index]);
+// Interceptor لإضافة التوكن
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return Promise.resolve(null);
-};
+  return config;
+});
 
-export const deleteTask = async (id) => {
-  const index = studentTasks.findIndex(t => t.id === id);
-  if (index !== -1) {
-    studentTasks.splice(index, 1);
+// ============= دوال جدول الطالب =============
+
+// جلب جدول الطالب (الدوام)
+export const getStudentSchedule = async () => {
+  try {
+    const response = await apiClient.get('/student/my-schedule');
+    console.log('📅 جدول الطالب:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب جدول الطالب:', error);
+    if (error.response?.status === 404) {
+      return { success: false, message: 'لا يوجد جدول دوام' };
+    }
+    throw error;
   }
-  return Promise.resolve();
 };
 
-export const getGrades = async () => {
-  return Promise.resolve([...studentGrades]);
+// جلب الامتحانات القادمة
+export const getUpcomingExams = async () => {
+  try {
+    const response = await apiClient.get('/student/upcoming-exams');
+    console.log('📝 الامتحانات القادمة:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب الامتحانات القادمة:', error);
+    return [];
+  }
 };
 
-export const getGradeByCourse = async (courseId) => {
-  const grade = studentGrades.find(g => g.course === courseId);
-  return Promise.resolve(grade || null);
+// جلب سجل الامتحانات السابقة (مع الدرجات)
+export const getExamHistory = async () => {
+  try {
+    const response = await apiClient.get('/student/exam-history');
+    console.log('📊 سجل الامتحانات:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب سجل الامتحانات:', error);
+    return [];
+  }
 };
 
+// ============= دوال الاختبارات (Quizzes) =============
 
-export const getInstallments = async () => {
-  return Promise.resolve([...studentInstallments]);
+// جلب الاختبارات القادمة
+export const getUpcomingQuizzes = async () => {
+  try {
+    const response = await apiClient.get('/student/upcoming-quizzes');
+    console.log('📚 الاختبارات القادمة:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب الاختبارات القادمة:', error);
+    return [];
+  }
 };
 
-export const getRemainingAmount = async () => {
-  const total = studentInstallments.reduce((sum, inst) => sum + inst.amount, 0);
-  const paid = studentInstallments.reduce((sum, inst) => sum + inst.paid, 0);
-  return Promise.resolve(total - paid);
+// جلب الاختبارات السابقة
+export const getPastQuizzes = async () => {
+  try {
+    const response = await apiClient.get('/student/past-quizzes');
+    console.log('📚 الاختبارات السابقة:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب الاختبارات السابقة:', error);
+    return [];
+  }
 };
 
+// ============= دوال النقاط =============
 
-export const submitComplaint = async (complaint) => {
-  const newComplaint = { id: uuidv4(), ...complaint, date: new Date().toISOString(), status: 'pending' };
-  studentComplaints.push(newComplaint);
-  return Promise.resolve(newComplaint);
-};
-
-export const getComplaints = async () => {
-  return Promise.resolve([...studentComplaints]);
-};
-
-export const getComplaintById = async (id) => {
-  const complaint = studentComplaints.find(c => c.id === id);
-  return Promise.resolve(complaint || null);
-};
-
-
-export const getSurveys = async () => {
-  return Promise.resolve([...studentSurveys]);
-};
-
-export const getSurveyById = async (surveyId) => {
-  const survey = studentSurveys.find(s => s.id === surveyId);
-  return Promise.resolve(survey || null);
-};
-
-export const submitSurveyResponse = async (surveyId, responses) => {
-  return Promise.resolve({ surveyId, responses, submittedAt: new Date().toISOString() });
-};
-
+// جلب النقاط - ✅ ترجع قيمة رقمية مباشرة
 export const getPoints = async () => {
-  return Promise.resolve(studentPoints);
-};
-
-export const addPoints = async (delta) => {
-  studentPoints += delta;
-  return Promise.resolve(studentPoints);
-};
-
-export const getTopStudents = async (limit = 3) => {
-  const topStudents = [
-    { id: 1, name: 'أحمد', points: 250 },
-    { id: 2, name: 'سارة', points: 180 },
-    { id: 3, name: 'محمد', points: 150 },
-  ];
-  return Promise.resolve(topStudents.slice(0, limit));
-};
-
-export const getNotifications = async () => {
-  return Promise.resolve([...studentNotifications]);
-};
-
-export const getUnreadNotificationsCount = async () => {
-  const unreadCount = studentNotifications.filter(n => !n.isRead).length;
-  return Promise.resolve(unreadCount);
-};
-
-export const markNotificationAsRead = async (id) => {
-  const index = studentNotifications.findIndex(n => n.id === id);
-  if (index !== -1) {
-    studentNotifications[index].isRead = true;
-    return Promise.resolve(studentNotifications[index]);
+  try {
+    const examHistory = await getExamHistory();
+    let totalPoints = 0;
+    
+    if (Array.isArray(examHistory)) {
+      totalPoints = examHistory.reduce((sum, exam) => sum + (exam.marks_obtained || exam.points || 0), 0);
+    } else if (examHistory?.data && Array.isArray(examHistory.data)) {
+      totalPoints = examHistory.data.reduce((sum, exam) => sum + (exam.marks_obtained || exam.points || 0), 0);
+    }
+    
+    console.log('⭐ مجموع النقاط:', totalPoints);
+    // ✅ إرجاع رقم مباشرة وليس كائن
+    return totalPoints;
+  } catch (error) {
+    console.error('❌ خطأ في جلب النقاط:', error);
+    return 0;
   }
-  return Promise.resolve(null);
 };
 
-export const markAllNotificationsAsRead = async () => {
-  studentNotifications = studentNotifications.map(n => ({ ...n, isRead: true }));
-  return Promise.resolve();
+// جلب النقاط (اسم بديل) - ✅ أيضاً يرجع رقم
+export const getStudentPoints = getPoints;
+
+// ============= دوال المواد الدراسية =============
+
+// جلب المواد المتاحة للتسجيل
+export const getAvailableCourses = async () => {
+  try {
+    const response = await apiClient.get('/student/available-courses');
+    console.log('📚 المواد المتاحة:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب المواد المتاحة:', error);
+    return [];
+  }
 };
 
-export const addNotification = async (notification) => {
-  const newNotification = { id: uuidv4(), ...notification, date: new Date().toISOString(), isRead: false };
-  studentNotifications.unshift(newNotification);
-  return Promise.resolve(newNotification);
+// جلب المواد التي سجل فيها الطالب
+export const getMyCourses = async () => {
+  try {
+    const response = await apiClient.get('/student/my-courses');
+    console.log('📚 المواد المسجلة (خام):', response.data);
+    
+    let coursesArray = [];
+    
+    if (Array.isArray(response.data)) {
+      coursesArray = response.data;
+    } else if (response.data?.data && Array.isArray(response.data.data)) {
+      coursesArray = response.data.data;
+    } else if (response.data?.courses && Array.isArray(response.data.courses)) {
+      coursesArray = response.data.courses;
+    }
+    
+    coursesArray = coursesArray.map(course => ({
+      id: course.id,
+      name: course.name,
+      code: course.code,
+      status: course.pivot?.status || course.status || 'approved',
+    }));
+    
+    console.log('✅ المواد بعد المعالجة:', coursesArray);
+    return coursesArray;
+  } catch (error) {
+    console.error('❌ خطأ في جلب المواد المسجلة:', error);
+    return [];
+  }
 };
 
-/**
- * @param {Object} session - بيانات الجلسة الجديدة
- */
-export const addToStudentSchedule = async (session) => {
-  const newSession = { id: uuidv4(), ...session };
-  studentSchedule.push(newSession);
-  return Promise.resolve(newSession);
+// التسجيل في مادة
+export const joinCourse = async (courseId) => {
+  try {
+    const response = await apiClient.post(`/student/courses/${courseId}/join`);
+    console.log('✅ تم التسجيل في المادة:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في التسجيل في المادة:', error);
+    throw error;
+  }
 };
 
-/**
- * @param {Object} exam - بيانات الامتحان الجديد
- */
-export const addToStudentExams = async (exam) => {
-  const newExam = { id: uuidv4(), ...exam };
-  studentExams.push(newExam);
-  
-  await addNotification({
-    message: `📝 تم إضافة امتحان جديد في مادة ${exam.subject} بتاريخ ${exam.date}`,
-    type: 'exam',
-  });
-  
-  return Promise.resolve(newExam);
+// ============= دوال الاستبيانات (Polls / Surveys) =============
+
+// جلب جميع الاستبيانات
+export const getSurveys = async () => {
+  try {
+    const response = await apiClient.get('/student/polls');
+    console.log('📊 الاستبيانات:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب الاستبيانات:', error);
+    return [];
+  }
 };
 
-/**
- * @param {Object} notificationData - بيانات الإشعار
- */
-export const sendNotificationToStudent = async (notificationData) => {
-  const newNotification = {
-    id: uuidv4(),
-    ...notificationData,
-    date: new Date().toISOString(),
-    isRead: false,
-  };
-  studentNotifications.unshift(newNotification);
-  return Promise.resolve(newNotification);
+// جلب جميع الاستبيانات
+export const getStudentPolls = getSurveys;
+
+// جلب استبيان محدد
+export const getPollById = async (pollId) => {
+  try {
+    const response = await apiClient.get(`/student/polls/${pollId}`);
+    console.log('📊 تفاصيل الاستبيان:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب تفاصيل الاستبيان:', error);
+    throw error;
+  }
 };
+
+// إرسال إجابات الاستبيان
+export const submitSurveyResponse = async (pollId, answers) => {
+  try {
+    const response = await apiClient.post(`/student/polls/${pollId}/submit`, { answers });
+    console.log('✅ تم إرسال إجابات الاستبيان:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في إرسال الإجابات:', error);
+    throw error;
+  }
+};
+
+// إرسال إجابات الاستبيان (اسم بديل)
+export const submitPollAnswers = submitSurveyResponse;
+
+// ============= دوال الاستفسارات (للاستاذ) =============
+
+// إرسال استفسار للأستاذ
+export const submitInquiry = async (inquiryData) => {
+  try {
+    const response = await apiClient.post('/student/questions/ask', inquiryData);
+    console.log('✅ تم إرسال الاستفسار للأستاذ:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في إرسال الاستفسار:', error);
+    throw error;
+  }
+};
+
+// إرسال سؤال (اسم بديل)
+export const askQuestion = submitInquiry;
+
+// جلب استفساراتي
+export const getMyInquiries = async () => {
+  try {
+    const response = await apiClient.get('/student/questions');
+    console.log('❓ استفساراتي:', response.data);
+    
+    let inquiriesArray = [];
+    if (Array.isArray(response.data)) {
+      inquiriesArray = response.data;
+    } else if (response.data?.data && Array.isArray(response.data.data)) {
+      inquiriesArray = response.data.data;
+    } else if (response.data?.questions && Array.isArray(response.data.questions)) {
+      inquiriesArray = response.data.questions;
+    }
+    
+    return inquiriesArray;
+  } catch (error) {
+    console.error('❌ خطأ في جلب الاستفسارات:', error);
+    return [];
+  }
+};
+
+// جلب أسئلتي (اسم بديل)
+export const getMyQuestions = getMyInquiries;
+
+// تعديل استفسار
+export const updateInquiry = async (id, inquiryData) => {
+  try {
+    const response = await apiClient.put(`/student/questions/${id}`, inquiryData);
+    console.log('✏️ تم تعديل الاستفسار:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في تعديل الاستفسار:', error);
+    throw error;
+  }
+};
+
+// تعديل سؤال (اسم بديل)
+export const updateQuestion = updateInquiry;
+
+// حذف استفسار
+export const deleteInquiry = async (id) => {
+  try {
+    const response = await apiClient.delete(`/student/questions/${id}`);
+    console.log('🗑️ تم حذف الاستفسار:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في حذف الاستفسار:', error);
+    throw error;
+  }
+};
+
+// حذف سؤال (اسم بديل)
+export const deleteQuestion = deleteInquiry;
+
+// ============= دوال الإشعارات =============
+
+// جلب الإشعارات
+export const getNotifications = async () => {
+  try {
+    const response = await apiClient.get('/notifications');
+    console.log('🔔 الإشعارات:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب الإشعارات:', error);
+    return { unread_count: 0, notifications: [] };
+  }
+};
+
+export { apiClient };

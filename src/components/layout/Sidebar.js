@@ -56,11 +56,8 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
 
   const studentItems = [
     { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
-    { text: 'برنامجي', path: 'my-schedule', icon: <CalendarMonthIcon /> },
-    { text: 'الدرجات', path: 'grades', icon: <ScoreIcon /> },
-    { text: 'الأقساط', path: 'installments', icon: <PaymentIcon /> },
-    { text: 'الشكاوى', path: 'complaints', icon: <ReportProblemIcon /> },
-    { text: 'الاستبيانات', path: 'surveys', icon: <PollIcon /> },
+    { text: 'الاستفسارات', path: 'inquiries', icon: <QuestionAnswerIcon /> },
+    { text: 'الاستبيانات', path: 'poll', icon: <PollIcon /> },
     { text: 'النقاط', path: 'points', icon: <StarIcon /> },
     { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
   ];

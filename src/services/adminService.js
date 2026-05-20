@@ -303,50 +303,76 @@ export const getAllUsers = async (role = null) => {
   }
 };
 
-// ============= دوال الجداول (البرنامج الأسبوعي) =============
+// ============= دوال الجداول (البرنامج الأسبوعي) - المعدلة =============
 
 export const getWeeklyProgram = async () => {
   try {
     const response = await apiClient.get('/admin-schedule', { params: { type: 'course' } });
+    console.log('📅 الرد الخام من /admin-schedule?type=course:', response);
+    console.log('📅 response.data:', response.data);
     return response.data;
   } catch (error) {
-    console.error('خطأ في جلب برنامج الدوام:', error);
-    return null;
+    console.error('❌ خطأ في جلب برنامج الدوام:', error);
+    if (error.response?.status === 404) {
+      return { success: false, message: error.response?.data?.message || 'لا يوجد جدول دوام' };
+    }
+    throw error;
   }
 };
 
 export const getExamProgram = async () => {
   try {
     const response = await apiClient.get('/admin-schedule', { params: { type: 'exam' } });
+    console.log('📝 الرد الخام من /admin-schedule?type=exam:', response);
+    console.log('📝 response.data:', response.data);
     return response.data;
   } catch (error) {
-    console.error('خطأ في جلب برنامج الامتحانات:', error);
-    return null;
-  }
-};
-
-export const generateWeeklySchedule = async () => {
-  const response = await apiClient.post('/schedule/generate', { type: 'course' });
-  return response.data;
-};
-
-export const generateExamSchedule = async () => {
-  const response = await apiClient.post('/schedule/generate', { type: 'exam' });
-  return response.data;
-};
-
-export const deleteSession = async (sessionId) => {
-  try {
-    const response = await apiClient.delete(`/sessions/${sessionId}`);
-    return response.data;
-  } catch (error) {
-    console.error('خطأ في حذف الجلسة:', error);
+    console.error('❌ خطأ في جلب برنامج الامتحانات:', error);
+    if (error.response?.status === 404) {
+      return { success: false, message: error.response?.data?.message || 'لا يوجد جدول امتحانات' };
+    }
     throw error;
   }
 };
 
-export const deleteWeeklyProgram = deleteSession;
-export const deleteExamProgram = deleteSession;
+export const generateWeeklySchedule = async () => {
+  try {
+    const response = await apiClient.post('/schedule/generate', { type: 'course' });
+    console.log('🚀 رد توليد الدوام:', response);
+    console.log('🚀 response.data:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في توليد جدول الدوام:', error);
+    console.error('❌ تفاصيل الخطأ:', error.response?.data);
+    throw error;
+  }
+};
+
+export const generateExamSchedule = async () => {
+  try {
+    const response = await apiClient.post('/schedule/generate', { type: 'exam' });
+    console.log('🚀 رد توليد الامتحانات:', response);
+    console.log('🚀 response.data:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في توليد جدول الامتحانات:', error);
+    console.error('❌ تفاصيل الخطأ:', error.response?.data);
+    throw error;
+  }
+};
+
+export const deleteWeeklyProgram = async (sessionId) => {
+  try {
+    const response = await apiClient.delete(`/sessions/${sessionId}`);
+    console.log('🗑️ رد الحذف:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في حذف الجلسة:', error);
+    throw error;
+  }
+};
+
+export const deleteExamProgram = deleteWeeklyProgram;
 
 // ============= دوال القاعات =============
 
@@ -518,7 +544,6 @@ export const markNotificationAsRead = async (notificationId) => {
 
 // ============= دوال الشكاوى (Complaints) - للأدمن فقط =============
 
-// جلب جميع الشكاوى
 export const getComplaints = async () => {
   try {
     const response = await apiClient.get('/admin/complaints');
@@ -530,7 +555,6 @@ export const getComplaints = async () => {
   }
 };
 
-// الرد على شكوى
 export const replyToComplaint = async (complaintId, answer) => {
   try {
     const response = await apiClient.post(`/admin/complaints/${complaintId}/answer`, {
@@ -544,7 +568,6 @@ export const replyToComplaint = async (complaintId, answer) => {
   }
 };
 
-// تعديل الرد على شكوى
 export const updateComplaintAnswer = async (complaintId, answer) => {
   try {
     const response = await apiClient.put(`/admin/complaints/${complaintId}/answer`, {
@@ -558,7 +581,6 @@ export const updateComplaintAnswer = async (complaintId, answer) => {
   }
 };
 
-// حذف شكوى
 export const deleteComplaint = async (id) => {
   try {
     const response = await apiClient.delete(`/admin/complaints/${id}`);
