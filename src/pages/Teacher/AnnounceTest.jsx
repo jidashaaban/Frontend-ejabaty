@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  MenuItem,
   Chip,
   CircularProgress,
   Alert,
@@ -26,7 +25,6 @@ import {
   Announcement as AnnouncementIcon,
   AccessTime as AccessTimeIcon,
   School as SchoolIcon,
-  Person as PersonIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { announceTest, getAnnouncedTests } from '../../services/teacherService';
@@ -36,7 +34,6 @@ import PageHeader from '../../components/common/PageHeader';
 function AnnounceTest() {
   const { user } = useSelector((state) => state.auth);
   const [quizzes, setQuizzes] = useState([]);
-  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [formData, setFormData] = useState({
@@ -44,21 +41,15 @@ function AnnounceTest() {
     quiz_date: new Date().toISOString().split('T')[0],
     start_time: '08:00',
     included_content: '',
-    teacher_name: '',
   });
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchQuizzes = async () => {
     setLoading(true);
     try {
-      try {
-        const data = await getAnnouncedTests();
-        const quizzes = data?.quizzes || data?.data || (Array.isArray(data) ? data : []);
-        setQuizzes(quizzes);
-      } catch (error) {
-        console.error('خطأ في جلب الاختبارات:', error);
-        setQuizzes([]);
-      }
+      const data = await getAnnouncedTests();
+      const quizzes = data?.quizzes || data?.data || (Array.isArray(data) ? data : []);
+      setQuizzes(quizzes);
     } catch (error) {
       console.error('خطأ في جلب الاختبارات:', error);
       setQuizzes([]);
@@ -66,7 +57,6 @@ function AnnounceTest() {
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     fetchQuizzes();
@@ -78,9 +68,7 @@ function AnnounceTest() {
       quiz_date: new Date().toISOString().split('T')[0],
       start_time: '08:00',
       included_content: '',
-      teacher_name: user?.name || '',
     });
-    setTeachers([]);
     setOpenDialog(true);
   };
 
@@ -98,10 +86,6 @@ function AnnounceTest() {
       setToast({ open: true, message: 'الرجاء إدخال اسم المادة', severity: 'error' });
       return;
     }
-    if (!formData.teacher_name) {
-      setToast({ open: true, message: 'الرجاء اختيار اسم الأستاذ', severity: 'error' });
-      return;
-    }
     if (!formData.included_content) {
       setToast({ open: true, message: 'الرجاء إدخال محتوى الاختبار', severity: 'error' });
       return;
@@ -113,24 +97,12 @@ function AnnounceTest() {
         quiz_date: formData.quiz_date,
         start_time: formData.start_time,
         included_content: formData.included_content,
-        teacher_name: formData.teacher_name,
       };
       
       console.log(' إرسال بيانات الاختبار:', quizData);
       const response = await announceTest(quizData);
       
       if (response && response.success) {
-        const newQuiz = {
-          id: Date.now(),
-          course_name: formData.course_name,
-          course: { name: formData.course_name },
-          included_content: formData.included_content,
-          quiz_date: formData.quiz_date,
-          start_time: formData.start_time,
-          teacher_name: formData.teacher_name,
-          created_at: new Date().toISOString(),
-        };
-        
         fetchQuizzes();
         setToast({ open: true, message: 'تم إعلان الاختبار بنجاح! سيتم إشعار الطلاب', severity: 'success' });
         handleCloseDialog();
@@ -295,7 +267,7 @@ function AnnounceTest() {
                   >
                     <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                       <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} sm={2}>
+                        <Grid item xs={12} sm={3}>
                           <Box display="flex" alignItems="center" gap={1}>
                             <SchoolIcon color="primary" fontSize="small" />
                             <Typography fontWeight="bold" variant="body2">
@@ -303,17 +275,8 @@ function AnnounceTest() {
                             </Typography>
                           </Box>
                         </Grid>
-                        
-                        <Grid item xs={12} sm={2}>
-                          <Box display="flex" alignItems="center" gap={0.5}>
-                            <PersonIcon sx={{ color: '#1976d2', fontSize: 14 }} />
-                            <Typography variant="body2" color="text.primary">
-                              {quiz.teacher_name || quiz.teacher?.name || 'غير محدد'}
-                            </Typography>
-                          </Box>
-                        </Grid>
 
-                        <Grid item xs={ 12 } sm={ 4 }>
+                        <Grid item xs={12} sm={5}>
                           <Typography variant="body2" color="text.secondary">
                             {quiz.included_content?.length > 60 
                               ? quiz.included_content.substring(0, 60) + '...' 
@@ -388,32 +351,6 @@ function AnnounceTest() {
           />
           
           <TextField
-            name="teacher_name"
-            label="اسم الأستاذ"
-            select={teachers.length > 0}
-            fullWidth
-            margin="normal"
-            value={formData.teacher_name}
-            onChange={handleChange}
-            required
-            variant="outlined"
-            helperText="اختر اسم الأستاذ الذي سيعلن الاختبار"
-            InputProps={{
-              startAdornment: <PersonIcon sx={{ color: '#1976d2', mr: 1 }} />,
-            }}
-          >
-            {teachers.length > 0 ? (
-              teachers.map((teacher, index) => (
-                <MenuItem key={teacher.id || index} value={teacher.name}>
-                  {teacher.name}
-                </MenuItem>
-              ))
-            ) : (
-              <MenuItem value={formData.teacher_name}>{formData.teacher_name || 'أدخل اسم الأستاذ'}</MenuItem>
-            )}
-          </TextField>
-          
-          <TextField
             name="included_content"
             label="محتوى الاختبار"
             fullWidth
@@ -483,4 +420,4 @@ function AnnounceTest() {
   );
 }
 
-export default AnnounceTest;  
+export default AnnounceTest;
