@@ -29,7 +29,7 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
-import { announceTest, getUpcomingQuizzesForStudent } from '../../services/teacherService';
+import { announceTest, getAnnouncedTests } from '../../services/teacherService';
 import Toast from '../../components/common/Toast';
 import PageHeader from '../../components/common/PageHeader';
 
@@ -51,25 +51,14 @@ function AnnounceTest() {
   const fetchQuizzes = async () => {
     setLoading(true);
     try {
-      const storedQuizzes = localStorage.getItem('teacher_quizzes');
-      let localQuizzes = storedQuizzes ? JSON.parse(storedQuizzes) : [];
-      
-      const studentId = user?.id;
-      if (studentId) {
-        try {
-          const data = await getUpcomingQuizzesForStudent(studentId);
-          if (data && data.success && data.upcoming_quizzes) {
-            const apiQuizzes = data.upcoming_quizzes.filter(
-              apiQuiz => !localQuizzes.some(localQuiz => localQuiz.id === apiQuiz.id)
-            );
-            localQuizzes = [...apiQuizzes, ...localQuizzes];
-          }
-        } catch (error) {
-          console.log('API غير متاح، نستخدم localStorage فقط');
-        }
+      try {
+        const data = await getAnnouncedTests();
+        const quizzes = data?.quizzes || data?.data || (Array.isArray(data) ? data : []);
+        setQuizzes(quizzes);
+      } catch (error) {
+        console.error('خطأ في جلب الاختبارات:', error);
+        setQuizzes([]);
       }
-      
-      setQuizzes(localQuizzes);
     } catch (error) {
       console.error('خطأ في جلب الاختبارات:', error);
       setQuizzes([]);
@@ -78,9 +67,6 @@ function AnnounceTest() {
     }
   };
 
-  const saveQuizzesToLocalStorage = (updatedQuizzes) => {
-    localStorage.setItem('teacher_quizzes', JSON.stringify(updatedQuizzes));
-  };
 
   useEffect(() => {
     fetchQuizzes();
@@ -130,7 +116,7 @@ function AnnounceTest() {
         teacher_name: formData.teacher_name,
       };
       
-      console.log('📤 إرسال بيانات الاختبار:', quizData);
+      console.log(' إرسال بيانات الاختبار:', quizData);
       const response = await announceTest(quizData);
       
       if (response && response.success) {
@@ -145,10 +131,7 @@ function AnnounceTest() {
           created_at: new Date().toISOString(),
         };
         
-        const updatedQuizzes = [newQuiz, ...quizzes];
-        setQuizzes(updatedQuizzes);
-        saveQuizzesToLocalStorage(updatedQuizzes);
-        
+        fetchQuizzes();
         setToast({ open: true, message: 'تم إعلان الاختبار بنجاح! سيتم إشعار الطلاب', severity: 'success' });
         handleCloseDialog();
       } else {
@@ -165,9 +148,7 @@ function AnnounceTest() {
   };
 
   const handleDelete = (id) => {
-    const updatedQuizzes = quizzes.filter(quiz => quiz.id !== id);
-    setQuizzes(updatedQuizzes);
-    saveQuizzesToLocalStorage(updatedQuizzes);
+    fetchQuizzes();
     setToast({ 
       open: true, 
       message: 'تم حذف الاختبار من القائمة', 
@@ -404,7 +385,6 @@ function AnnounceTest() {
             required
             variant="outlined"
             placeholder="مثال: رياضيات، علوم، لغة عربية"
-            helperText="أدخل اسم المادة كما هو مسجل في النظام"
           />
           
           <TextField
@@ -503,4 +483,4 @@ function AnnounceTest() {
   );
 }
 
-export default AnnounceTest;
+export default AnnounceTest;  

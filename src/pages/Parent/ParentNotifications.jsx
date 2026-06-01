@@ -33,15 +33,15 @@ const ParentNotifications = () => {
     setLoading(true);
     try {
       const data = await getParentNotifications();
-      console.log('🔔 الإشعارات المستلمة:', data);
+      console.log(' الإشعارات المستلمة:', data);
       
       let notificationsArray = [];
-      if (Array.isArray(data)) {
+      if (data && data.notifications && Array.isArray(data.notifications)) {
+        notificationsArray = data.notifications;
+      } else if (Array.isArray(data)) {
         notificationsArray = data;
       } else if (data && data.data && Array.isArray(data.data)) {
         notificationsArray = data.data;
-      } else if (data && data.notifications && Array.isArray(data.notifications)) {
-        notificationsArray = data.notifications;
       }
       
       const formattedNotifications = notificationsArray.map(notif => {
@@ -92,7 +92,6 @@ const ParentNotifications = () => {
     fetchNotifications();
   }, []);
 
-  // ✅ فقط تحديث حالة القراءة بدون تنقل
   const handleNotificationClick = async (notification) => {
     if (!notification.read) {
       try {

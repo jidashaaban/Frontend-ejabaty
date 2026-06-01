@@ -3,194 +3,83 @@ import {
   Box,
   Typography,
   Grid,
-  Paper,
   Card,
   CardContent,
-  Chip,
   Avatar,
-  Alert,
+  Chip,
   CircularProgress,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
+  LinearProgress,
+  Paper,
+  Divider,
 } from '@mui/material';
 import {
-  CalendarMonth as CalendarIcon,
   School as SchoolIcon,
   Star as StarIcon,
-  Pending as PendingIcon,
-  CheckCircle as CheckCircleIcon,
-  Schedule as ScheduleIcon,
+  EventNote as EventNoteIcon,
+  Assignment as AssignmentIcon,
+  MenuBook as MenuBookIcon,
+  HourglassEmpty as PendingIcon,
+  CheckCircle as ActiveIcon,
+  TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
-import {
-  getStudentSchedule,
-  getUpcomingExams,
-  getStudentPoints,
-  getMyCourses,
-} from '../../services/studentService';
+import { getPoints, getStudentExams, getGrades } from '../../services/studentService';
+import { getActiveCourses, getPendingCourses } from '../../services/courseRegistrationService';
 
-const dayMapToArabic = {
-  'Sunday': 'الأحد',
-  'Monday': 'الإثنين',
-  'Tuesday': 'الثلاثاء',
-  'Wednesday': 'الأربعاء',
-  'Thursday': 'الخميس',
-};
-
-const timeSlots = ['08:00:00', '09:30:00', '11:00:00', '12:30:00', '14:00:00', '15:30:00'];
-
-const formatTime = (time) => time?.substring(0, 5) || time;
-
-function StudentDashboard() {
+const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
-  
-  const [schedule, setSchedule] = useState({});
-  const [exams, setExams] = useState([]);
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [registeredCourses, setRegisteredCourses] = useState([]);
-  const [pendingCourses, setPendingCourses] = useState([]);
+  const [data, setData] = useState({
+    points: 0,
+    activeCourses: [],
+    pendingCourses: [],
+    exams: [],
+    grades: []
+  });
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [user?.id]);
+    const fetchAll = async () => {
+      try {
+        const [pointsRes, activeRes, pendingRes, examsRes, gradesRes] = await Promise.allSettled([
+          getPoints(),
+          getActiveCourses(),
+          getPendingCourses(),
+          getStudentExams(),
+          getGrades(),
+        ]);
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    try {
-      const [scheduleData, examsData, pointsData, coursesData] = await Promise.all([
-        getStudentSchedule(),
-        getUpcomingExams(),
-        getStudentPoints(),
-        getMyCourses(),
-      ]);
-
-      console.log('📅 الجدول:', scheduleData);
-      console.log('📝 الامتحانات:', examsData);
-      console.log('⭐ النقاط (الخام):', pointsData);
-      console.log('📚 المواد المسجلة (الخام):', coursesData);
-
-      // معالجة الجدول (master_grid)
-      let processedSchedule = {};
-      if (scheduleData?.master_grid) {
-        processedSchedule = scheduleData.master_grid;
-      } else if (scheduleData?.data?.master_grid) {
-        processedSchedule = scheduleData.data.master_grid;
-      }
-      setSchedule(processedSchedule);
-
-      // معالجة الامتحانات
-      let examsArray = [];
-      if (Array.isArray(examsData)) {
-        examsArray = examsData;
-      } else if (examsData?.data && Array.isArray(examsData.data)) {
-        examsArray = examsData.data;
-      } else if (examsData?.sessions && Array.isArray(examsData.sessions)) {
-        examsArray = examsData.sessions;
-      }
-      setExams(examsArray);
-
-      // ✅ معالجة النقاط - التأكد من أنها قيمة رقمية وليس كائن
-      let pointsValue = 0;
-      if (typeof pointsData === 'number') {
-        pointsValue = pointsData;
-      } else if (pointsData?.total_points) {
-        pointsValue = pointsData.total_points;
-      } else if (pointsData?.points) {
-        pointsValue = pointsData.points;
-      } else if (typeof pointsData === 'object' && pointsData !== null) {
-        pointsValue = pointsData.total_points || pointsData.points || 0;
-      }
-      setTotalPoints(pointsValue);
-      console.log('⭐ النقاط المعالجة:', pointsValue);
-
-      // معالجة المواد المسجلة
-      let coursesArray = [];
-      
-      if (Array.isArray(coursesData)) {
-        coursesArray = coursesData;
-      } else if (coursesData?.data && Array.isArray(coursesData.data)) {
-        coursesArray = coursesData.data;
-      } else if (coursesData?.courses && Array.isArray(coursesData.courses)) {
-        coursesArray = coursesData.courses;
-      }
-      
-      console.log('📚 المصفوفة قبل التقسيم:', coursesArray);
-      console.log('📚 عدد المواد:', coursesArray.length);
-      
-      // عرض كل مادة في Console للتأكد
-      coursesArray.forEach((course, index) => {
-        console.log(`📚 المادة ${index + 1}:`, {
-          id: course.id,
-          name: course.name,
-          code: course.code,
-          status: course.status,
-          pivot_status: course.pivot?.status
+        setData({
+          points: pointsRes.status === 'fulfilled' ? (pointsRes.value?.points || 0) : 0,
+          activeCourses: activeRes.status === 'fulfilled' ? (activeRes.value?.active_courses || []) : [],
+          pendingCourses: pendingRes.status === 'fulfilled' ? (pendingRes.value?.pending_courses || []) : [],
+          exams: examsRes.status === 'fulfilled' ? (examsRes.value?.exams || (Array.isArray(examsRes.value) ? examsRes.value : [])) : [],
+          grades: gradesRes.status === 'fulfilled' ? (gradesRes.value?.data || []).sort((a, b) => new Date(b.published_at || 0) - new Date(a.published_at || 0)) : [],
         });
-      });
-      
-      // تقسيم المواد إلى معتمدة وقيد الانتظار
-      const approved = coursesArray.filter(c => 
-        c.status === 'approved' || 
-        c.status === 'active' || 
-        c.status === 'accepted' ||
-        c.pivot?.status === 'approved'
-      );
-      
-      const pending = coursesArray.filter(c => 
-        c.status === 'pending' || 
-        c.status === 'waiting' ||
-        c.pivot?.status === 'pending'
-      );
-      
-      console.log('✅ المواد المعتمدة:', approved.length);
-      console.log('⏳ المواد قيد الانتظار:', pending.length);
-      
-      setRegisteredCourses(approved);
-      setPendingCourses(pending);
+      } catch (e) {
+        console.error('خطأ في تحميل الداشبورد:', e);
+        setToast({ open: true, message: 'حدث خطأ في تحميل البيانات', severity: 'error' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
+  }, []);
 
-    } catch (error) {
-      console.error('❌ خطأ في جلب البيانات:', error);
-      setToast({ open: true, message: 'فشل في جلب البيانات', severity: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // دالة لبناء جدول الدوام
-  const buildScheduleTable = () => {
-    const daysInArabic = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
-    const tableData = [];
-    
-    timeSlots.forEach(timeSlot => {
-      const row = { time: formatTime(timeSlot) };
-      daysInArabic.forEach(day => {
-        const englishDay = Object.keys(dayMapToArabic).find(key => dayMapToArabic[key] === day);
-        const dayData = schedule[englishDay];
-        const session = dayData?.[timeSlot];
-        if (session && session.status === 'Occupied') {
-          row[day] = { name: session.course_name, hall: session.halls?.[0] };
-        } else {
-          row[day] = null;
-        }
-      });
-      tableData.push(row);
-    });
-    
-    return { days: daysInArabic, rows: tableData };
-  };
-
-  const scheduleTable = buildScheduleTable();
+  const gradedItems = data.grades.filter(g => {
+    const val = g.my_mark ?? g.mark ?? g.score;
+    return val !== null && val !== undefined && !isNaN(Number(val)) && Number(val) > 0;
+  });
+  const avgGrade = gradedItems.length > 0
+    ? Math.round(gradedItems.reduce((sum, g) => sum + Number(g.my_mark ?? g.mark ?? g.score ?? 0), 0) / gradedItems.length)
+    : null;
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="500px">
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
         <Typography sx={{ mr: 2 }}>جاري تحميل لوحة التحكم...</Typography>
       </Box>
@@ -199,62 +88,85 @@ function StudentDashboard() {
 
   return (
     <Box>
-      <PageHeader 
-        title={`مرحباً، ${user?.name || 'الطالب'}`}
-        subtitle="نظرة عامة على دراستك"
+      <PageHeader
+        title={`مرحباً ${user?.name || 'طالب'}`}
+        subtitle={'هذه نظرة عامة على تقدمك الدراسي ونشاطك في المنصة'}
         icon={<SchoolIcon sx={{ fontSize: 20 }} />}
       />
 
-      {/* بطاقات الإحصائيات */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ borderRadius: 3, bgcolor: '#e3f2fd' }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, bgcolor: '#fff3e0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography variant="body2" color="text.secondary">المواد المسجلة</Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
-                    {registeredCourses.length + pendingCourses.length}
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: '#1976d2' }}>
-                  <SchoolIcon />
-                </Avatar>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ borderRadius: 3, bgcolor: '#fff3e0' }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography variant="body2" color="text.secondary">قيد الانتظار</Typography>
+                  <Typography variant="body2" color="text.secondary">نقاطي</Typography>
                   <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ed6c02' }}>
-                    {pendingCourses.length}
+                    {data.points}
                   </Typography>
+                  <Typography variant="caption" color="text.secondary">مجموع النقاط المكتسبة</Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: '#ed6c02' }}>
-                  <PendingIcon />
+                <Avatar sx={{ bgcolor: '#ed6c02', width: 55, height: 55 }}>
+                  <StarIcon sx={{ fontSize: 30, color: '#fff' }} />
                 </Avatar>
               </Box>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ borderRadius: 3, bgcolor: '#e8f5e9' }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, bgcolor: '#e8f5e9', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography variant="body2" color="text.secondary">مجموع النقاط</Typography>
+                  <Typography variant="body2" color="text.secondary">موادي المفعّلة</Typography>
                   <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
-                    {typeof totalPoints === 'number' ? totalPoints : (totalPoints?.total_points || totalPoints?.points || 0)}
+                    {data.activeCourses.length}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">مادة مسجّلة وموافق عليها</Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: '#2e7d32', width: 55, height: 55 }}>
+                  <ActiveIcon sx={{ fontSize: 30, color: '#fff' }} />
+                </Avatar>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, bgcolor: '#e1f5fe', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="body2" color="text.secondary">طلبات معلّقة</Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#0288d1' }}>
+                    {data.pendingCourses.length}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">بانتظار موافقة الإدارة</Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: '#0288d1', width: 55, height: 55 }}>
+                  <PendingIcon sx={{ fontSize: 30, color: '#fff' }} />
+                </Avatar>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, bgcolor: '#f3e5f5', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="body2" color="text.secondary">المعدل العام</Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#7b1fa2' }}>
+                    {avgGrade !== null ? `${avgGrade}%` : '—'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {data.grades.length > 0 ? `من ${data.grades.length} امتحان` : 'لا توجد بيانات'}
                   </Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: '#2e7d32' }}>
-                  <StarIcon />
+                <Avatar sx={{ bgcolor: '#7b1fa2', width: 55, height: 55 }}>
+                  <TrendingUpIcon sx={{ fontSize: 30, color: '#fff' }} />
                 </Avatar>
               </Box>
             </CardContent>
@@ -263,173 +175,169 @@ function StudentDashboard() {
       </Grid>
 
       <Grid container spacing={3}>
-        {/* جدول الدوام */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, borderRadius: 3 }}>
+          <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
             <Box display="flex" alignItems="center" gap={1} sx={{ mb: 2 }}>
-              <CalendarIcon sx={{ color: '#1976d2' }} />
+              <MenuBookIcon sx={{ color: '#1976d2' }} />
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                برنامج الدوام الأسبوعي
+                موادي المفعّلة
               </Typography>
             </Box>
-            
-            <Box sx={{ overflowX: 'auto' }}>
-              <Table sx={{ minWidth: 500 }}>
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>الوقت</TableCell>
-                    {scheduleTable.days.map(day => (
-                      <TableCell key={day} align="center" sx={{ fontWeight: 'bold' }}>{day}</TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {scheduleTable.rows.map((row, idx) => (
-                    <TableRow key={idx} hover>
-                      <TableCell align="center" sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>
-                        {row.time}
-                      </TableCell>
-                      {scheduleTable.days.map(day => {
-                        const session = row[day];
-                        return (
-                          <TableCell key={day} align="center">
-                            {session ? (
-                              <Box>
-                                <Typography variant="body2" fontWeight="bold" color="primary">
-                                  {session.name}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  🏫 {session.hall || 'غير محدد'}
-                                </Typography>
-                              </Box>
-                            ) : (
-                              <Typography variant="caption" color="text.disabled">—</Typography>
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-            
-            {Object.keys(schedule).length === 0 && (
-              <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
-                📭 لا توجد جلسات في جدول دوامك. سيتم عرض الجدول بعد أن يقوم المدير بتوليد البرنامج.
-              </Alert>
-            )}
-          </Paper>
-        </Grid>
+            <Divider sx={{ mb: 2 }} />
 
-        {/* جدول الامتحانات */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, borderRadius: 3 }}>
-            <Box display="flex" alignItems="center" gap={1} sx={{ mb: 2 }}>
-              <ScheduleIcon sx={{ color: '#ed6c02' }} />
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#ed6c02' }}>
-                برنامج الامتحانات
-              </Typography>
-            </Box>
-            
-            {exams.length > 0 ? (
-              <Box sx={{ overflowX: 'auto' }}>
-                <Table sx={{ minWidth: 500 }}>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: '#fff3e0' }}>
-                      <TableCell sx={{ fontWeight: 'bold' }}>المادة</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>اليوم</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>التاريخ</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>الوقت</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>القاعة</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {exams.map((exam, idx) => (
-                      <TableRow key={idx} hover>
-                        <TableCell>{exam.course?.name || exam.course_name}</TableCell>
-                        <TableCell align="center">
-                          <Chip 
-                            label={dayMapToArabic[exam.day] || exam.day || 'غير محدد'} 
-                            size="small" 
-                            color="warning" 
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell align="center">{exam.date || '-'}</TableCell>
-                        <TableCell align="center">
-                          {exam.start_time?.substring(0, 5)} - {exam.end_time?.substring(0, 5)}
-                        </TableCell>
-                        <TableCell align="center">{exam.hall?.name || exam.room_name || 'غير محدد'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+            {data.activeCourses.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <MenuBookIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1 }} />
+                <Typography variant="body2">لا توجد مواد مفعّلة حتى الآن</Typography>
               </Box>
             ) : (
-              <Alert severity="info" sx={{ borderRadius: 2 }}>
-                📭 لا توجد امتحانات مسجلة حالياً
-              </Alert>
+              data.activeCourses.map((course, i) => (
+                <Box
+                  key={i}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    py: 1.5,
+                    borderBottom: i < data.activeCourses.length - 1 ? '1px solid #f0f0f0' : 'none',
+                  }}
+                >
+                  <Avatar sx={{ bgcolor: '#e3f2fd', color: '#1976d2', width: 45, height: 45 }}>
+                    {(course.name || '?')[0]}
+                  </Avatar>
+                  <Box flex={1}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                      {course.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {course.code} · {course.teacher_name || 'غير محدد'}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label="مفعّلة"
+                    size="small"
+                    sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontWeight: 'bold' }}
+                  />
+                </Box>
+              ))
             )}
           </Paper>
         </Grid>
 
-        {/* المواد الدراسية */}
-        <Grid item xs={12}>
-          <Paper sx={{ p: 3, borderRadius: 3 }}>
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
             <Box display="flex" alignItems="center" gap={1} sx={{ mb: 2 }}>
-              <SchoolIcon sx={{ color: '#1976d2' }} />
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                المواد الدراسية
+              <EventNoteIcon sx={{ color: '#ed6c02' }} />
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#ed6c02' }}>
+                امتحاناتي القادمة
               </Typography>
             </Box>
-            
-            <Grid container spacing={2}>
-              {/* المواد المعتمدة */}
-              {registeredCourses.map((course) => (
-                <Grid item xs={12} sm={6} md={4} key={course.id}>
-                  <Card variant="outlined" sx={{ borderRadius: 2, borderColor: '#4caf50' }}>
-                    <CardContent>
-                      <Box display="flex" alignItems="center" justifyContent="space-between">
-                        <Chip label="معتمدة" size="small" color="success" icon={<CheckCircleIcon />} />
-                        <Typography variant="caption" color="text.secondary">{course.code}</Typography>
-                      </Box>
-                      <Typography variant="h6" sx={{ my: 1, fontSize: '1rem' }}>
-                        {course.name}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
+            <Divider sx={{ mb: 2 }} />
 
-              {/* المواد قيد الانتظار */}
-              {pendingCourses.map((course) => (
-                <Grid item xs={12} sm={6} md={4} key={course.id}>
-                  <Card variant="outlined" sx={{ borderRadius: 2, borderColor: '#ff9800', bgcolor: '#fff8e1' }}>
-                    <CardContent>
-                      <Box display="flex" alignItems="center" justifyContent="space-between">
-                        <Chip label="قيد الموافقة" size="small" color="warning" icon={<PendingIcon />} />
-                        <Typography variant="caption" color="text.secondary">{course.code}</Typography>
-                      </Box>
-                      <Typography variant="h6" sx={{ my: 1, fontSize: '1rem' }}>
-                        {course.name}
-                      </Typography>
-                      <Alert severity="info" sx={{ mt: 1, py: 0 }}>
-                        <Typography variant="caption">⏳ بانتظار موافقة الإدارة</Typography>
-                      </Alert>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-
-            {registeredCourses.length === 0 && pendingCourses.length === 0 && (
-              <Alert severity="info" sx={{ borderRadius: 2 }}>
-                📭 لا توجد مواد مسجلة حالياً
-              </Alert>
+            {data.exams.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <EventNoteIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1 }} />
+                <Typography variant="body2">لا توجد امتحانات قادمة</Typography>
+              </Box>
+            ) : (
+              data.exams.slice(0, 5).map((exam, i) => (
+                <Box
+                  key={i}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    py: 1.5,
+                    borderBottom: i < Math.min(data.exams.length, 5) - 1 ? '1px solid #f0f0f0' : 'none',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      minWidth: 55,
+                      textAlign: 'center',
+                      bgcolor: '#fff3e0',
+                      borderRadius: 2,
+                      py: 0.8,
+                      px: 1,
+                    }}
+                  >
+                    <Typography variant="caption" fontWeight="bold" color="#ed6c02" display="block">
+                      {exam.date ? new Date(exam.date).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' }) : '—'}
+                    </Typography>
+                  </Box>
+                  <Box flex={1}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                      {exam.course || exam.exam_name || exam.course_name || '—'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {exam.date || ''}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label="قادم"
+                    size="small"
+                    sx={{ bgcolor: '#fff3e0', color: '#ed6c02', fontWeight: 'bold' }}
+                  />
+                </Box>
+              ))
             )}
           </Paper>
         </Grid>
+
+        {data.grades.length > 0 && (
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3, borderRadius: 3 }}>
+              <Box display="flex" alignItems="center" gap={1} sx={{ mb: 2 }}>
+                <AssignmentIcon sx={{ color: '#1976d2' }} />
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                  آخر النتائج
+                </Typography>
+              </Box>
+              <Divider sx={{ mb: 2 }} />
+
+              <Grid container spacing={2}>
+                {data.grades.slice(0, 4).map((grade, i) => {
+                  const mark = Number(grade.my_mark ?? grade.mark ?? grade.score ?? 0);
+                  const total = grade.total || 100;
+                  const pct = Math.round((mark / total) * 100);
+                  const color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#ed6c02' : '#c62828';
+                  return (
+                    <Grid item xs={12} sm={6} key={i}>
+                      <Card sx={{ borderRadius: 2, border: '1px solid #f0f0f0', boxShadow: 0 }}>
+                        <CardContent>
+                          <Box display="flex" justifyContent="space-between" mb={1}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                              {grade.course_name || grade.exam_name || grade.course || '—'}
+                            </Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold', color }}>
+                              {mark}
+                              <Typography component="span" variant="caption" color="text.secondary">
+                                /{total}
+                              </Typography>
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={pct}
+                            sx={{
+                              height: 8,
+                              borderRadius: 4,
+                              bgcolor: '#e0e0e0',
+                              '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 4 },
+                            }}
+                          />
+                          <Typography variant="caption" color="text.secondary" mt={0.5} display="block">
+                            {pct}% · {grade.published_at ? new Date(grade.published_at).toLocaleDateString('ar-SA') : ''}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </Paper>
+          </Grid>
+        )}
       </Grid>
 
       <Toast
@@ -440,6 +348,6 @@ function StudentDashboard() {
       />
     </Box>
   );
-}
+};
 
-export default StudentDashboard;
+export default Dashboard;

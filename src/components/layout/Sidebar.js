@@ -26,8 +26,10 @@ import ScoreIcon from '@mui/icons-material/Score';
 import PaymentIcon from '@mui/icons-material/Payment';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import SchoolIcon from '@mui/icons-material/School';
 import EventNoteIcon from '@mui/icons-material/EventNote';
+import GradeIcon from '@mui/icons-material/Grade';
 
 const Sidebar = ({ role, drawerWidth = 260 }) => {
   const navigate = useNavigate();
@@ -43,11 +45,13 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
     { text: 'الشكاوى', path: 'complaints', icon: <ReportProblemIcon /> },
     { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
     { text: 'القاعات', path: 'halls', icon: <MeetingRoomIcon /> },
+    { text: 'تنشيط الدورات', path: 'activate-courses', icon: <SchoolIcon /> }
   ];
 
   const teacherItems = [
     { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
     { text: 'تقييم الطلاب', path: 'evaluations', icon: <AssessmentIcon /> },
+    { text: 'علامات الامتحانات', path: 'exam-grades', icon: <GradeIcon /> },
     { text: 'نماذج امتحانية', path: 'exam-models', icon: <MenuBookIcon /> },
     { text: 'إعلان اختبار', path: 'announce-test', icon: <CalendarMonthIcon /> },
     { text: 'الاستفسارات', path: 'inquiries', icon: <QuestionAnswerIcon /> },
@@ -56,17 +60,21 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
 
   const studentItems = [
     { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
-    { text: 'الاستفسارات', path: 'inquiries', icon: <QuestionAnswerIcon /> },
-    { text: 'الاستبيانات', path: 'poll', icon: <PollIcon /> },
+    { text: 'برنامجي', path: 'schedule', icon: <CalendarMonthIcon /> },
+    { text: 'الدرجات', path: 'grades', icon: <ScoreIcon /> },
+    { text: 'الاستبيانات', path: 'surveys', icon: <PollIcon /> },
     { text: 'النقاط', path: 'points', icon: <StarIcon /> },
     { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
+    {text: 'الدورات', path: 'register-courses', icon: <MenuBookIcon /> },
+    { text: 'النماذج الامتحانية', path: 'exam-papers', icon: <GradeIcon /> },
+    { text: 'استفساراتي', path: 'inquiries', icon: <HelpOutlineIcon /> },
+     { text: 'امتحاناتي ', path: 'exams', icon: <MenuBookIcon /> },
   ];
 
   const parentItems = [
     { text: 'لوحة التحكم', path: '', icon: <DashboardIcon /> },
     { text: 'تقديم شكوى', path: 'complaints', icon: <ReportProblemIcon /> },
     { text: 'تقييم الطالب', path: 'points', icon: <StarIcon /> },
-    { text: 'برنامج الامتحانات', path: 'exams', icon: <EventNoteIcon /> },
     { text: 'الإشعارات', path: 'notifications', icon: <NotificationImportantIcon /> },
   ];
 

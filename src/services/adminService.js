@@ -17,8 +17,6 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// ============= دوال المصادقة =============
-
 export const login = async (email, password) => {
   try {
     const response = await apiClient.post('/login', { email, password });
@@ -57,8 +55,6 @@ export const getCurrentUser = async () => {
   }
 };
 
-// ============= دوال لوحة التحكم والتقارير =============
-
 export const getDashboardMetrics = async () => {
   try {
     const response = await apiClient.get('/admin/dashboard');
@@ -90,7 +86,7 @@ export const getReports = async () => {
 export const getReportsByRole = async (role) => {
   try {
     const response = await apiClient.get('/admin/reports', { params: { role } });
-    console.log('📊 تقرير الدور:', response.data);
+    console.log(' تقرير الدور:', response.data);
     return response.data;
   } catch (error) {
     console.error(`خطأ في جلب تقارير ${role}:`, error);
@@ -103,7 +99,7 @@ export const saveReport = async (role) => {
     const response = await apiClient.post('/admin/reports/save', null, { 
       params: { role } 
     });
-    console.log('📝 حفظ التقرير:', response.data);
+    console.log(' حفظ التقرير:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في حفظ التقرير:', error);
@@ -114,7 +110,7 @@ export const saveReport = async (role) => {
 export const getReportsHistory = async () => {
   try {
     const response = await apiClient.get('/admin/reports/history');
-    console.log('📋 تاريخ التقارير من API:', response.data);
+    console.log(' تاريخ التقارير من API:', response.data);
     
     if (response.data && response.data.data && Array.isArray(response.data.data)) {
       return response.data.data;
@@ -132,12 +128,10 @@ export const getReportsHistory = async () => {
   }
 };
 
-// ============= دوال المواد (Courses) =============
-
 export const getAllCourses = async () => {
   try {
     const response = await apiClient.get('/admin/courses');
-    console.log('📚 المواد المستلمة:', response.data);
+    console.log(' المواد المستلمة:', response.data);
     
     if (response.data && response.data.data && Array.isArray(response.data.data)) {
       return response.data.data;
@@ -160,12 +154,13 @@ export const addCourse = async (courseData) => {
       name: courseData.name,
       code: courseData.code,
       capacity: courseData.capacity,
-      teacher_id: courseData.teacher_id,
+      teacher_name: courseData.teacher_name,
     });
     console.log('✅ تم إضافة المادة:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في إضافة المادة:', error);
+    console.error('تفاصيل الخطأ:', error.response?.data);
     throw error;
   }
 };
@@ -176,7 +171,7 @@ export const updateCourse = async (id, courseData) => {
       name: courseData.name,
       code: courseData.code,
       capacity: courseData.capacity,
-      teacher_id: courseData.teacher_id,
+      teacher_name: courseData.teacher_name,
     });
     console.log('✅ تم تعديل المادة:', response.data);
     return response.data;
@@ -197,13 +192,21 @@ export const deleteCourse = async (id) => {
   }
 };
 
-// ============= Aliases للإعلانات =============
+export const toggleCourseStatus = async (id, status) => {
+  try {
+    const response = await apiClient.patch(`/courses/${id}/toggle-status`, { is_active: status });
+    console.log('✅ تم تغيير حالة المادة:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في تغيير حالة المادة:', error);
+    throw error;
+  }
+};
+
 export const getAnnouncements = getAllCourses;
 export const createAnnouncement = addCourse;
 export const updateAnnouncement = updateCourse;
 export const deleteAnnouncement = deleteCourse;
-
-// ============= دوال الطلاب =============
 
 export const getAllStudents = async () => {
   try {
@@ -223,7 +226,21 @@ export const getAllStudents = async () => {
   }
 };
 
-// ============= دوال المستخدمين (إضافة) =============
+export const getAvailableStudents = async () => {
+  try {
+    const response = await apiClient.get('/admin/available-students');
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+    return [];
+  } catch (error) {
+    console.error('خطأ في جلب الطلاب غير المرتبطين:', error);
+    return [];
+  }
+};
 
 export const addTeacherViaAPI = async (teacherData) => {
   try {
@@ -303,78 +320,48 @@ export const getAllUsers = async (role = null) => {
   }
 };
 
-// ============= دوال الجداول (البرنامج الأسبوعي) - المعدلة =============
-
 export const getWeeklyProgram = async () => {
   try {
     const response = await apiClient.get('/admin-schedule', { params: { type: 'course' } });
-    console.log('📅 الرد الخام من /admin-schedule?type=course:', response);
-    console.log('📅 response.data:', response.data);
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في جلب برنامج الدوام:', error);
-    if (error.response?.status === 404) {
-      return { success: false, message: error.response?.data?.message || 'لا يوجد جدول دوام' };
-    }
-    throw error;
+    console.error('خطأ في جلب برنامج الدوام:', error);
+    return null;
   }
 };
 
 export const getExamProgram = async () => {
   try {
     const response = await apiClient.get('/admin-schedule', { params: { type: 'exam' } });
-    console.log('📝 الرد الخام من /admin-schedule?type=exam:', response);
-    console.log('📝 response.data:', response.data);
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في جلب برنامج الامتحانات:', error);
-    if (error.response?.status === 404) {
-      return { success: false, message: error.response?.data?.message || 'لا يوجد جدول امتحانات' };
-    }
-    throw error;
+    console.error('خطأ في جلب برنامج الامتحانات:', error);
+    return null;
   }
 };
 
 export const generateWeeklySchedule = async () => {
-  try {
-    const response = await apiClient.post('/schedule/generate', { type: 'course' });
-    console.log('🚀 رد توليد الدوام:', response);
-    console.log('🚀 response.data:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('❌ خطأ في توليد جدول الدوام:', error);
-    console.error('❌ تفاصيل الخطأ:', error.response?.data);
-    throw error;
-  }
+  const response = await apiClient.post('/schedule/generate', { type: 'course' });
+  return response.data;
 };
 
 export const generateExamSchedule = async () => {
-  try {
-    const response = await apiClient.post('/schedule/generate', { type: 'exam' });
-    console.log('🚀 رد توليد الامتحانات:', response);
-    console.log('🚀 response.data:', response.data);
-    return response.data;
-  } catch (error) {
-    console.error('❌ خطأ في توليد جدول الامتحانات:', error);
-    console.error('❌ تفاصيل الخطأ:', error.response?.data);
-    throw error;
-  }
+  const response = await apiClient.post('/schedule/generate', { type: 'exam' });
+  return response.data;
 };
 
-export const deleteWeeklyProgram = async (sessionId) => {
+export const deleteSession = async (sessionId) => {
   try {
     const response = await apiClient.delete(`/sessions/${sessionId}`);
-    console.log('🗑️ رد الحذف:', response.data);
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في حذف الجلسة:', error);
+    console.error('خطأ في حذف الجلسة:', error);
     throw error;
   }
 };
 
-export const deleteExamProgram = deleteWeeklyProgram;
-
-// ============= دوال القاعات =============
+export const deleteWeeklyProgram = deleteSession;
+export const deleteExamProgram = deleteSession;
 
 export const getHalls = async () => {
   try {
@@ -432,8 +419,6 @@ export const deleteHall = async (id) => {
   }
 };
 
-// ============= دوال الاستبيانات =============
-
 export const getAllPolls = async () => {
   try {
     const response = await apiClient.get('/admin/polls');
@@ -457,15 +442,18 @@ export const getAllPollsFromAPI = getAllPolls;
 
 export const createPoll = async (pollData) => {
   try {
-    const response = await apiClient.post('/admin/create-poll', {
+    const payload = {
       title: pollData.title,
       description: pollData.description || '',
       expires_at: pollData.expires_at,
       questions: pollData.questions
-    });
+    };
+    console.log('📤 بيانات الاستبيان المرسلة:', JSON.stringify(payload, null, 2));
+    const response = await apiClient.post('/admin/create-poll', payload);
     return response.data;
   } catch (error) {
     console.error('خطأ في إنشاء الاستبيان:', error);
+    console.error('تفاصيل الخطأ:', error.response?.data);
     throw error;
   }
 };
@@ -508,7 +496,7 @@ export const getPollResults = async (pollId) => {
 export const getPollById = async (id) => {
   try {
     const response = await apiClient.get(`/admin/polls/${id}`);
-    console.log('📊 استبيان واحد:', response.data);
+    console.log('استبيان واحد:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب الاستبيان:', error);
@@ -516,12 +504,10 @@ export const getPollById = async (id) => {
   }
 };
 
-// ============= دوال الإشعارات =============
-
 export const getRealNotifications = async () => {
   try {
     const response = await apiClient.get('/notifications');
-    console.log('🔔 الإشعارات المستلمة:', response.data);
+    console.log(' الإشعارات المستلمة:', response.data);
     return {
       unread_count: response.data.unread_count || 0,
       notifications: response.data.notifications || []
@@ -542,12 +528,10 @@ export const markNotificationAsRead = async (notificationId) => {
   }
 };
 
-// ============= دوال الشكاوى (Complaints) - للأدمن فقط =============
-
 export const getComplaints = async () => {
   try {
     const response = await apiClient.get('/admin/complaints');
-    console.log('📋 الشكاوى:', response.data);
+    console.log(' الشكاوى:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب الشكاوى:', error);
@@ -573,7 +557,7 @@ export const updateComplaintAnswer = async (complaintId, answer) => {
     const response = await apiClient.put(`/admin/complaints/${complaintId}/answer`, {
       answer_text: answer
     });
-    console.log('✏️ تم تحديث الرد:', response.data);
+    console.log(' تم تحديث الرد:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في تحديث الرد:', error);
@@ -584,15 +568,13 @@ export const updateComplaintAnswer = async (complaintId, answer) => {
 export const deleteComplaint = async (id) => {
   try {
     const response = await apiClient.delete(`/admin/complaints/${id}`);
-    console.log('🗑️ تم حذف الشكوى:', response.data);
+    console.log('تم حذف الشكوى:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في حذف الشكوى:', error);
     throw error;
   }
 };
-
-// ============= دوال إضافية =============
 
 export const getUpcomingQuizzes = async () => {
   try {

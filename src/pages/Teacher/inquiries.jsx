@@ -1,4 +1,3 @@
-// src/pages/Teacher/Inquiries.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -37,12 +36,11 @@ const Inquiries = () => {
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-  // جلب الاستفسارات
   const fetchInquiries = async () => {
     setLoading(true);
     try {
       const data = await getInquiries();
-      console.log('📋 الاستفسارات المستلمة:', data);
+      console.log(' الاستفسارات المستلمة:', data);
       
       let inquiriesList = [];
       if (Array.isArray(data)) {
@@ -51,7 +49,6 @@ const Inquiries = () => {
         inquiriesList = data.data;
       }
       
-      // تنسيق البيانات للواجهة
       const formattedInquiries = inquiriesList.map((item, index) => ({
         id: item.id || index,
         studentId: item.student_id || item.student?.id,
@@ -82,7 +79,6 @@ const Inquiries = () => {
     fetchInquiries();
   }, []);
 
-  // الرد على استفسار
   const handleReply = async (id) => {
     const reply = replyTexts[id] || '';
     if (!reply.trim()) {

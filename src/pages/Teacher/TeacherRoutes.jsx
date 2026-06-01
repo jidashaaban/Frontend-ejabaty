@@ -4,9 +4,10 @@ import TeacherLayout from '../../components/layout/TeacherLayout';
 import Dashboard from './Dashboard';
 import StudentsRate from './StudentsRate';
 import ExamModels from './ExamModels';
+import ExamGrades from './ExamGrades';
 import AnnounceTest from './AnnounceTest';
 import Inquiries from './Inquiries';
-import TeacherNotifications from './TeacherNotifications';
+import TeacherNotifications from './TeacherNotifications'; 
 
 const TeacherRoutes = () => {
   return (
@@ -14,10 +15,11 @@ const TeacherRoutes = () => {
       <Route element={<TeacherLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="evaluations" element={<StudentsRate />} />  
+        <Route path="exam-grades" element={<ExamGrades />} />
         <Route path="exam-models" element={<ExamModels />} />
         <Route path="announce-test" element={<AnnounceTest />} />
         <Route path="inquiries" element={<Inquiries />} />
-        <Route path="notifications" element={<TeacherNotifications />} />
+        <Route path="notifications" element={ <TeacherNotifications /> } />
       </Route>
     </Routes>
   );

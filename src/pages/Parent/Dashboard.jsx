@@ -26,14 +26,13 @@ import {
   MeetingRoom as MeetingRoomIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
-import { getChildProgress, getChildExamSchedule } from '../../services/parentService';
+import { getChildren, getChildProgress, getChildExamSchedule } from '../../services/parentService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
-  // ✅ استخدمي ID الطالب الصحيح (من tinker كان 4)
-  const [childId] = useState(4);
+  const [childId, setChildId] = useState(null);
   const [studentName, setStudentName] = useState('');
   const [studentGrade, setStudentGrade] = useState('');
   const [totalPoints, setTotalPoints] = useState(0);
@@ -42,23 +41,20 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-  // جلب تقدم الطالب (الدرجات والنقاط)
-  const fetchChildProgress = async () => {
+  const fetchChildProgress = async (id) => {
     try {
-      const data = await getChildProgress(childId);
+      const data = await getChildProgress(id);
       console.log('📊 تقدم الطالب:', data);
       
       if (data && data.success === true) {
         setStudentName(data.student_name || 'الطالب');
         
-        // ✅ معالجة النقاط من الاختبارات (quiz_progress)
         let points = 0;
         if (data.quiz_progress && Array.isArray(data.quiz_progress)) {
           points = data.quiz_progress.reduce((sum, quiz) => sum + (parseInt(quiz.points) || 0), 0);
           console.log('📝 تفاصيل النقاط:', data.quiz_progress);
         }
         
-        // ✅ معالجة درجات الامتحانات (exam_progress) - قد يكون نصاً أو مصفوفة
         let examMarks = [];
         if (data.exam_progress && Array.isArray(data.exam_progress)) {
           examMarks = data.exam_progress.map(e => e.mark || 0);
@@ -76,10 +72,9 @@ const Dashboard = () => {
     }
   };
 
-  // جلب جدول امتحانات الطالب
-  const fetchChildExamSchedule = async () => {
+  const fetchChildExamSchedule = async (id) => {
     try {
-      const data = await getChildExamSchedule(childId);
+      const data = await getChildExamSchedule(id);
       console.log('📚 جدول امتحانات الطالب:', data);
       
       let examsList = [];
@@ -104,16 +99,47 @@ const Dashboard = () => {
     }
   };
 
-  // تحميل جميع البيانات
   const loadData = async () => {
     setLoading(true);
     try {
+      const childrenData = await getChildren();
+      console.log('👨‍👧 بيانات الأبناء الكاملة:', JSON.stringify(childrenData, null, 2));
+      let id = null;
+      const list =
+        childrenData?.children ||
+        childrenData?.data ||
+        childrenData?.students ||
+        (Array.isArray(childrenData) ? childrenData : null);
+
+      if (Array.isArray(list) && list.length > 0) {
+        id = list[0].id;
+        setStudentName(list[0].name || '');
+        setStudentGrade(list[0].grade || '');
+      } else if (childrenData?.student) {
+        id = childrenData.student.id;
+        setStudentName(childrenData.student.name || '');
+        setStudentGrade(childrenData.student.grade || '');
+      } else if (childrenData?.child) {
+        id = childrenData.child.id;
+        setStudentName(childrenData.child.name || '');
+        setStudentGrade(childrenData.child.grade || '');
+      }
+
+      if (!id) {
+        console.warn(' لم يتم العثور على ID الطالب من البيانات:', childrenData);
+        setToast({ open: true, message: 'لا يوجد طالب مرتبط بهذا الحساب', severity: 'warning' });
+        setLoading(false);
+        return;
+      }
+
+      setChildId(id);
       await Promise.all([
-        fetchChildProgress(),
-        fetchChildExamSchedule(),
+        fetchChildProgress(id),
+        fetchChildExamSchedule(id),
       ]);
     } catch (error) {
       console.error('خطأ في تحميل البيانات:', error);
+      setToast({ open: true, message: 'فشل في تحميل بيانات الطالب', severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -140,7 +166,6 @@ const Dashboard = () => {
         icon={<SchoolIcon sx={{ fontSize: 20 }} />}
       />
 
-      {/* معلومات الطالب */}
       <Paper
         sx={{
           p: 3,
@@ -171,7 +196,6 @@ const Dashboard = () => {
         </Box>
       </Paper>
 
-      {/* نقاط الطالب التفصيلية */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={6}>
           <Card
@@ -226,7 +250,6 @@ const Dashboard = () => {
         </Grid>
       </Grid>
 
-      {/* جدول الامتحانات */}
       <Paper
         sx={{
           borderRadius: 4,

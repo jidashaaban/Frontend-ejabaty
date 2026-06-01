@@ -35,7 +35,6 @@ import { getReports, getWeeklyProgram, getExamProgram, getDashboardMetrics } fro
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
-// ترتيب الأيام
 const dayOrder = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الأحد'];
 
 const daysMap = {
@@ -64,7 +63,6 @@ function Dashboard() {
   const [scheduleList, setScheduleList] = useState([]);
   const [examList, setExamList] = useState([]);
 
-  // تنسيق بيانات الدوام
   const formatScheduleData = (scheduleRes) => {
     let formatted = [];
     if (!scheduleRes) return [];
@@ -109,7 +107,6 @@ function Dashboard() {
       }));
     }
     
-    // ترتيب الجلسات حسب الوقت
     formatted.sort((a, b) => {
       return (a.start_time || '').localeCompare(b.start_time || '');
     });
@@ -117,7 +114,6 @@ function Dashboard() {
     return formatted;
   };
 
-  // تنسيق بيانات الامتحانات
   const formatExamData = (examRes) => {
     let formatted = [];
     if (!examRes) return [];
@@ -162,7 +158,6 @@ function Dashboard() {
       }));
     }
     
-    // ترتيب الجلسات حسب الوقت
     formatted.sort((a, b) => {
       return (a.start_time || '').localeCompare(b.start_time || '');
     });
@@ -170,7 +165,6 @@ function Dashboard() {
     return formatted;
   };
 
-  // دالة لمعرفة إذا كان الجدول فارغاً
   const isEmptySchedule = (program) => {
     if (!program) return true;
     if (program.master_grid) {
@@ -189,7 +183,6 @@ function Dashboard() {
     return true;
   };
 
-  // تجميع الجلسات حسب اليوم
   const groupByDay = (list) => {
     const grouped = {};
     dayOrder.forEach(day => { grouped[day] = []; });
@@ -433,7 +426,7 @@ function Dashboard() {
                           color: '#1565c0'
                         }}
                       >
-                        📅 {day} ({sessions.length} مواد)
+                         {day} ({sessions.length} مواد)
                       </Typography>
                       
                       <Table sx={{ minWidth: 600 }}>
@@ -512,7 +505,7 @@ function Dashboard() {
                           color: '#ed6c02'
                         }}
                       >
-                        📅 {day} ({exams.length} امتحانات)
+                        {day} ({exams.length} امتحانات)
                       </Typography>
                       
                       <Table sx={{ minWidth: 600 }}>

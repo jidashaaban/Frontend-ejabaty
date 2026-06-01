@@ -61,7 +61,7 @@ function PollStudent() {
     setLoading(true);
     try {
       const data = await getStudentPolls();
-      console.log('📊 الاستبيانات:', data);
+      console.log(' الاستبيانات:', data);
       
       let pollsArray = [];
       if (Array.isArray(data)) {
@@ -85,7 +85,7 @@ function PollStudent() {
     setLoading(true);
     try {
       const data = await getPollById(pollId);
-      console.log('📊 تفاصيل الاستبيان:', data);
+      console.log('تفاصيل الاستبيان:', data);
       
       let pollDetails = data;
       if (data?.data) pollDetails = data.data;
@@ -115,7 +115,7 @@ function PollStudent() {
     if (answeredQuestions < totalQuestions) {
       setToast({ 
         open: true, 
-        message: `⚠️ الرجاء الإجابة على جميع الأسئلة (${answeredQuestions}/${totalQuestions})`, 
+        message: ` الرجاء الإجابة على جميع الأسئلة (${answeredQuestions}/${totalQuestions})`, 
         severity: 'warning' 
       });
       return;
@@ -410,7 +410,7 @@ function PollStudent() {
             <Paper key={question.id || qIndex} sx={{ p: 2.5, mb: 3, borderRadius: 2, boxShadow: 1 }}>
               <FormControl component="fieldset" sx={{ width: '100%' }}>
                 <FormLabel component="legend" sx={{ fontWeight: 'bold', mb: 2, fontSize: '1rem', color: '#1976d2' }}>
-                  {qIndex + 1}. {question.text || question.question}
+                  {qIndex + 1}. {question.question_text || question.text || question.question}
                 </FormLabel>
                 
                 <RadioGroup
@@ -418,29 +418,33 @@ function PollStudent() {
                   onChange={(e) => handleAnswerChange(question.id || qIndex, e.target.value)}
                 >
                   <Grid container spacing={1}>
-                    {question.options?.map((option, oIndex) => (
-                      <Grid item xs={12} key={oIndex}>
-                        <Paper
-                          variant="outlined"
-                          sx={{
-                            p: 1,
-                            borderRadius: 2,
-                            transition: 'all 0.2s ease',
-                            bgcolor: answers[question.id || qIndex] === option ? '#e3f2fd' : 'transparent',
-                            borderColor: answers[question.id || qIndex] === option ? '#1976d2' : '#e0e0e0',
-                            borderWidth: answers[question.id || qIndex] === option ? 2 : 1,
-                            '&:hover': { bgcolor: '#f5f5f5', cursor: 'pointer' }
-                          }}
-                        >
-                          <FormControlLabel
-                            value={option}
-                            control={<Radio />}
-                            label={option}
-                            sx={{ width: '100%', m: 0 }}
-                          />
-                        </Paper>
-                      </Grid>
-                    ))}
+                    {question.options?.map((option, oIndex) => {
+                      const optionText = typeof option === 'string' ? option : (option.option_text || option.text || '');
+                      const optionValue = typeof option === 'string' ? option : String(option.id);
+                      return (
+                        <Grid item xs={12} key={oIndex}>
+                          <Paper
+                            variant="outlined"
+                            sx={{
+                              p: 1,
+                              borderRadius: 2,
+                              transition: 'all 0.2s ease',
+                              bgcolor: answers[question.id || qIndex] === optionValue ? '#e3f2fd' : 'transparent',
+                              borderColor: answers[question.id || qIndex] === optionValue ? '#1976d2' : '#e0e0e0',
+                              borderWidth: answers[question.id || qIndex] === optionValue ? 2 : 1,
+                              '&:hover': { bgcolor: '#f5f5f5', cursor: 'pointer' }
+                            }}
+                          >
+                            <FormControlLabel
+                              value={optionValue}
+                              control={<Radio />}
+                              label={optionText}
+                              sx={{ width: '100%', m: 0 }}
+                            />
+                          </Paper>
+                        </Grid>
+                      );
+                    })}
                   </Grid>
                 </RadioGroup>
               </FormControl>

@@ -169,25 +169,22 @@ function Polls() {
     });
   };
 
-  // ✅ دالة التعديل المعدلة - تستخدم getPollById
   const handleEditPoll = async (poll) => {
     setLoading(true);
     try {
       // جلب الاستبيان كامل مع الأسئلة من API
       const fullPoll = await getPollById(poll.id);
-      console.log('📝 الاستبيان الكامل للتعديل:', fullPoll);
+      console.log(' الاستبيان الكامل للتعديل:', fullPoll);
       
       setEditMode(true);
       setEditingPollId(fullPoll.id);
       
-      // تنسيق تاريخ الانتهاء
       let expiresAtFormatted = '';
       if (fullPoll.expires_at) {
         const date = new Date(fullPoll.expires_at);
         expiresAtFormatted = date.toISOString().slice(0, 16);
       }
       
-      // تحويل الأسئلة
       let questions = [];
       if (fullPoll.questions && Array.isArray(fullPoll.questions) && fullPoll.questions.length > 0) {
         questions = fullPoll.questions.map(q => {
@@ -198,7 +195,6 @@ function Polls() {
               return opt.option_text || opt.text || '';
             });
           }
-          // التأكد من وجود خيارين على الأقل
           while (options.length < 2) {
             options.push('');
           }
@@ -323,14 +319,16 @@ function Polls() {
       const results = await getPollResults(poll.id);
       console.log('نتائج الاستبيان:', results);
       
-      let resultsArray = [];
-      if (Array.isArray(results)) {
-        resultsArray = results;
-      } else if (results && results.data && Array.isArray(results.data)) {
-        resultsArray = results.data;
-      } else {
-        resultsArray = [];
-      }
+let resultsArray = [];
+if (Array.isArray(results)) {
+  resultsArray = results;
+} else if (results && results.results && Array.isArray(results.results)) {
+  resultsArray = results.results;
+} else if (results && results.data && Array.isArray(results.data)) {
+  resultsArray = results.data;
+} else {
+  resultsArray = [];
+}
       
       setPollResults(resultsArray);
       setOpenViewDialog(true);
@@ -586,7 +584,7 @@ function Polls() {
           background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', 
           color: '#fff' 
         }}>
-          📊 نتائج الاستبيان: {selectedPoll?.title}
+           نتائج الاستبيان: {selectedPoll?.title}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           {pollResults && pollResults.length > 0 ? (

@@ -10,6 +10,7 @@ import WeeklyProgram from './WeeklyProgram';
 import Complaints from './Complaints';
 import AdminNotifications from './AdminNotifications';
 import Halls from './Halls';
+import ActivateCourses from './ActivateCourses';
 
 const AdminRoutes = () => {
   return (
@@ -24,6 +25,7 @@ const AdminRoutes = () => {
         <Route path="complaints" element={<Complaints />} />
         <Route path="notifications" element={ <AdminNotifications /> } />
         <Route path="halls" element={<Halls />} />
+        <Route path="activate-courses" element={<ActivateCourses />} />
       </Route>
     </Routes>
   );

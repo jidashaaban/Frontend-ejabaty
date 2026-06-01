@@ -15,12 +15,19 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  Switch,
+  FormControlLabel,
+  Tooltip,
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   MenuBook as MenuBookIcon,
   Add as AddIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  ToggleOn as ToggleOnIcon,
+  ToggleOff as ToggleOffIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
@@ -29,6 +36,7 @@ import {
   addCourse,
   updateCourse,
   deleteCourse,
+  toggleCourseStatus,
 } from '../../services/adminService';
 
 const Announcements = () => {
@@ -37,6 +45,7 @@ const Announcements = () => {
   const [current, setCurrent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [togglingId, setTogglingId] = useState(null);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchData = async () => {
@@ -73,7 +82,8 @@ const Announcements = () => {
       name: '',
       code: '',
       capacity: '',
-      teacher_id: '',
+      teacher_name: '',
+      is_active: 0, 
     });
     setModalOpen(true);
   };
@@ -84,7 +94,8 @@ const Announcements = () => {
       name: row.name,
       code: row.code || '',
       capacity: row.capacity || '',
-      teacher_id: row.teacher_id || '',
+      teacher_name: row.teacher?.name || row.teacher_name || '',
+      is_active: row.is_active !== undefined ? row.is_active : 0,
     });
     setModalOpen(true);
   };
@@ -104,6 +115,29 @@ const Announcements = () => {
     }
   };
 
+  const handleToggleStatus = async (id, currentStatus) => {
+    setTogglingId(id);
+    try {
+      const newStatus = currentStatus === 1 ? 0 : 1;
+      await toggleCourseStatus(id, newStatus);
+      setToast({ 
+        open: true, 
+        message: newStatus === 1 ? '✅ تم تفعيل المادة بنجاح' : '⏸️ تم تعطيل المادة بنجاح', 
+        severity: 'success' 
+      });
+      fetchData(); 
+    } catch (error) {
+      console.error('خطأ في تغيير حالة المادة:', error);
+      setToast({ 
+        open: true, 
+        message: error.response?.data?.message || 'فشل في تغيير حالة المادة', 
+        severity: 'error' 
+      });
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   const handleSave = async () => {
     if (!current.name || !current.name.trim()) {
       setToast({ open: true, message: 'الرجاء إدخال اسم المادة', severity: 'error' });
@@ -117,8 +151,8 @@ const Announcements = () => {
       setToast({ open: true, message: 'الرجاء إدخال سعة صحيحة للمادة', severity: 'error' });
       return;
     }
-    if (!current.teacher_id) {
-      setToast({ open: true, message: 'الرجاء إدخال معرف المعلم', severity: 'error' });
+    if (!current.teacher_name || !current.teacher_name.trim()) {
+      setToast({ open: true, message: 'الرجاء إدخال اسم المعلم', severity: 'error' });
       return;
     }
     
@@ -128,7 +162,8 @@ const Announcements = () => {
         name: current.name,
         code: current.code,
         capacity: parseInt(current.capacity),
-        teacher_id: parseInt(current.teacher_id),
+        teacher_name: current.teacher_name,
+        is_active: current.is_active !== undefined ? current.is_active : 0,
       };
       
       if (current.id) {
@@ -142,7 +177,9 @@ const Announcements = () => {
       fetchData();
     } catch (err) {
       console.error('خطأ:', err);
-      setToast({ open: true, message: err.response?.data?.message || 'فشل في حفظ المادة', severity: 'error' });
+      const errors = err.response?.data?.errors;
+      const errorMsg = errors ? Object.values(errors).flat().join(' | ') : (err.response?.data?.message || 'فشل في حفظ المادة');
+      setToast({ open: true, message: errorMsg, severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -161,7 +198,7 @@ const Announcements = () => {
     <Box>
       <PageHeader 
         title="المواد الدراسية"
-        subtitle="أضف أو عدل أو احذف المواد الدراسية"
+        subtitle="أضف أو عدل أو احذف المواد الدراسية - المواد غير المفعلة لا تظهر في الجداول"
         icon={<MenuBookIcon sx={{ fontSize: 20 }} />}
       />
 
@@ -196,62 +233,109 @@ const Announcements = () => {
         </Paper>
       ) : (
         <Grid container spacing={3}>
-          {announcements.map((course) => (
-            <Grid item xs={12} md={6} lg={4} key={course.id}>
-              <Card sx={{
-                borderRadius: 3,
-                transition: '0.3s',
-                bgcolor: '#ffffff',
-                border: '1px solid #e0e0e0',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                '&:hover': { 
-                  transform: 'translateY(-4px)', 
-                  boxShadow: '0 8px 25px rgba(25,118,210,0.15)',
-                }
-              }}>
-                <CardContent>
-                  <Box display="flex" justifyContent="flex-end" alignItems="flex-start" mb={1}>
-                    <Box>
-                      <IconButton onClick={() => handleEdit(course)} color="primary" size="small" title="تعديل">
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton onClick={() => handleDelete(course.id)} color="error" size="small" title="حذف">
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+          {announcements.map((course) => {
+            const isActive = course.is_active === 1;
+            
+            return (
+              <Grid item xs={12} md={6} lg={4} key={course.id}>
+                <Card sx={{
+                  borderRadius: 3,
+                  transition: '0.3s',
+                  bgcolor: isActive ? '#ffffff' : '#fafafa',
+                  border: isActive ? '1px solid #e0e0e0' : '1px solid #ffccbc',
+                  opacity: isActive ? 1 : 0.85,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  '&:hover': { 
+                    transform: 'translateY(-4px)', 
+                    boxShadow: '0 8px 25px rgba(25,118,210,0.15)',
+                  }
+                }}>
+                  <CardContent>
+                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
+                      <Chip 
+                        label={isActive ? 'مفعلة' : 'غير مفعلة'} 
+                        size="small" 
+                        icon={isActive ? <CheckCircleIcon /> : <CancelIcon />}
+                        sx={{ 
+                          bgcolor: isActive ? '#4caf50' : '#ff9800', 
+                          color: '#fff',
+                          '& .MuiChip-icon': { color: '#fff' }
+                        }}
+                      />
+                      <Box>
+                        <Tooltip title={isActive ? 'تعطيل المادة' : 'تفعيل المادة'}>
+                          <IconButton 
+                            onClick={() => handleToggleStatus(course.id, course.is_active)} 
+                            color={isActive ? 'success' : 'warning'}
+                            size="small"
+                            disabled={togglingId === course.id}
+                          >
+                            {togglingId === course.id ? (
+                              <CircularProgress size={20} />
+                            ) : isActive ? (
+                              <ToggleOnIcon fontSize="small" />
+                            ) : (
+                              <ToggleOffIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        </Tooltip>
+                        <IconButton onClick={() => handleEdit(course)} color="primary" size="small" title="تعديل">
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton onClick={() => handleDelete(course.id)} color="error" size="small" title="حذف">
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
                     </Box>
-                  </Box>
 
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: '#1565c0' }}>
-                    <MenuBookIcon color="primary" fontSize="small" />
-                    {course.name}
-                  </Typography>
-
-                  <Typography variant="body2" sx={{ mb: 1, color: '#37474f' }}>
-                    <strong>الكود:</strong> {course.code}
-                  </Typography>
-
-                  <Typography variant="body2" sx={{ mb: 1, color: '#37474f' }}>
-                    <strong>السعة:</strong> {course.capacity} طالب
-                  </Typography>
-
-                  {course.teacher && (
-                    <Typography variant="body2" sx={{ mb: 2, color: '#37474f' }}>
-                      <strong>المعلم:</strong> {course.teacher.name}
+                    <Typography variant="h6" sx={{ 
+                      fontWeight: 'bold', 
+                      mb: 1, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 1, 
+                      color: '#1565c0' 
+                    }}>
+                      <MenuBookIcon color="primary" fontSize="small" />
+                      {course.name}
                     </Typography>
-                  )}
 
-                  <Box display="flex" alignItems="center" justifyContent="flex-end" mt={2}>
-                    <Chip 
-                      label={`تمت الإضافة: ${new Date(course.created_at).toLocaleDateString('ar')}`} 
-                      size="small" 
-                      variant="outlined"
-                      sx={{ borderColor: '#1976d2', color: '#1976d2' }}
-                    />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+                    <Typography variant="body2" sx={{ mb: 1, color: '#37474f' }}>
+                      <strong>الكود:</strong> {course.code}
+                    </Typography>
+
+                    <Typography variant="body2" sx={{ mb: 1, color: '#37474f' }}>
+                      <strong>السعة:</strong> {course.capacity} طالب
+                    </Typography>
+
+                    {course.teacher && (
+                      <Typography variant="body2" sx={{ mb: 2, color: '#37474f' }}>
+                        <strong>المعلم:</strong> {course.teacher.name}
+                      </Typography>
+                    )}
+
+                    {!isActive && (
+                      <Chip 
+                        label=" غير مفعلة - لن تظهر في الجداول" 
+                        size="small" 
+                        variant="outlined"
+                        sx={{ mt: 1, borderColor: '#ff9800', color: '#ff9800', width: '100%' }}
+                      />
+                    )}
+
+                    <Box display="flex" alignItems="center" justifyContent="flex-end" mt={2}>
+                      <Chip 
+                        label={`تمت الإضافة: ${new Date(course.created_at).toLocaleDateString('ar')}`} 
+                        size="small" 
+                        variant="outlined"
+                        sx={{ borderColor: '#1976d2', color: '#1976d2' }}
+                      />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
 
@@ -300,17 +384,28 @@ const Announcements = () => {
             inputProps={{ min: 1 }}
           />
           <TextField
-            label="معرف المعلم (Teacher ID)"
-            type="number"
+            label="اسم المعلم"
             fullWidth
             margin="normal"
-            value={current?.teacher_id || ''}
-            onChange={(e) => setCurrent({ ...current, teacher_id: e.target.value })}
+            value={current?.teacher_name || ''}
+            onChange={(e) => setCurrent({ ...current, teacher_name: e.target.value })}
             required
             variant="outlined"
-            placeholder="مثال: 1"
-            helperText="أدخل ID المعلم المسؤول عن هذه المادة"
+            placeholder="مثال: أحمد محمد"
           />
+          
+          <Box sx={{ mt: 2, pt: 1 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={current?.is_active === 1}
+                  onChange={(e) => setCurrent({ ...current, is_active: e.target.checked ? 1 : 0 })}
+                  color="primary"
+                />
+              }
+              label={current?.is_active === 1 ? 'المادة مفعلة (ستظهر في الجداول)' : 'المادة غير مفعلة (لن تظهر في الجداول)'}
+            />
+          </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setModalOpen(false)} variant="outlined" disabled={loading}>

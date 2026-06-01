@@ -34,6 +34,7 @@ import Toast from '../../components/common/Toast';
 import {
   getAllCourses,
   getAllStudents,
+  getAvailableStudents,
   addTeacherViaAPI,
   addStudentViaAPI,
   addParentViaAPI,
@@ -130,9 +131,9 @@ function AddUser() {
       }
       
       try {
-        console.log('9. جلب الطلاب عبر الدالة...');
-        const students = await getAllStudents();
-        console.log('10. عدد الطلاب:', students.length);
+        console.log('9. جلب الطلاب المتاحين عبر الدالة...');
+        const students = await getAvailableStudents();
+        console.log('10. عدد الطلاب المتاحين:', students.length);
         setAllStudents(Array.isArray(students) ? students : []);
       } catch (error) {
         console.error('❌ خطأ في جلب الطلاب:', error);
@@ -440,9 +441,6 @@ function AddUser() {
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px" flexDirection="column">
         <CircularProgress />
         <Typography sx={{ mt: 2 }}>جاري تحميل البيانات...</Typography>
-        <Typography sx={{ mt: 1, fontSize: '0.75rem', color: '#666' }}>
-          تأكدي من فتح Console المتصفح (F12) لمشاهدة تفاصيل التشخيص
-        </Typography>
       </Box>
     );
   }
@@ -489,12 +487,6 @@ function AddUser() {
             {dataError}
           </Alert>
         )}
-
-        {/* إظهار عدد المواد للتحقق */}
-        <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
-          عدد المواد المجلوبة: {allCourses.length} مادة
-          {allCourses.length === 0 && " - تأكدي من فتح Console المتصفح (F12) لمشاهدة تفاصيل التشخيص"}
-        </Alert>
 
         <Paper
           elevation={0}
@@ -559,7 +551,7 @@ function AddUser() {
                   <Grid container spacing={2}>
                     <Grid item xs={12} md={4}>
                       <TextField
-                        label="الاسم الكامل"
+                        label="الاسم "
                         fullWidth
                         required
                         size="small"
@@ -807,7 +799,7 @@ function AddUser() {
                     <Typography
                       sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#1976d2', mb: 2 }}
                     >
-                      📝 المعلومات الشخصية
+                       المعلومات الشخصية
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid item xs={12} md={4}>
@@ -890,7 +882,7 @@ function AddUser() {
                       </Grid>
                       <Grid item xs={12} md={4}>
                         <TextField
-                          label="البريد الإلكتروني (اختياري)"
+                          label="البريد الإلكتروني"
                           type="email"
                           fullWidth
                           size="small"
@@ -911,12 +903,12 @@ function AddUser() {
                     <Typography
                       sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#1976d2', mb: 2 }}
                     >
-                      🎓 المعلومات الدراسية
+                       المعلومات الدراسية
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid item xs={12} md={4}>
                         <TextField
-                          label="الصف / الشعبة"
+                          label="الصف "
                           fullWidth
                           required
                           size="small"
@@ -967,7 +959,7 @@ function AddUser() {
                     <Typography
                       sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#1976d2', mb: 2 }}
                     >
-                      🏥 معلومات إضافية
+                       معلومات إضافية
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid item xs={12} md={6}>
@@ -1061,7 +1053,7 @@ function AddUser() {
                   <Grid container spacing={2}>
                     <Grid item xs={12} md={4}>
                       <TextField
-                        label="الاسم الكامل"
+                        label="الاسم "
                         fullWidth
                         required
                         size="small"
@@ -1107,7 +1099,7 @@ function AddUser() {
                       pr: 1.5,
                     }}
                   >
-                    معلومات التواصل والربط
+                    معلومات التواصل 
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12} md={6}>

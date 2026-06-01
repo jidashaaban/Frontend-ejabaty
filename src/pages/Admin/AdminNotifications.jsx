@@ -42,7 +42,7 @@ function AdminNotifications() {
     setLoading(true);
     try {
       const data = await getRealNotifications();
-      console.log('🔔 الإشعارات المستلمة من API:', data);
+      console.log(' الإشعارات المستلمة من API:', data);
       
       setUnreadCount(data.unread_count || 0);
       
@@ -80,8 +80,8 @@ function AdminNotifications() {
   };
 
   const handleNotificationClick = async (notification) => {
-    console.log('📌 تم الضغط على إشعار:', notification);
-    console.log('📌 نوع الإشعار:', notification.type);
+    console.log(' تم الضغط على إشعار:', notification);
+    console.log(' نوع الإشعار:', notification.type);
     
     if (!notification.is_read) {
       try {
@@ -99,19 +99,15 @@ function AdminNotifications() {
     
     const type = notification.type;
     
-    // شكاوى جديدة
     if (type === 'complaint' || type === 'new_complaint' || type.includes('complaint')) {
       navigate('/admin/complaints');
     }
-    // نتائج استبيانات
     else if (type === 'poll_result' || type === 'poll_completed' || type.includes('poll')) {
       navigate('/admin/polls');
     }
-    // طلب تسجيل في مادة
     else if (type === 'course_join' || type === 'new_course_request' || type.includes('course')) {
       navigate('/admin/courses');
     }
-    // أي إشعار آخر
     else {
       navigate('/admin/dashboard');
     }
@@ -286,7 +282,7 @@ function AdminNotifications() {
 
       {notifications.length > 0 && unreadCount === 0 && (
         <Alert severity="success" sx={{ mt: 3, borderRadius: 2 }}>
-          🎉 جميع الإشعارات مقروءة
+          جميع الإشعارات مقروءة
         </Alert>
       )}
 

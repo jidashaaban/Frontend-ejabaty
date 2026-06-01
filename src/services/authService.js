@@ -18,7 +18,7 @@ apiClient.interceptors.request.use((config) => {
 });
 
 export const login = async (email, password) => {
-  console.log('📧 محاولة تسجيل دخول:', email);
+  console.log(' محاولة تسجيل دخول:', email);
   
   try {
     const response = await apiClient.post('/login', { email, password });

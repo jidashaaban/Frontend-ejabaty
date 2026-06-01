@@ -31,7 +31,7 @@ import {
   Calculate as CalculateIcon,
   HistoryEdu as HistoryEduIcon,
 } from '@mui/icons-material';
-import { getStudentPoints, getStudentNotes, getStudentGrades } from '../../services/parentService';
+import { getChildren, getStudentPoints, getStudentNotes, getStudentGrades } from '../../services/parentService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
@@ -46,26 +46,46 @@ const Points = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const pointsData = await getStudentPoints(1);
-        setPoints(pointsData.points || 250);
-        const gradesData = await getStudentGrades(1);
-        setGrades(gradesData || []);
-        const notesData = await getStudentNotes(1);
-        setNotes(notesData || []);
+        const childrenData = await getChildren();
+        const list = childrenData?.children || childrenData?.data || childrenData?.students || (Array.isArray(childrenData) ? childrenData : null);
+        const id = Array.isArray(list) && list.length > 0 ? list[0].id : childrenData?.student?.id || childrenData?.child?.id;
+
+        if (!id) {
+          setToast({ open: true, message: 'لا يوجد طالب مرتبط بهذا الحساب', severity: 'warning' });
+          setLoading(false);
+          return;
+        }
+
+        const [pointsData, gradesData, notesData] = await Promise.all([
+          getStudentPoints(id).catch(() => ({ points: 0 })),
+          getStudentGrades(id).catch(() => []),
+          getStudentNotes(id).catch(() => []),
+        ]);
+
+        setPoints(pointsData?.points || 0);
+
+        const gradesList = gradesData?.data || gradesData?.grades || (Array.isArray(gradesData) ? gradesData : []);
+        setGrades(gradesList.map(g => ({
+          id: g.id,
+          subject: g.course_name || g.subject || g.course?.name || '-',
+          grade: g.my_mark ?? g.mark ?? g.grade ?? g.score ?? 0,
+          maxGrade: g.max_mark || g.max_grade || 100,
+          date: g.date || g.created_at?.substring(0, 10) || '',
+          type: g.type || g.exam_type || 'اختبار',
+        })));
+
+        const notesList = notesData?.data || notesData?.notes || (Array.isArray(notesData) ? notesData : []);
+        setNotes(notesList.map(n => ({
+          id: n.id,
+          subject: n.course_name || n.subject || n.course?.name || '-',
+          note: n.comment || n.note || n.content || n.text || '',
+          date: n.date || n.created_at?.substring(0, 10) || '',
+          teacher: n.teacher_name || n.teacher?.name || 'الأستاذ',
+        })));
+
       } catch (error) {
-        setPoints(250);
-        setGrades([
-          { id: 1, subject: 'الرياضيات', grade: 92, maxGrade: 100, date: '2026-04-20', type: 'اختبار نهائي' },
-          { id: 2, subject: 'الفيزياء', grade: 88, maxGrade: 100, date: '2026-04-18', type: 'اختبار شهري' },
-          { id: 3, subject: 'الكيمياء', grade: 95, maxGrade: 100, date: '2026-04-15', type: 'اختبار نهائي' },
-          { id: 4, subject: 'اللغة العربية', grade: 85, maxGrade: 100, date: '2026-04-10', type: 'اختبار شهري' },
-          { id: 5, subject: 'اللغة الإنجليزية', grade: 90, maxGrade: 100, date: '2026-04-05', type: 'اختبار نهائي' },
-        ]);
-        setNotes([
-          { id: 1, subject: 'الرياضيات', note: 'متميز في حل المسائل، استمر', date: '2026-04-20', teacher: 'أ. أحمد' },
-          { id: 2, subject: 'الفيزياء', note: 'يحتاج إلى مراجعة قوانين نيوتن', date: '2026-04-18', teacher: 'أ. سارة' },
-          { id: 3, subject: 'الكيمياء', note: 'تميز في التفاعلات الكيميائية', date: '2026-04-15', teacher: 'أ. خالد' },
-        ]);
+        console.error('خطأ في جلب بيانات الطالب:', error);
+        setToast({ open: true, message: 'فشل في جلب بيانات الطالب', severity: 'error' });
       } finally {
         setLoading(false);
       }
@@ -73,8 +93,9 @@ const Points = () => {
     fetchData();
   }, []);
 
-  const averageGrade = grades.length > 0 
-    ? Math.round(grades.reduce((sum, g) => sum + g.grade, 0) / grades.length) 
+  const validGrades = grades.filter(g => g.grade !== null && g.grade !== undefined && !isNaN(Number(g.grade)) && Number(g.grade) > 0);
+  const averageGrade = validGrades.length > 0
+    ? Math.round(validGrades.reduce((sum, g) => sum + Number(g.grade), 0) / validGrades.length)
     : 0;
 
   const getSubjectIcon = (subject) => {
@@ -211,8 +232,8 @@ const Points = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {grades.map((grade) => (
-                  <TableRow key={grade.id} hover>
+                {grades.map((grade, idx) => (
+                  <TableRow key={grade.id ?? idx} hover>
                     <TableCell>
                       <Box display="flex" alignItems="center" gap={1}>
                         {getSubjectIcon(grade.subject)}

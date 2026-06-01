@@ -4,7 +4,6 @@ import ParentLayout from '../../components/layout/ParentLayout';
 import Dashboard from './Dashboard';
 import ComplaintsParent from './ComplaintsParent';
 import Points from './Points';
-import Exams from './Exams';
 import ParentNotifications from './ParentNotifications';  
 
 const ParentRoutes = () => {
@@ -15,7 +14,6 @@ const ParentRoutes = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="complaints" element={<ComplaintsParent />} />
         <Route path="points" element={<Points />} />
-        <Route path="exams" element={<Exams />} />
         <Route path="notifications" element={<ParentNotifications />} />
       </Route>
     </Routes>

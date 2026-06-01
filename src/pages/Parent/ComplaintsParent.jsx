@@ -45,7 +45,6 @@ const ComplaintsParent = () => {
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-  // جلب الشكاوى السابقة
   const fetchComplaints = async () => {
     setLoadingComplaints(true);
     try {
@@ -143,7 +142,6 @@ const ComplaintsParent = () => {
         icon={<ReportProblemIcon sx={{ fontSize: 20 }} />}
       />
 
-      {/* زر عرض تاريخ الشكاوى */}
       <Box display="flex" justifyContent="flex-end" mb={2}>
         <Button
           variant={showHistory ? "contained" : "outlined"}
@@ -151,15 +149,14 @@ const ComplaintsParent = () => {
           onClick={() => setShowHistory(!showHistory)}
           sx={{ borderRadius: 2 }}
         >
-          {showHistory ? "إخفاء تاريخ الشكاوى" : "عرض تاريخ الشكاوى"}
+          {showHistory ? "إخفاء أرشيف الشكاوى" : "عرض أرشيف الشكاوى"}
         </Button>
       </Box>
 
-      {/* قائمة الشكاوى السابقة */}
       {showHistory && (
         <Paper sx={{ p: 3, mb: 4, borderRadius: 4 }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}>
-            📋 تاريخ الشكاوى
+            أرشيف الشكاوى
           </Typography>
           
           {loadingComplaints ? (
@@ -195,7 +192,6 @@ const ComplaintsParent = () => {
                             التاريخ: {formatDate(complaint.created_at)}
                           </Typography>
                           
-                          {/* عرض الرد إن وجد */}
                           {complaint.answer_text && (
                             <Box sx={{ mt: 2, p: 2, bgcolor: '#e8f5e9', borderRadius: 2 }}>
                               <Typography variant="caption" color="success.main" fontWeight="bold">
@@ -224,7 +220,6 @@ const ComplaintsParent = () => {
         </Paper>
       )}
 
-      {/* بطاقة تقديم الشكوى */}
       <Paper
         elevation={0}
         sx={{
@@ -371,7 +366,6 @@ const ComplaintsParent = () => {
         </Box>
       </Paper>
 
-      {/* نافذة تأكيد الحذف */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>تأكيد الحذف</DialogTitle>
         <DialogContent>

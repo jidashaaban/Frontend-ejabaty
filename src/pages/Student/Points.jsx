@@ -2,331 +2,377 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Grid,
   Paper,
   Card,
   CardContent,
-  Chip,
+  Grid,
   Avatar,
+  Chip,
   CircularProgress,
   Alert,
   Divider,
+  LinearProgress,
   Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
-  Rating,
-  Tooltip,
 } from '@mui/material';
 import {
-  EmojiEvents as EmojiEventsIcon,
   Star as StarIcon,
-  School as SchoolIcon,
-  CheckCircle as CheckCircleIcon,
-  TrendingUp as TrendingUpIcon,
+  EmojiEvents as EmojiEventsIcon,
   Assignment as AssignmentIcon,
+  TrendingUp as TrendingUpIcon,
+  School as SchoolIcon,
+  Science as ScienceIcon,
+  MenuBook as MenuBookIcon,
+  Calculate as CalculateIcon,
 } from '@mui/icons-material';
+import { getPoints, getGrades, getNotes } from '../../services/studentService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
-import { getPoints, getExamHistory, getPastQuizzes } from '../../services/studentService';
 
-function Points() {
+const Points = () => {
+  const [points, setPoints] = useState(0);
+  const [grades, setGrades] = useState([]);
+  const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [pointsDetails, setPointsDetails] = useState([]);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
-    fetchPointsData();
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [pointsData, gradesData, notesData] = await Promise.all([
+          getPoints().catch(() => ({ points: 0 })),
+          getGrades().catch(() => ({ data: [] })),
+          getNotes().catch(() => ({ data: [] })),
+        ]);
+
+        const points = pointsData?.points || 0;
+        setPoints(points);
+
+        const gradesArray = gradesData?.data || gradesData?.grades || (Array.isArray(gradesData) ? gradesData : []);
+        const processedGrades = Array.isArray(gradesArray) ? gradesArray.map(g => ({
+          id: g.id,
+          subject: g.course_name || g.subject || g.course?.name || '-',
+          grade: g.my_mark || g.mark || g.grade || g.score || 0,
+          maxGrade: g.max_mark || g.max_grade || 100,
+          date: g.date || g.created_at?.substring(0, 10) || '',
+          type: g.type || g.exam_type || 'اختبار',
+        })) : [];
+        setGrades(processedGrades);
+
+        let notesList = [];
+        if (notesData) {
+          if (Array.isArray(notesData)) {
+            notesList = notesData;
+          } else if (notesData.data && Array.isArray(notesData.data)) {
+            notesList = notesData.data;
+          } else if (notesData.notes && Array.isArray(notesData.notes)) {
+            notesList = notesData.notes;
+          }
+        }
+        
+        const processedNotes = Array.isArray(notesList) ? notesList.map(n => ({
+          id: n.id,
+          subject: n.course_name || n.subject || n.course?.name || '-',
+          note: n.comment || n.note || n.content || n.text || '',
+          date: n.date || n.created_at?.substring(0, 10) || '',
+          teacher: n.teacher_name || n.teacher?.name || 'الأستاذ',
+        })) : [];
+        setNotes(processedNotes);
+
+      } catch (error) {
+        console.error('خطأ في جلب بيانات الطالب:', error);
+        setToast({ open: true, message: 'لم يتم تحميل بعض البيانات', severity: 'warning' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
-  const fetchPointsData = async () => {
-    setLoading(true);
-    try {
-      const [pointsData, examHistory, pastQuizzes] = await Promise.all([
-        getPoints(),
-        getExamHistory(),
-        getPastQuizzes(),
-      ]);
+  const averageGrade = grades.length > 0 
+    ? Math.round(grades.filter(g => g.grade && !isNaN(g.grade)).reduce((sum, g) => sum + Number(g.grade), 0) / (grades.filter(g => g.grade && !isNaN(g.grade)).length || 1)) 
+    : 0;
 
-      console.log('⭐ النقاط (الخام):', pointsData);
-      console.log('📊 سجل الامتحانات:', examHistory);
-      console.log('📚 الاختبارات السابقة:', pastQuizzes);
-
-      // معالجة النقاط الكلية
-      let total = 0;
-      if (typeof pointsData === 'number') {
-        total = pointsData;
-      } else if (pointsData?.total_points) {
-        total = pointsData.total_points;
-      } else if (pointsData?.points) {
-        total = pointsData.points;
-      }
-      setTotalPoints(total);
-
-      // معالجة تفاصيل النقاط من سجل الامتحانات والاختبارات
-      let detailsArray = [];
-
-      // من سجل الامتحانات
-      if (Array.isArray(examHistory)) {
-        examHistory.forEach(item => {
-          detailsArray.push({
-            id: item.id,
-            course_name: item.course?.name || item.course_name,
-            exam_name: item.exam_name || 'امتحان',
-            points: item.marks_obtained || item.points || 0,
-            max_points: item.max_marks || item.total_marks || 100,
-            note: item.teacher_note || item.note || item.feedback || '',
-            date: item.created_at || item.date,
-            type: 'exam',
-          });
-        });
-      } else if (examHistory?.data && Array.isArray(examHistory.data)) {
-        examHistory.data.forEach(item => {
-          detailsArray.push({
-            id: item.id,
-            course_name: item.course?.name || item.course_name,
-            exam_name: item.exam_name || 'امتحان',
-            points: item.marks_obtained || item.points || 0,
-            max_points: item.max_marks || item.total_marks || 100,
-            note: item.teacher_note || item.note || item.feedback || '',
-            date: item.created_at || item.date,
-            type: 'exam',
-          });
-        });
-      }
-
-      // من الاختبارات السابقة (Quizzes)
-      if (Array.isArray(pastQuizzes)) {
-        pastQuizzes.forEach(item => {
-          detailsArray.push({
-            id: item.id,
-            course_name: item.course?.name || item.course_name,
-            exam_name: item.quiz_name || item.title || 'اختبار قصير',
-            points: item.score || item.points || item.marks_obtained || 0,
-            max_points: item.max_score || item.total_marks || 100,
-            note: item.feedback || item.teacher_note || item.note || '',
-            date: item.created_at || item.date,
-            type: 'quiz',
-          });
-        });
-      } else if (pastQuizzes?.data && Array.isArray(pastQuizzes.data)) {
-        pastQuizzes.data.forEach(item => {
-          detailsArray.push({
-            id: item.id,
-            course_name: item.course?.name || item.course_name,
-            exam_name: item.quiz_name || item.title || 'اختبار قصير',
-            points: item.score || item.points || item.marks_obtained || 0,
-            max_points: item.max_score || item.total_marks || 100,
-            note: item.feedback || item.teacher_note || item.note || '',
-            date: item.created_at || item.date,
-            type: 'quiz',
-          });
-        });
-      }
-
-      // ترتيب حسب التاريخ (الأحدث أولاً)
-      detailsArray.sort((a, b) => new Date(b.date) - new Date(a.date));
-      
-      setPointsDetails(detailsArray);
-      console.log('✅ تفاصيل النقاط:', detailsArray);
-      console.log('📊 عدد العناصر:', detailsArray.length);
-
-    } catch (error) {
-      console.error('❌ خطأ في جلب بيانات النقاط:', error);
-      setToast({ open: true, message: 'فشل في جلب بيانات النقاط', severity: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getPercentage = (points, maxPoints) => {
-    if (!maxPoints || maxPoints === 0) return 0;
-    return Math.round((points / maxPoints) * 100);
-  };
-
-  const getGradeColor = (percentage) => {
-    if (percentage >= 90) return '#4caf50';
-    if (percentage >= 80) return '#8bc34a';
-    if (percentage >= 70) return '#ffc107';
-    if (percentage >= 60) return '#ff9800';
-    return '#f44336';
+  const getSubjectIcon = (subject) => {
+    const icons = {
+      'الرياضيات': <CalculateIcon />,
+      'الفيزياء': <ScienceIcon />,
+      'الكيمياء': <ScienceIcon />,
+      'اللغة العربية': <MenuBookIcon />,
+      'اللغة الإنجليزية': <MenuBookIcon />,
+    };
+    return icons[subject] || <SchoolIcon />;
   };
 
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
-        <Typography sx={{ mr: 2 }}>جاري تحميل النقاط...</Typography>
+        <Typography sx={{ mr: 2 }}>جاري تحميل البيانات...</Typography>
       </Box>
     );
   }
 
   return (
     <Box>
-      <PageHeader 
-        title="نقاطي"
-        subtitle="سجل النقاط والملاحظات من الأساتذة"
-        icon={<EmojiEventsIcon sx={{ fontSize: 20 }} />}
+      <PageHeader
+        title="نقاطي وتقييمي"
+        subtitle="تابع علاماتك ونقاطك وملاحظات الأساتذة"
+        icon={<StarIcon sx={{ fontSize: 20 }} />}
       />
 
-      {/* بطاقة إجمالي النقاط */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          mb: 4,
+          borderRadius: 4,
+          background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%)',
+        }}
+      >
+        <Grid container spacing={3} alignItems="center">
+          <Grid item xs={12} md={4} textAlign="center">
+            <Avatar
+              sx={{
+                width: 80,
+                height: 80,
+                bgcolor: '#1976d2',
+                mx: 'auto',
+                mb: 1,
+              }}
+            >
+              <TrendingUpIcon sx={{ fontSize: 45, color: '#fff' }} />
+            </Avatar>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
+              {points}
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#1976d2' }}>نقطة</Typography>
+            <Chip
+              icon={<StarIcon />}
+              label={points >= 400 ? 'ممتاز' : points >= 250 ? 'جيد جداً' : 'جيد'}
+              size="small"
+              sx={{ mt: 1, bgcolor: '#1976d2', color: '#fff' }}
+            />
+          </Grid>
+          <Grid item xs={12} md={4} textAlign="center">
+            <Avatar
+              sx={{
+                width: 80,
+                height: 80,
+                bgcolor: '#42a5f5',
+                mx: 'auto',
+                mb: 1,
+              }}
+            >
+              <SchoolIcon sx={{ fontSize: 45, color: '#fff' }} />
+            </Avatar>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
+              {averageGrade}
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#1976d2' }}>المتوسط العام</Typography>
+            <Chip
+              label={`${grades.length} اختبار`}
+              size="small"
+              sx={{ mt: 1, bgcolor: '#e3f2fd', color: '#1565c0' }}
+            />
+          </Grid>
+          <Grid item xs={12} md={4} textAlign="center">
+            <Avatar
+              sx={{
+                width: 80,
+                height: 80,
+                bgcolor: '#64b5f6',
+                mx: 'auto',
+                mb: 1,
+              }}
+            >
+              <AssignmentIcon sx={{ fontSize: 45, color: '#fff' }} />
+            </Avatar>
+            <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
+              {notes.length}
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#1976d2' }}>ملاحظة</Typography>
+            <Chip
+              label="من الأساتذة"
+              size="small"
+              sx={{ mt: 1, bgcolor: '#e3f2fd', color: '#1565c0' }}
+            />
+          </Grid>
+        </Grid>
+      </Paper>
+
+      <Paper sx={{ mb: 4, borderRadius: 4, overflow: 'hidden' }}>
+        <Box
+          sx={{
+            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+            p: 2,
+            px: 3,
+          }}
+        >
+          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 'bold' }}>
+             علاماتي
+          </Typography>
+        </Box>
+        <Box sx={{ p: 3 }}>
+          {grades.length === 0 ? (
+            <Alert severity="info">لا توجد علامات مسجلة حالياً</Alert>
+          ) : (
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: '#f5f7fa' }}>
+                  <TableCell sx={{ fontWeight: 'bold' }}>المادة</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>العلامة</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>التاريخ</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>نوع الاختبار</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {grades.map((grade, index) => (
+                  <TableRow key={grade.id ?? index} hover>
+                    <TableCell>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        {getSubjectIcon(grade.subject)}
+                        <Typography fontWeight="500">{grade.subject}</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={`${grade.grade} / ${grade.maxGrade}`}
+                        size="small"
+                        sx={{
+                          bgcolor: grade.grade >= 90 ? '#e8f5e9' : grade.grade >= 70 ? '#fff3e0' : '#ffebee',
+                          color: grade.grade >= 90 ? '#2e7d32' : grade.grade >= 70 ? '#ed6c02' : '#d32f2f',
+                          fontWeight: 'bold',
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>{grade.date}</TableCell>
+                    <TableCell>
+                      <Chip label={grade.type} size="small" variant="outlined" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </Box>
+      </Paper>
+
+      <Grid container spacing={4}>
         <Grid item xs={12} md={6}>
-          <Card sx={{ 
-            borderRadius: 3, 
-            background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)',
-            color: '#fff',
-            boxShadow: '0 4px 15px rgba(46,125,50,0.3)',
-          }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography variant="body2" sx={{ opacity: 0.8 }}>مجموع النقاط</Typography>
-                  <Typography variant="h2" sx={{ fontWeight: 'bold' }}>
-                    {totalPoints}
-                  </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                    من الاختبارات والامتحانات
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', width: 70, height: 70 }}>
-                  <EmojiEventsIcon sx={{ fontSize: 45 }} />
+          <Card
+            sx={{
+              borderRadius: 4,
+              height: '100%',
+              background: 'linear-gradient(135deg, #e3f2fd 0%, #f5f9ff 100%)',
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+                <Avatar sx={{ bgcolor: '#1976d2', width: 40, height: 40 }}>
+                  <EmojiEventsIcon />
                 </Avatar>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
+                  نقاطي في الأنشطة
+                </Typography>
+              </Box>
+              <Divider sx={{ mb: 2, borderColor: '#90caf9' }} />
+              
+              <Box textAlign="center" py={2}>
+                <Typography variant="h2" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                  {points}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  إجمالي النقاط
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={Math.min((points / 500) * 100, 100)}
+                  sx={{
+                    height: 10,
+                    borderRadius: 5,
+                    bgcolor: '#bbdef5',
+                    '& .MuiLinearProgress-bar': { bgcolor: '#1976d2' },
+                  }}
+                />
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  {points}
+                </Typography>
+              </Box>
+
+              <Divider sx={{ my: 2, borderColor: '#90caf9' }} />
+
+              <Box display="flex" justifyContent="center" gap={1.5} flexWrap="wrap">
+                <Chip icon={<StarIcon />} label="حضور يومي +5" sx={{ bgcolor: '#1976d2', color: '#fff' }} />
+                <Chip icon={<StarIcon />} label="مشاركة صفية +5" sx={{ bgcolor: '#42a5f5', color: '#fff' }} />
+                <Chip icon={<StarIcon />} label="درجة امتياز +15" sx={{ bgcolor: '#64b5f6', color: '#fff' }} />
+                <Chip icon={<StarIcon />} label="سلوك ممتاز +10" sx={{ bgcolor: '#90caf9', color: '#fff' }} />
               </Box>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Card sx={{ 
-            borderRadius: 3, 
-            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-            color: '#fff',
-            boxShadow: '0 4px 15px rgba(25,118,210,0.3)',
-          }}>
-            <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography variant="body2" sx={{ opacity: 0.8 }}>عدد الاختبارات</Typography>
-                  <Typography variant="h2" sx={{ fontWeight: 'bold' }}>
-                    {pointsDetails.length}
-                  </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                    امتحانات واختبارات قصيرة
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', width: 70, height: 70 }}>
-                  <AssignmentIcon sx={{ fontSize: 45 }} />
+          <Card
+            sx={{
+              borderRadius: 4,
+              height: '100%',
+              background: 'linear-gradient(135deg, #e3f2fd 0%, #f5f9ff 100%)',
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+                <Avatar sx={{ bgcolor: '#42a5f5', width: 40, height: 40 }}>
+                  <AssignmentIcon />
                 </Avatar>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
+                   ملاحظات الأساتذة
+                </Typography>
               </Box>
+              <Divider sx={{ mb: 2, borderColor: '#90caf9' }} />
+
+              {notes.length === 0 ? (
+                <Alert severity="info">لا توجد ملاحظات حتى الآن</Alert>
+              ) : (
+                notes.map((note, noteIndex) => (
+                  <Paper
+                    key={note.id ?? noteIndex}
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      borderRadius: 3,
+                      bgcolor: '#f8f9fa',
+                      borderRight: `4px solid #1976d2`,
+                      transition: '0.3s',
+                      '&:hover': { bgcolor: '#e3f2fd' },
+                    }}
+                  >
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                      <Chip
+                        icon={getSubjectIcon(note.subject)}
+                        label={note.subject}
+                        size="small"
+                        sx={{ bgcolor: '#1976d2', color: '#fff' }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {note.teacher} | {note.date}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ color: '#333', lineHeight: 1.6 }}>
+                      {note.note}
+                    </Typography>
+                  </Paper>
+                ))
+              )}
             </CardContent>
           </Card>
         </Grid>
       </Grid>
-
-      {/* قائمة النقاط والملاحظات */}
-      <Paper sx={{ p: 3, borderRadius: 3 }}>
-        <Box display="flex" alignItems="center" gap={1} sx={{ mb: 2 }}>
-          <StarIcon sx={{ color: '#ffc107' }} />
-          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-            سجل النقاط والملاحظات
-          </Typography>
-        </Box>
-        <Divider sx={{ mb: 3 }} />
-
-        {pointsDetails.length === 0 ? (
-          <Alert severity="info" sx={{ borderRadius: 2 }}>
-            📭 لا توجد نقاط مسجلة حالياً. سيتم عرض النقاط بعد تصحيح الاختبارات من قبل الأساتذة.
-          </Alert>
-        ) : (
-          <Grid container spacing={2}>
-            {pointsDetails.map((item, index) => {
-              const percentage = getPercentage(item.points, item.max_points);
-              const gradeColor = getGradeColor(percentage);
-              
-              return (
-                <Grid item xs={12} key={item.id || index}>
-                  <Card sx={{ 
-                    borderRadius: 2,
-                    borderRight: `4px solid ${gradeColor}`,
-                    transition: '0.3s',
-                    '&:hover': { transform: 'translateX(4px)', boxShadow: 3 }
-                  }}>
-                    <CardContent>
-                      <Grid container spacing={2}>
-                        {/* معلومات المادة والاختبار */}
-                        <Grid item xs={12} md={5}>
-                          <Box display="flex" alignItems="center" gap={1} mb={1}>
-                            <SchoolIcon sx={{ color: '#1976d2', fontSize: 20 }} />
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                              {item.course_name || 'مادة غير محددة'}
-                            </Typography>
-                          </Box>
-                          <Chip 
-                            label={item.exam_name} 
-                            size="small" 
-                            sx={{ bgcolor: '#e3f2fd', color: '#1976d2', fontWeight: 'bold', mb: 1 }}
-                          />
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            📅 {item.date ? new Date(item.date).toLocaleDateString('ar') : 'تاريخ غير محدد'}
-                          </Typography>
-                        </Grid>
-
-                        {/* النقاط */}
-                        <Grid item xs={12} md={3}>
-                          <Box textAlign="center">
-                            <Typography variant="body2" color="text.secondary">الدرجة</Typography>
-                            <Typography variant="h4" sx={{ fontWeight: 'bold', color: gradeColor }}>
-                              {item.points}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              من {item.max_points}
-                            </Typography>
-                            <Box display="flex" alignItems="center" justifyContent="center" mt={0.5}>
-                              <Chip 
-                                label={`${percentage}%`} 
-                                size="small" 
-                                sx={{ bgcolor: `${gradeColor}20`, color: gradeColor, fontWeight: 'bold' }}
-                              />
-                            </Box>
-                          </Box>
-                        </Grid>
-
-                        {/* ملاحظات الأستاذ */}
-                        <Grid item xs={12} md={4}>
-                          {item.note ? (
-                            <Box sx={{ bgcolor: '#f5f5f5', p: 1.5, borderRadius: 2 }}>
-                              <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                                <Avatar sx={{ width: 24, height: 24, bgcolor: '#1976d2' }}>
-                                  <StarIcon sx={{ fontSize: 14 }} />
-                                </Avatar>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                  ملاحظة الأستاذ
-                                </Typography>
-                              </Box>
-                              <Typography variant="body2" color="text.secondary">
-                                {item.note}
-                              </Typography>
-                            </Box>
-                          ) : (
-                            <Box sx={{ bgcolor: '#fafafa', p: 1.5, borderRadius: 2, textAlign: 'center' }}>
-                              <Typography variant="body2" color="text.disabled">
-                                📝 لا توجد ملاحظات
-                              </Typography>
-                            </Box>
-                          )}
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              );
-            })}
-          </Grid>
-        )}
-      </Paper>
 
       <Toast
         open={toast.open}
@@ -336,6 +382,6 @@ function Points() {
       />
     </Box>
   );
-}
+};
 
 export default Points;

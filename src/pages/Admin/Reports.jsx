@@ -33,8 +33,6 @@ import {
   School as SchoolIcon,
   MenuBook as MenuBookIcon,
   Poll as PollIcon,
-  EmojiEvents as EmojiEventsIcon,
-  Star as StarIcon,
   Assessment as AssessmentIcon,
   PeopleAlt as ParentsIcon,
   ReportProblem as ReportProblemIcon,
@@ -49,7 +47,6 @@ import {
   saveReport,
   getReportsHistory,
   getAllPollsFromAPI,
-  getPoints
 } from '../../services/adminService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
@@ -76,14 +73,6 @@ function Reports() {
   const [openHistoryDialog, setOpenHistoryDialog] = useState(false);
   const [selectedHistoryReport, setSelectedHistoryReport] = useState(null);
   
-  const [surveyResults, setSurveyResults] = useState([]);
-  const [topStudents, setTopStudents] = useState({
-    grade9: [],
-    scientific: [],
-    literary: [],
-  });
-  const [loadingPolls, setLoadingPolls] = useState(false);
-  const [loadingTopStudents, setLoadingTopStudents] = useState(false);
 
   const roles = [
     { value: 'student', label: 'الطلاب', color: '#1976d2' },
@@ -91,94 +80,6 @@ function Reports() {
     { value: 'parent', label: 'أولياء الأمور', color: '#9c27b0' },
     { value: 'admin', label: 'المديرين', color: '#ed6c02' },
   ];
-
-  const fetchPollsFromAPI = async () => {
-    setLoadingPolls(true);
-    try {
-      const polls = await getAllPollsFromAPI();
-      console.log(' الاستبيانات من API:', polls);
-      
-      if (polls && polls.length > 0) {
-        const results = polls.map(poll => ({
-          id: poll.id,
-          title: poll.title,
-          description: poll.description,
-          results: poll.questions?.map(q => ({
-            question: q.text,
-            averageRating: q.averageRating || 0,
-            totalVotes: q.totalVotes || 0,
-          })) || []
-        }));
-        setSurveyResults(results);
-      } else {
-        setSurveyResults([]);
-      }
-    } catch (error) {
-      console.error(' فشل جلب الاستبيانات من API:', error);
-      setSurveyResults([]);
-      setToast({
-        open: true,
-        message: 'فشل في جلب الاستبيانات',
-        severity: 'error'
-      });
-    } finally {
-      setLoadingPolls(false);
-    }
-  };
-
-  const fetchTopStudentsFromAPI = async () => {
-    setLoadingTopStudents(true);
-    try {
-      const points = await getPoints();
-      console.log(' نقاط الطلاب من API:', points);
-      
-      if (points && points.length > 0) {
-        const sortedStudents = [...points].sort((a, b) => b.points - a.points);
-        
-        const grade9Students = sortedStudents.filter((_, idx) => idx < 3);
-        const scientificStudents = sortedStudents.filter((_, idx) => idx >= 3 && idx < 6);
-        const literaryStudents = sortedStudents.filter((_, idx) => idx >= 6 && idx < 9);
-        
-        setTopStudents({
-          grade9: grade9Students.map(s => ({
-            id: s.studentId,
-            name: s.studentName || `طالب ${s.studentId}`,
-            points: s.points
-          })),
-          scientific: scientificStudents.map(s => ({
-            id: s.studentId,
-            name: s.studentName || `طالب ${s.studentId}`,
-            points: s.points
-          })),
-          literary: literaryStudents.map(s => ({
-            id: s.studentId,
-            name: s.studentName || `طالب ${s.studentId}`,
-            points: s.points
-          })),
-        });
-      } else {
-        setTopStudents({
-          grade9: [],
-          scientific: [],
-          literary: [],
-        });
-      }
-    } catch (error) {
-      console.error(' فشل جلب ترتيب الطلاب من API:', error);
-      setTopStudents({
-        grade9: [],
-        scientific: [],
-        literary: [],
-      });
-      setToast({
-        open: true,
-        message: 'فشل في جلب ترتيب الطلاب',
-        severity: 'error'
-      });
-    } finally {
-      setLoadingTopStudents(false);
-    }
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -209,8 +110,6 @@ function Reports() {
     };
     
     fetchData();
-    fetchPollsFromAPI();
-    fetchTopStudentsFromAPI();
     
     const fetchHistory = async () => {
       try {
@@ -311,7 +210,7 @@ function Reports() {
           <TableHead>
             <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
               <TableCell><strong>اسم الطالب</strong></TableCell>
-              <TableCell><strong>المساقات</strong></TableCell>
+              <TableCell><strong>المواد</strong></TableCell>
               <TableCell><strong>علامات الامتحانات</strong></TableCell>
               <TableCell><strong>نقاط الاختبارات</strong></TableCell>
             </TableRow>
@@ -376,8 +275,6 @@ function Reports() {
             <TableRow sx={{ backgroundColor: '#f3e5f5' }}>
               <TableCell><strong>اسم ولي الأمر</strong></TableCell>
               <TableCell><strong>الأبناء</strong></TableCell>
-              <TableCell><strong>عدد الشكاوى</strong></TableCell>
-              <TableCell><strong>حالة الشكاوى</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -408,9 +305,7 @@ function Reports() {
           <TableHead>
             <TableRow sx={{ backgroundColor: '#fff3e0' }}>
               <TableCell><strong>اسم المدير</strong></TableCell>
-              <TableCell><strong>الاستبيانات المنشأة</strong></TableCell>
-              <TableCell><strong>الجداول المُنشأة</strong></TableCell>
-            </TableRow>
+         </TableRow>
           </TableHead>
           <TableBody>
             {reportData?.map((admin, idx) => (
@@ -428,7 +323,7 @@ function Reports() {
     return <Alert severity="info">لا توجد بيانات متاحة</Alert>;
   };
 
-  if (loading || loadingPolls || loadingTopStudents) {
+  if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress size={60} />
@@ -437,20 +332,17 @@ function Reports() {
     );
   }
 
-  const medalColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
-
   return (
     <Box>
       <PageHeader 
         title="التقارير والإحصائيات"
-        subtitle="لوحة تحليلية شاملة لأداء المنصة"
         icon={<AssessmentIcon sx={{ fontSize: 20 }} />}
       />
 
       <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} sx={{ mb: 3, borderBottom: 2, borderColor: 'divider' }}>
         <Tab label=" إحصائيات عامة" />
         <Tab label=" تقارير حسب الدور" />
-        <Tab label=" تاريخ التقارير" />
+        <Tab label=" أرشيف التقارير" />
       </Tabs>
 
       {tabValue === 0 && (
@@ -610,205 +502,6 @@ function Reports() {
               </Card>
             </Grid>
           </Grid>
-
-          <Paper sx={{ 
-            p: 3, 
-            mb: 5, 
-            borderRadius: 4,
-            background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%)',
-            border: '2px solid #1976d2',
-          }}>
-            <Box display="flex" alignItems="center" gap={1.5} mb={3}>
-              <Avatar sx={{ bgcolor: '#1976d2', width: 40, height: 40 }}>
-                <PollIcon sx={{ color: '#fff' }} />
-              </Avatar>
-              <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1565c0' }}>نتائج الاستبيانات</Typography>
-            </Box>
-
-            {surveyResults.length === 0 ? (
-              <Alert severity="info" sx={{ borderRadius: 3, bgcolor: '#fff' }}>لا توجد استبيانات متاحة حالياً</Alert>
-            ) : (
-              <Grid container spacing={3}>
-                {surveyResults.map((survey, index) => (
-                  <Grid item xs={12} md={6} key={index}>
-                    <Card sx={{ borderRadius: 4, bgcolor: '#ffffff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
-                      <CardContent sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom sx={{ color: '#1565c0', fontWeight: 'bold' }}>
-                          📊 {survey.title}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                          {survey.description}
-                        </Typography>
-                        <Divider sx={{ my: 2, borderColor: '#90caf9' }} />
-                        {survey.results?.map((result, idx) => (
-                          <Box key={idx} sx={{ mb: 2 }}>
-                            <Box display="flex" justifyContent="space-between" mb={0.5}>
-                              <Typography variant="body2" fontWeight="500" sx={{ color: '#37474f' }}>{result.question}</Typography>
-                              <Typography variant="body2" fontWeight="bold" color="#1976d2">
-                                {result.averageRating} / 5
-                              </Typography>
-                            </Box>
-                            <Box sx={{ width: '100%', bgcolor: '#e0e0e0', borderRadius: 2, height: 10 }}>
-                              <Box
-                                sx={{
-                                  width: `${(result.averageRating / 5) * 100}%`,
-                                  background: 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)',
-                                  height: 10,
-                                  borderRadius: 2,
-                                }}
-                              />
-                            </Box>
-                          </Box>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-          </Paper>
-
-          <Paper sx={{ 
-            p: 3, 
-            borderRadius: 4,
-            border: '2px solid #e3f2fd',
-          }}>
-            <Box display="flex" alignItems="center" gap={1.5} mb={3}>
-              <Avatar sx={{ bgcolor: '#ff9800', width: 40, height: 40 }}>
-                <EmojiEventsIcon sx={{ color: '#fff' }} />
-              </Avatar>
-              <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1976d2' }}>ترتيب الطلاب حسب النقاط</Typography>
-            </Box>
-
-            {topStudents.grade9.length === 0 && topStudents.scientific.length === 0 && topStudents.literary.length === 0 ? (
-              <Alert severity="info">لا توجد نقاط مسجلة للطلاب حالياً</Alert>
-            ) : (
-              <Grid container spacing={4}>
-                <Grid item xs={12} md={4}>
-                  <Typography variant="h6" align="center" gutterBottom sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2 }}>
-                     الصف التاسع
-                  </Typography>
-                  <Table sx={{ border: '2px solid #1976d2', borderRadius: 2, overflow: 'hidden' }}>
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
-                        <TableCell align="center" sx={{ borderBottom: '2px solid #1976d2', fontWeight: 'bold', color: '#1565c0' }}>الترتيب</TableCell>
-                        <TableCell sx={{ borderBottom: '2px solid #1976d2', fontWeight: 'bold', color: '#1565c0' }}>اسم الطالب</TableCell>
-                        <TableCell align="center" sx={{ borderBottom: '2px solid #1976d2', fontWeight: 'bold', color: '#1565c0' }}>النقاط</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {topStudents.grade9.length > 0 ? (
-                        topStudents.grade9.map((student, idx) => (
-                          <TableRow key={student.id} hover>
-                            <TableCell align="center">
-                              <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
-                                {idx === 0 && <StarIcon sx={{ color: medalColors[0], fontSize: 18 }} />}
-                                {idx === 1 && <StarIcon sx={{ color: medalColors[1], fontSize: 18 }} />}
-                                {idx === 2 && <StarIcon sx={{ color: medalColors[2], fontSize: 18 }} />}
-                                {idx > 2 && `${idx + 1}`}
-                              </Box>
-                            </TableCell>
-                            <TableCell>{student.name}</TableCell>
-                            <TableCell align="center">
-                              <Chip label={student.points} size="small" sx={{ bgcolor: '#1976d2', color: '#fff', fontWeight: 'bold' }} />
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={3} align="center" sx={{ py: 3 }}>
-                            <Typography color="text.secondary">لا توجد بيانات</Typography>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <Typography variant="h6" align="center" gutterBottom sx={{ color: '#2e7d32', fontWeight: 'bold', mb: 2 }}>
-                     البكالوريا - علمي
-                  </Typography>
-                  <Table sx={{ border: '2px solid #2e7d32', borderRadius: 2, overflow: 'hidden' }}>
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: '#e8f5e9' }}>
-                        <TableCell align="center" sx={{ borderBottom: '2px solid #2e7d32', fontWeight: 'bold', color: '#2e7d32' }}>الترتيب</TableCell>
-                        <TableCell sx={{ borderBottom: '2px solid #2e7d32', fontWeight: 'bold', color: '#2e7d32' }}>اسم الطالب</TableCell>
-                        <TableCell align="center" sx={{ borderBottom: '2px solid #2e7d32', fontWeight: 'bold', color: '#2e7d32' }}>النقاط</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {topStudents.scientific.length > 0 ? (
-                        topStudents.scientific.map((student, idx) => (
-                          <TableRow key={student.id} hover>
-                            <TableCell align="center">
-                              <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
-                                {idx === 0 && <StarIcon sx={{ color: medalColors[0], fontSize: 18 }} />}
-                                {idx === 1 && <StarIcon sx={{ color: medalColors[1], fontSize: 18 }} />}
-                                {idx === 2 && <StarIcon sx={{ color: medalColors[2], fontSize: 18 }} />}
-                                {idx > 2 && `${idx + 1}`}
-                              </Box>
-                            </TableCell>
-                            <TableCell>{student.name}</TableCell>
-                            <TableCell align="center">
-                              <Chip label={student.points} size="small" sx={{ bgcolor: '#2e7d32', color: '#fff', fontWeight: 'bold' }} />
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={3} align="center" sx={{ py: 3 }}>
-                            <Typography color="text.secondary">لا توجد بيانات</Typography>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <Typography variant="h6" align="center" gutterBottom sx={{ color: '#ed6c02', fontWeight: 'bold', mb: 2 }}>
-                     البكالوريا - أدبي
-                  </Typography>
-                  <Table sx={{ border: '2px solid #ed6c02', borderRadius: 2, overflow: 'hidden' }}>
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: '#fff3e0' }}>
-                        <TableCell align="center" sx={{ borderBottom: '2px solid #ed6c02', fontWeight: 'bold', color: '#ed6c02' }}>الترتيب</TableCell>
-                        <TableCell sx={{ borderBottom: '2px solid #ed6c02', fontWeight: 'bold', color: '#ed6c02' }}>اسم الطالب</TableCell>
-                        <TableCell align="center" sx={{ borderBottom: '2px solid #ed6c02', fontWeight: 'bold', color: '#ed6c02' }}>النقاط</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {topStudents.literary.length > 0 ? (
-                        topStudents.literary.map((student, idx) => (
-                          <TableRow key={student.id} hover>
-                            <TableCell align="center">
-                              <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
-                                {idx === 0 && <StarIcon sx={{ color: medalColors[0], fontSize: 18 }} />}
-                                {idx === 1 && <StarIcon sx={{ color: medalColors[1], fontSize: 18 }} />}
-                                {idx === 2 && <StarIcon sx={{ color: medalColors[2], fontSize: 18 }} />}
-                                {idx > 2 && `${idx + 1}`}
-                              </Box>
-                            </TableCell>
-                            <TableCell>{student.name}</TableCell>
-                            <TableCell align="center">
-                              <Chip label={student.points} size="small" sx={{ bgcolor: '#ed6c02', color: '#fff', fontWeight: 'bold' }} />
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={3} align="center" sx={{ py: 3 }}>
-                            <Typography color="text.secondary">لا توجد بيانات</Typography>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </Grid>
-              </Grid>
-            )}
-          </Paper>
         </>
       )}
 

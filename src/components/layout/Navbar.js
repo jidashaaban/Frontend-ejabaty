@@ -15,7 +15,6 @@ import {
   Menu as MenuIcon, 
   ChevronRight as ChevronRightIcon,
   Logout as LogoutIcon, 
-  Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 
@@ -50,11 +49,6 @@ const Navbar = ({ toggleSidebar, sidebarOpen, handleLogout }) => {
     student: 'طالب',
     parent: 'ولي أمر',
   }[role] || 'مستخدم';
-
-  const notifications = [
-    { title: 'شكوى جديدة', message: 'لديك شكوى جديدة', color: '#f44336' },
-    { title: 'تحديث النقاط', message: 'تم تحديث نقاط الطلاب', color: '#ff9800' },
-  ];
 
   return (
     <AppBar 
@@ -102,18 +96,6 @@ const Navbar = ({ toggleSidebar, sidebarOpen, handleLogout }) => {
         </Box>
 
         <Box display="flex" alignItems="center" gap={2}>
-          <IconButton 
-            sx={{ 
-              bgcolor: 'rgba(255,255,255,0.1)',
-              borderRadius: 1,
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' }
-            }}
-          >
-            <Badge badgeContent={notifications.length} color="error">
-              <NotificationsIcon sx={{ color: '#fff' }} />
-            </Badge>
-          </IconButton>
-
           <Box display="flex" alignItems="center" gap={1.5}>
             <Typography variant="body2" sx={{ color: '#e0e7ff' }}>
               مرحباً {user?.name || 'مستخدم'}

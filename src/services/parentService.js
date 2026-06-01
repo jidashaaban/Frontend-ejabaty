@@ -17,13 +17,10 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// ============= ✅ دوال ولي الأمر (Parent) ✅ =============
-
-// جلب أبناء ولي الأمر
 export const getChildren = async () => {
   try {
     const response = await apiClient.get('/parent/children');
-    console.log('👨‍👧‍👦 أبناء ولي الأمر:', response.data);
+    console.log(' أبناء ولي الأمر:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب أبناء ولي الأمر:', error);
@@ -31,11 +28,10 @@ export const getChildren = async () => {
   }
 };
 
-// جلب تقدم الطالب
 export const getChildProgress = async (childId) => {
   try {
     const response = await apiClient.get(`/parent/child/${childId}/progress`);
-    console.log('📊 تقدم الطالب:', response.data);
+    console.log('تقدم الطالب:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب تقدم الطالب:', error);
@@ -43,11 +39,10 @@ export const getChildProgress = async (childId) => {
   }
 };
 
-// جلب جدول امتحانات الطالب
 export const getChildExamSchedule = async (childId) => {
   try {
     const response = await apiClient.get(`/parent/child/${childId}/exam-schedule`);
-    console.log('📚 جدول امتحانات الطالب:', response.data);
+    console.log('جدول امتحانات الطالب:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب جدول امتحانات الطالب:', error);
@@ -55,7 +50,6 @@ export const getChildExamSchedule = async (childId) => {
   }
 };
 
-// جلب نقاط الطالب
 export const getStudentPoints = async (studentId) => {
   try {
     const response = await getChildProgress(studentId);
@@ -73,7 +67,6 @@ export const getStudentPoints = async (studentId) => {
   }
 };
 
-// جلب امتحانات الطالب
 export const getStudentExams = async (studentId) => {
   try {
     const response = await getChildExamSchedule(studentId);
@@ -99,11 +92,10 @@ export const getStudentExams = async (studentId) => {
   }
 };
 
-// جلب ملاحظات الطالب
 export const getStudentNotes = async (studentId) => {
   try {
     const response = await apiClient.get(`/parent/child/${studentId}/notes`);
-    console.log('📝 ملاحظات الطالب:', response.data);
+    console.log(' ملاحظات الطالب:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب ملاحظات الطالب:', error);
@@ -111,11 +103,10 @@ export const getStudentNotes = async (studentId) => {
   }
 };
 
-// جلب درجات الطالب
 export const getStudentGrades = async (studentId) => {
   try {
     const response = await apiClient.get(`/parent/child/${studentId}/grades`);
-    console.log('📊 درجات الطالب:', response.data);
+    console.log(' درجات الطالب:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب درجات الطالب:', error);
@@ -123,16 +114,13 @@ export const getStudentGrades = async (studentId) => {
   }
 };
 
-// ============= ✅ دوال الشكاوى (Complaints) ✅ =============
-
-// إرسال شكوى
 export const submitComplaint = async (subject, complaintText) => {
   try {
     const payload = {
       subject: subject,
       complaint_text: complaintText
     };
-    console.log('📤 إرسال الشكوى:', payload);
+    console.log(' إرسال الشكوى:', payload);
     
     const response = await apiClient.post('/parent/complaints/submit', payload);
     console.log('✅ تم إرسال الشكوى:', response.data);
@@ -143,7 +131,6 @@ export const submitComplaint = async (subject, complaintText) => {
   }
 };
 
-// جلب الشكاوى السابقة
 export const getComplaints = async () => {
   try {
     const response = await apiClient.get('/parent/complaints');
@@ -155,7 +142,6 @@ export const getComplaints = async () => {
   }
 };
 
-// حذف شكوى
 export const deleteComplaint = async (id) => {
   try {
     const response = await apiClient.delete(`/parent/complaints/${id}`);
@@ -167,7 +153,6 @@ export const deleteComplaint = async (id) => {
   }
 };
 
-// تحديث شكوى
 export const updateComplaint = async (id, complaintData) => {
   try {
     const payload = {
@@ -175,21 +160,18 @@ export const updateComplaint = async (id, complaintData) => {
       complaint_text: complaintData.message,
     };
     const response = await apiClient.put(`/parent/complaints/${id}`, payload);
-    console.log('✏️ تم تحديث الشكوى:', response.data);
+    console.log(' تم تحديث الشكوى:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في تحديث الشكوى:', error);
     throw error;
   }
 };
-
-// ============= ✅ دوال الإشعارات (Notifications) ✅ =============
-
-// جلب إشعارات ولي الأمر
-export const getParentNotifications = async () => {
+export const getParentNotifications = async () =>
+{
   try {
     const response = await apiClient.get('/notifications');
-    console.log('🔔 إشعارات ولي الأمر:', response.data);
+    console.log(' إشعارات ولي الأمر:', response.data);
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب الإشعارات:', error);
@@ -197,7 +179,6 @@ export const getParentNotifications = async () => {
   }
 };
 
-// تحديث إشعار كمقروء
 export const markParentNotificationAsRead = async (notificationId) => {
   try {
     const response = await apiClient.post(`/notifications/${notificationId}/read`);

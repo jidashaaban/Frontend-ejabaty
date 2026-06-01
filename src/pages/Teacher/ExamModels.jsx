@@ -33,14 +33,13 @@ import {
 import { useSelector } from 'react-redux';
 import {
   getMarkingSchemesByCourse,
+  getExamsByCourse,
   getExamForMarking,
   submitMarkingScheme,
   createExam,
 } from '../../services/teacherService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
-
-// ============= تبويب إنشاء امتحان جديد =============
 const CreateExamTab = ({ onExamCreated }) => {
   const [formData, setFormData] = useState({
     course_name: '',
@@ -91,7 +90,7 @@ const CreateExamTab = ({ onExamCreated }) => {
         questions: validQuestions,
       };
       
-      console.log('📤 إرسال بيانات الامتحان:', payload);
+      console.log(' إرسال بيانات الامتحان:', payload);
       const result = await createExam(payload);
       console.log('✅ تم إنشاء الامتحان:', result);
       
@@ -120,7 +119,7 @@ const CreateExamTab = ({ onExamCreated }) => {
   return (
     <Box sx={{ p: 3 }}>
       <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-        <strong>📝 تعليمات:</strong> أدخل اسم المادة بالضبط كما هو مسجل في النظام (مثال: الرياضيات، الفيزياء، الكيمياء، علوم الحاسوب)
+        <strong> تعليمات:</strong> أدخل اسم المادة بالضبط كما هو مسجل في النظام (مثال: الرياضيات، الفيزياء، الكيمياء، علوم الحاسوب)
       </Alert>
 
       <Grid container spacing={3}>
@@ -131,7 +130,7 @@ const CreateExamTab = ({ onExamCreated }) => {
             value={formData.course_name}
             onChange={(e) => setFormData({ ...formData, course_name: e.target.value })}
             placeholder="مثال: الرياضيات"
-            helperText="⚠️ يجب أن يطابق الاسم المسجل في قاعدة البيانات تماماً"
+            helperText=" يجب أن يطابق الاسم المسجل في قاعدة البيانات تماماً"
           />
         </Grid>
 
@@ -207,7 +206,6 @@ const CreateExamTab = ({ onExamCreated }) => {
   );
 };
 
-// ============= قائمة الامتحانات =============
 const ExamList = ({ exams, loading, onAddAnswers }) => {
   if (loading) {
     return (
@@ -225,7 +223,7 @@ const ExamList = ({ exams, loading, onAddAnswers }) => {
           لا توجد امتحانات لهذه المادة
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          💡 انتقل إلى تبويب "إنشاء امتحان" لإنشاء امتحان جديد
+           انتقل إلى تبويب "إنشاء امتحان" لإنشاء امتحان جديد
         </Typography>
       </Paper>
     );
@@ -269,8 +267,6 @@ const ExamList = ({ exams, loading, onAddAnswers }) => {
     </Grid>
   );
 };
-
-// ============= تبويب سلم التصحيح =============
 const MarkingSchemeTab = ({ refreshTrigger }) => {
   const [courseName, setCourseName] = useState('');
   const [exams, setExams] = useState([]);
@@ -287,39 +283,29 @@ const MarkingSchemeTab = ({ refreshTrigger }) => {
     
     setLoading(true);
     try {
-      const response = await getMarkingSchemesByCourse(courseName);
-      console.log('📦 الامتحانات:', response);
+      const response = await getExamsByCourse(courseName);
+      console.log(' الامتحانات:', response);
       
       let examsList = [];
-      
-      if (response && response.marking_schemes && Array.isArray(response.marking_schemes)) {
-        examsList = response.marking_schemes;
-        console.log('✅ تم استخراج الامتحانات من marking_schemes');
-      }
-      else if (response && response.data && Array.isArray(response.data)) {
+      if (Array.isArray(response)) {
+        examsList = response;
+      } else if (response?.exams && Array.isArray(response.exams)) {
+        examsList = response.exams;
+      } else if (response?.data && Array.isArray(response.data)) {
         examsList = response.data;
       }
-      else if (response && response.exams && Array.isArray(response.exams)) {
-        examsList = response.exams;
-      }
-      else if (Array.isArray(response)) {
-        examsList = response;
-      }
       
-      console.log('📋 عدد الامتحانات:', examsList.length);
+      console.log(' عدد الامتحانات:', examsList.length);
       
-      const formattedExams = examsList.map(exam => ({
+      setExams(examsList.map(exam => ({
         id: exam.id,
         title: exam.title || exam.exam_title || 'امتحان',
         description: exam.description || 'يحتاج إضافة الإجابات النموذجية',
-      }));
+      })));
       
-      setExams(formattedExams);
-      
-      if (formattedExams.length === 0) {
-        console.log('ℹ️ لا توجد امتحانات للمادة:', courseName);
+      if (examsList.length === 0) {
+        console.log(' لا توجد امتحانات للمادة:', courseName);
       }
-      
     } catch (error) {
       console.error('❌ خطأ في جلب الامتحانات:', error);
       setToast({ open: true, message: 'فشل في جلب الامتحانات', severity: 'error' });
@@ -328,25 +314,22 @@ const MarkingSchemeTab = ({ refreshTrigger }) => {
     }
   };
 
-  // ✅ التعديل الوحيد - دالة جلب الأسئلة المعدلة
   const fetchExamQuestions = async (examId) => {
     try {
       const response = await getExamForMarking(examId);
-      console.log('📝 استجابة الأسئلة:', response);
+      console.log(' استجابة الأسئلة:', response);
       
       let questions = [];
       
-      // ✅ الأسئلة في response.exam.questions
       if (response && response.exam && response.exam.questions) {
         questions = response.exam.questions;
         console.log('✅ تم استخراج الأسئلة من response.exam.questions');
       }
-      // للاحتياط
       else if (response && response.questions) {
         questions = response.questions;
       }
       
-      console.log('📝 عدد الأسئلة:', questions.length);
+      console.log('عدد الأسئلة:', questions.length);
       
       const formattedQuestions = questions.map((q, idx) => ({
         id: q.id || idx,
@@ -361,7 +344,7 @@ const MarkingSchemeTab = ({ refreshTrigger }) => {
       setAnswersData(answers);
       
       if (formattedQuestions.length === 0) {
-        setToast({ open: true, message: '⚠️ لا توجد أسئلة لهذا الامتحان', severity: 'warning' });
+        setToast({ open: true, message: ' لا توجد أسئلة لهذا الامتحان', severity: 'warning' });
       }
       
     } catch (error) {
@@ -387,7 +370,7 @@ const MarkingSchemeTab = ({ refreshTrigger }) => {
     
     const unanswered = Object.values(answersData).some(answer => answer.trim() === '');
     if (unanswered) {
-      setToast({ open: true, message: '⚠️ الرجاء إكمال جميع الإجابات قبل الحفظ', severity: 'warning' });
+      setToast({ open: true, message: ' الرجاء إكمال جميع الإجابات قبل الحفظ', severity: 'warning' });
       return;
     }
     
@@ -399,7 +382,7 @@ const MarkingSchemeTab = ({ refreshTrigger }) => {
       }));
       
       const payload = { marking_data: markingData };
-      console.log('📤 إرسال الإجابات:', payload);
+      console.log(' إرسال الإجابات:', payload);
       
       await submitMarkingScheme(selectedExam.id, payload);
       
@@ -423,7 +406,7 @@ const MarkingSchemeTab = ({ refreshTrigger }) => {
     if (courseName.trim()) {
       fetchExams();
     } else {
-      setToast({ open: true, message: '⚠️ الرجاء إدخال اسم المادة', severity: 'warning' });
+      setToast({ open: true, message: ' الرجاء إدخال اسم المادة', severity: 'warning' });
     }
   };
 
@@ -459,7 +442,7 @@ const MarkingSchemeTab = ({ refreshTrigger }) => {
       </Paper>
 
       {!courseName ? (
-        <Alert severity="info">🔍 الرجاء إدخال اسم المادة ثم الضغط على بحث</Alert>
+        <Alert severity="info"> الرجاء إدخال اسم المادة ثم الضغط على بحث</Alert>
       ) : loading ? (
         <Box display="flex" justifyContent="center" py={4}>
           <CircularProgress />
@@ -472,14 +455,13 @@ const MarkingSchemeTab = ({ refreshTrigger }) => {
         />
       )}
 
-      {/* نافذة إضافة الإجابات */}
       <Dialog open={openAnswersDialog} onClose={() => setOpenAnswersDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ bgcolor: '#42a5f5', color: '#fff' }}>
-          📝 إضافة سلم التصحيح: {selectedExam?.title}
+           إضافة سلم التصحيح: {selectedExam?.title}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
-            📖 قم بكتابة الإجابة النموذجية لكل سؤال.
+             قم بكتابة الإجابة النموذجية لكل سؤال.
           </Alert>
           
           {examQuestions.length === 0 ? (
@@ -521,7 +503,6 @@ const MarkingSchemeTab = ({ refreshTrigger }) => {
   );
 };
 
-// ============= المكون الرئيسي =============
 const ExamModels = () => {
   const [mainTabValue, setMainTabValue] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -553,8 +534,8 @@ const ExamModels = () => {
             '& .MuiTab-root': { fontWeight: 'bold' }
           }}
         >
-          <Tab label="📝 إنشاء امتحان" />
-          <Tab label="📖 سلم التصحيح" />
+          <Tab label=" إنشاء امتحان" />
+          <Tab label=" سلم التصحيح" />
         </Tabs>
 
         {mainTabValue === 0 && <CreateExamTab onExamCreated={handleExamCreated} />}
