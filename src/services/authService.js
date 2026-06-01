@@ -8,7 +8,6 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -38,7 +37,6 @@ export const login = async (email, password) => {
       };
       localStorage.setItem('user', JSON.stringify(user));
     }
-    
     return {
       token: response.data.access_token,
       user: {
@@ -53,7 +51,6 @@ export const login = async (email, password) => {
     throw error.response?.data || { message: 'فشل في تسجيل الدخول' };
   }
 };
-
 export const logout = async () => {
   try {
     await apiClient.post('/logout');
@@ -64,16 +61,13 @@ export const logout = async () => {
     localStorage.removeItem('user');
   }
 };
-
 export const getStoredUser = () => {
   const user = localStorage.getItem('user');
   return user ? JSON.parse(user) : null;
 };
-
 export const getCurrentToken = () => {
   return localStorage.getItem('token');
 };
-
 export const isAuthenticated = () => {
   return !!localStorage.getItem('token');
 };
