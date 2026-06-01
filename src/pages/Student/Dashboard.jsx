@@ -119,7 +119,7 @@ const Dashboard = () => {
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography variant="body2" color="text.secondary">موادي المفعّلة</Typography>
+                  <Typography variant="body2" color="text.secondary">موادي المسجلة</Typography>
                   <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
                     {data.activeCourses.length}
                   </Typography>
@@ -180,7 +180,7 @@ const Dashboard = () => {
             <Box display="flex" alignItems="center" gap={1} sx={{ mb: 2 }}>
               <MenuBookIcon sx={{ color: '#1976d2' }} />
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                موادي المفعّلة
+                موادي المسجلة
               </Typography>
             </Box>
             <Divider sx={{ mb: 2 }} />
@@ -214,7 +214,7 @@ const Dashboard = () => {
                     </Typography>
                   </Box>
                   <Chip
-                    label="مفعّلة"
+                    label="مسجل"
                     size="small"
                     sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontWeight: 'bold' }}
                   />
@@ -229,7 +229,7 @@ const Dashboard = () => {
             <Box display="flex" alignItems="center" gap={1} sx={{ mb: 2 }}>
               <EventNoteIcon sx={{ color: '#ed6c02' }} />
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#ed6c02' }}>
-                امتحاناتي القادمة
+                الدورات المفعلة
               </Typography>
             </Box>
             <Divider sx={{ mb: 2 }} />
@@ -237,7 +237,7 @@ const Dashboard = () => {
             {data.exams.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
                 <EventNoteIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1 }} />
-                <Typography variant="body2">لا توجد امتحانات قادمة</Typography>
+                <Typography variant="body2">لا توجد دورات مفعلة</Typography>
               </Box>
             ) : (
               data.exams.slice(0, 5).map((exam, i) => (
@@ -274,7 +274,7 @@ const Dashboard = () => {
                     </Typography>
                   </Box>
                   <Chip
-                    label="قادم"
+                    label="مفعل"
                     size="small"
                     sx={{ bgcolor: '#fff3e0', color: '#ed6c02', fontWeight: 'bold' }}
                   />

@@ -23,7 +23,6 @@ import {
   School as SchoolIcon,
   DoneAll as DoneAllIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import {
   getRealNotifications,
   markNotificationAsRead,
@@ -32,7 +31,6 @@ import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 
 function AdminNotifications() {
-  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -81,7 +79,6 @@ function AdminNotifications() {
 
   const handleNotificationClick = async (notification) => {
     console.log(' تم الضغط على إشعار:', notification);
-    console.log(' نوع الإشعار:', notification.type);
     
     if (!notification.is_read) {
       try {
@@ -92,24 +89,13 @@ function AdminNotifications() {
           )
         );
         setUnreadCount(prev => Math.max(0, prev - 1));
+        setToast({ open: true, message: 'تم تحديث الإشعار كمقروء', severity: 'success' });
       } catch (error) {
         console.error('خطأ في تحديث الإشعار:', error);
+        setToast({ open: true, message: 'فشل في تحديث الإشعار', severity: 'error' });
       }
-    }
-    
-    const type = notification.type;
-    
-    if (type === 'complaint' || type === 'new_complaint' || type.includes('complaint')) {
-      navigate('/admin/complaints');
-    }
-    else if (type === 'poll_result' || type === 'poll_completed' || type.includes('poll')) {
-      navigate('/admin/polls');
-    }
-    else if (type === 'course_join' || type === 'new_course_request' || type.includes('course')) {
-      navigate('/admin/courses');
-    }
-    else {
-      navigate('/admin/dashboard');
+    } else {
+      setToast({ open: true, message: 'هذا الإشعار مقروء بالفعل', severity: 'info' });
     }
   };
 
