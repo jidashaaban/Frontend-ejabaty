@@ -15,11 +15,13 @@ import {
   Chip,
   Alert,
   CircularProgress,
+  Tooltip,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
   AutoAwesome as AutoAwesomeIcon,
   CalendarMonth as CalendarMonthIcon,
+  MeetingRoom as MeetingRoomIcon,
 } from '@mui/icons-material';
 import {
   getWeeklyProgram,
@@ -53,7 +55,7 @@ function WeeklyProgram() {
     'Thursday': 'الخميس'
   };
 
-  const dayOrder = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس' ];
+  const dayOrder = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
 
   const fetchData = async () => {
     setLoading(true);
@@ -66,7 +68,7 @@ function WeeklyProgram() {
       ]);
       
       console.log('جدول الدوام:', scheduleRes);
-      console.log( 'جدول الامتحانات:', examRes );
+      console.log('جدول الامتحانات:', examRes);
       
       let formattedSchedule = [];
       if (scheduleRes && scheduleRes.master_grid) {
@@ -82,7 +84,8 @@ function WeeklyProgram() {
                 start_time: slot.start_time,
                 end_time: slot.end_time,
                 course_name: slot.course_name,
-                hall_name: slot.halls && slot.halls.length > 0 ? slot.halls[0] : 'غير محدد',
+                halls: slot.halls || [],
+                hall_name: slot.halls && slot.halls.length > 0 ? slot.halls.join('، ') : 'غير محدد',
               });
             }
           });
@@ -94,7 +97,8 @@ function WeeklyProgram() {
           start_time: session.start_time,
           end_time: session.end_time,
           course_name: session.course?.name,
-          hall_name: session.hall?.name,
+          halls: session.halls || (session.hall ? [session.hall.name] : []),
+          hall_name: session.halls ? session.halls.join('، ') : (session.hall?.name || 'غير محدد'),
         }));
       } else if (Array.isArray(scheduleRes)) {
         formattedSchedule = scheduleRes.map(item => ({
@@ -103,7 +107,8 @@ function WeeklyProgram() {
           start_time: item.start_time,
           end_time: item.end_time,
           course_name: item.course?.name || item.course_name,
-          hall_name: item.hall?.name || item.hall_name,
+          halls: item.halls || (item.hall ? [item.hall.name] : []),
+          hall_name: item.halls ? item.halls.join('، ') : (item.hall?.name || 'غير محدد'),
         }));
       }
       
@@ -121,22 +126,21 @@ function WeeklyProgram() {
                 start_time: slot.start_time,
                 end_time: slot.end_time,
                 course_name: slot.course_name,
-                hall_name: slot.halls && slot.halls.length > 0 ? slot.halls[0] : 'غير محدد',
+                halls: slot.halls || [],
+                hall_name: slot.halls && slot.halls.length > 0 ? slot.halls.join('، ') : 'غير محدد',
               });
             }
           });
         });
-      }
-      
-        else if ( examRes && examRes.sessions )
-      {
+      } else if (examRes && examRes.sessions) {
         formattedExams = examRes.sessions.map(session => ({
           id: session.id,
           day: daysMap[session.day] || session.day,
           start_time: session.start_time,
           end_time: session.end_time,
           course_name: session.course?.name,
-          hall_name: session.hall?.name,
+          halls: session.halls || (session.hall ? [session.hall.name] : []),
+          hall_name: session.halls ? session.halls.join('، ') : (session.hall?.name || 'غير محدد'),
         }));
       } else if (Array.isArray(examRes)) {
         formattedExams = examRes.map(item => ({
@@ -145,7 +149,8 @@ function WeeklyProgram() {
           start_time: item.start_time,
           end_time: item.end_time,
           course_name: item.course?.name || item.course_name,
-          hall_name: item.hall?.name || item.hall_name,
+          halls: item.halls || (item.hall ? [item.hall.name] : []),
+          hall_name: item.halls ? item.halls.join('، ') : (item.hall?.name || 'غير محدد'),
         }));
       }
       
@@ -261,7 +266,7 @@ function WeeklyProgram() {
       />
 
       <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-         ملاحظة: عند الضغط على زر التوليد، سيتم إنشاء جدول تلقائي مع تجنب التعارضات.
+        ملاحظة: عند الضغط على زر التوليد، سيتم إنشاء جدول تلقائي مع تجنب التعارضات.
       </Alert>
 
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }} centered>
@@ -312,7 +317,7 @@ function WeeklyProgram() {
                         color: '#1565c0'
                       }}
                     >
-                       {day} ({sessions.length} مواد)
+                      {day} ({sessions.length} مواد)
                     </Typography>
                     
                     <Table sx={{ minWidth: 600 }}>
@@ -320,7 +325,7 @@ function WeeklyProgram() {
                         <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                           <TableCell sx={{ fontWeight: 'bold' }}>الوقت</TableCell>
                           <TableCell sx={{ fontWeight: 'bold' }}>المادة</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>القاعة</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>القاعات</TableCell>
                           <TableCell align="center" sx={{ fontWeight: 'bold' }}>إجراءات</TableCell>
                         </TableRow>
                       </TableHead>
@@ -338,7 +343,14 @@ function WeeklyProgram() {
                                 variant="outlined"
                               />
                             </TableCell>
-                            <TableCell>{item.hall_name || 'غير محدد'}</TableCell>
+                            <TableCell>
+                              <Box display="flex" alignItems="center" gap={0.5} flexWrap="wrap">
+                                <MeetingRoomIcon sx={{ fontSize: 14, color: '#666' }} />
+                                <Typography variant="body2">
+                                  {item.hall_name}
+                                </Typography>
+                              </Box>
+                            </TableCell>
                             <TableCell align="center">
                               <IconButton 
                                 onClick={() => handleScheduleDelete(item.id)} 
@@ -403,7 +415,7 @@ function WeeklyProgram() {
                         color: '#ed6c02'
                       }}
                     >
-                       {day} ({exams.length} امتحانات)
+                      {day} ({exams.length} امتحانات)
                     </Typography>
                     
                     <Table sx={{ minWidth: 600 }}>
@@ -411,7 +423,7 @@ function WeeklyProgram() {
                         <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                           <TableCell sx={{ fontWeight: 'bold' }}>الوقت</TableCell>
                           <TableCell sx={{ fontWeight: 'bold' }}>المادة</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>القاعة</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>القاعات</TableCell>
                           <TableCell align="center" sx={{ fontWeight: 'bold' }}>إجراءات</TableCell>
                         </TableRow>
                       </TableHead>
@@ -429,7 +441,14 @@ function WeeklyProgram() {
                                 variant="outlined"
                               />
                             </TableCell>
-                            <TableCell>{item.hall_name || 'غير محدد'}</TableCell>
+                            <TableCell>
+                              <Box display="flex" alignItems="center" gap={0.5} flexWrap="wrap">
+                                <MeetingRoomIcon sx={{ fontSize: 14, color: '#666' }} />
+                                <Typography variant="body2">
+                                  {item.hall_name}
+                                </Typography>
+                              </Box>
+                            </TableCell>
                             <TableCell align="center">
                               <IconButton 
                                 onClick={() => handleExamDelete(item.id)} 

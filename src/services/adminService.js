@@ -326,7 +326,7 @@ export const getWeeklyProgram = async () => {
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب برنامج الدوام:', error);
-    return null;
+    return { master_grid: {}, sessions: [] };
   }
 };
 
@@ -336,7 +336,7 @@ export const getExamProgram = async () => {
     return response.data;
   } catch (error) {
     console.error('خطأ في جلب برنامج الامتحانات:', error);
-    return null;
+    return { master_grid: {}, sessions: [] };
   }
 };
 

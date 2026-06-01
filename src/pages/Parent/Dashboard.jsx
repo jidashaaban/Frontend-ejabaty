@@ -15,15 +15,18 @@ import {
   TableBody,
   CircularProgress,
   Alert,
+  LinearProgress,
 } from '@mui/material';
 import {
   Star as StarIcon,
   EventNote as EventNoteIcon,
   School as SchoolIcon,
-  Person as PersonIcon,
   CalendarToday as CalendarTodayIcon,
   AccessTime as AccessTimeIcon,
   MeetingRoom as MeetingRoomIcon,
+  EmojiEvents as EmojiEventsIcon,
+  TrendingUp as TrendingUpIcon,
+  People as PeopleIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { getChildren, getChildProgress, getChildExamSchedule } from '../../services/parentService';
@@ -158,6 +161,9 @@ const Dashboard = () => {
     );
   }
 
+  const maxPoints = 500;
+  const pointsPercentage = (totalPoints / maxPoints) * 100;
+
   return (
     <Box>
       <PageHeader
@@ -166,85 +172,81 @@ const Dashboard = () => {
         icon={<SchoolIcon sx={{ fontSize: 20 }} />}
       />
 
-      <Paper
-        sx={{
-          p: 3,
-          mb: 4,
-          borderRadius: 3,
-          background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%)',
-        }}
-      >
-        <Box display="flex" alignItems="center" gap={3} flexWrap="wrap">
-          <Avatar sx={{ width: 60, height: 60, bgcolor: '#1976d2' }}>
-            <PersonIcon sx={{ fontSize: 35, color: '#fff' }} />
-          </Avatar>
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
-              {studentName || 'الطالب'}
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#1976d2' }}>
-              الصف: {studentGrade || 'غير محدد'}
-            </Typography>
-          </Box>
-          <Box flexGrow={1} />
-          <Box textAlign="center">
-            <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
-              {totalPoints}
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#1976d2' }}>نقطة</Typography>
-          </Box>
-        </Box>
-      </Paper>
-
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-              background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%)',
-              height: '100%',
-            }}
-          >
-            <CardContent>
-              <Box display="flex" alignItems="center" gap={2} mb={2}>
-                <StarIcon sx={{ color: '#1565c0' }} />
-                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1565c0' }}>
-                  نقاط الاختبارات
-                </Typography>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, bgcolor: '#e3f2fd', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="body2" color="#1565c0" sx={{ mb: 0.5, fontWeight: 600 }}>الطالب</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1565c0' }}>{studentName || 'الطالب'}</Typography>
+                  <Typography variant="caption" color="#1976d2">الصف: {studentGrade || 'غير محدد'}</Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: '#1976d2', width: 50, height: 50 }}>
+                  <PeopleIcon sx={{ fontSize: 26, color: '#fff' }} />
+                </Avatar>
               </Box>
-              <Typography variant="h2" sx={{ fontWeight: 'bold', color: '#1565c0', mb: 1 }}>
-                {totalPoints}
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#1976d2' }}>
-                إجمالي النقاط المحصلة من الاختبارات
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-              background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-              height: '100%',
-            }}
-          >
-            <CardContent>
-              <Box display="flex" alignItems="center" gap={2} mb={2}>
-                <SchoolIcon sx={{ color: '#2e7d32' }} />
-                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
-                  متوسط الدرجات
-                </Typography>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, bgcolor: '#e8f5e9', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="body2" color="#2e7d32" sx={{ mb: 0.5, fontWeight: 600 }}>نقاط الاختبارات</Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>{totalPoints}</Typography>
+                  <Typography variant="caption" color="#4caf50">من {maxPoints} نقطة</Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: '#2e7d32', width: 50, height: 50 }}>
+                  <EmojiEventsIcon sx={{ fontSize: 26, color: '#fff' }} />
+                </Avatar>
               </Box>
-              <Typography variant="h2" sx={{ fontWeight: 'bold', color: '#2e7d32', mb: 1 }}>
-                {avgGrade}
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#2e7d32' }}>
-                متوسط درجات الامتحانات
-              </Typography>
+              <LinearProgress 
+                variant="determinate" 
+                value={pointsPercentage} 
+                sx={{ mt: 1.5, height: 5, borderRadius: 3, bgcolor: '#c8e6c9', '& .MuiLinearProgress-bar': { bgcolor: '#2e7d32', borderRadius: 3 } }}
+              />
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, bgcolor: '#fff3e0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="body2" color="#ed6c02" sx={{ mb: 0.5, fontWeight: 600 }}>متوسط الدرجات</Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ed6c02' }}>{avgGrade}</Typography>
+                  <Typography variant="caption" color="#ff9800">من 100 درجة</Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: '#ed6c02', width: 50, height: 50 }}>
+                  <TrendingUpIcon sx={{ fontSize: 26, color: '#fff' }} />
+                </Avatar>
+              </Box>
+              <LinearProgress 
+                variant="determinate" 
+                value={avgGrade} 
+                sx={{ mt: 1.5, height: 5, borderRadius: 3, bgcolor: '#ffe0b2', '& .MuiLinearProgress-bar': { bgcolor: '#ed6c02', borderRadius: 3 } }}
+              />
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, bgcolor: '#fce4ec', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="body2" color="#c62828" sx={{ mb: 0.5, fontWeight: 600 }}>الامتحانات القادمة</Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#c62828' }}>{examSchedule.length}</Typography>
+                  <Typography variant="caption" color="#ef5350">امتحان قادم</Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: '#c62828', width: 50, height: 50 }}>
+                  <EventNoteIcon sx={{ fontSize: 26, color: '#fff' }} />
+                </Avatar>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
@@ -252,105 +254,112 @@ const Dashboard = () => {
 
       <Paper
         sx={{
-          borderRadius: 4,
+          p: 3,
+          borderRadius: 3,
           overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
         }}
       >
-        <Box
-          sx={{
-            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-            p: 2.5,
-            color: '#fff',
-          }}
-        >
-          <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap">
-            <Box display="flex" alignItems="center" gap={1.5}>
-              <Box
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  borderRadius: 2,
-                  p: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <EventNoteIcon sx={{ fontSize: 28 }} />
-              </Box>
-              <Box>
-                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                  برنامج الامتحانات
-                </Typography>
-                <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                  جدول امتحانات الطالب القادمة
-                </Typography>
-              </Box>
-            </Box>
-            <Chip
-              icon={<EventNoteIcon />}
-              label={`${examSchedule.length} امتحان${examSchedule.length !== 1 ? 'ات' : ''}`}
-              sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#fff' }}
-            />
-          </Box>
+        <Box sx={{ mb: 2.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <EventNoteIcon sx={{ color: '#ed6c02', fontSize: 24 }} />
+          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#ed6c02' }}>
+            جدول الامتحانات
+          </Typography>
+          <Chip
+            label={`${examSchedule.length} امتحان${examSchedule.length !== 1 ? 'ات' : ''}`}
+            size="small"
+            sx={{ bgcolor: '#fff3e0', color: '#ed6c02', fontWeight: 'bold' }}
+          />
         </Box>
 
-        <Box sx={{ p: 3 }}>
-          {examSchedule.length === 0 ? (
-            <Alert severity="info" sx={{ borderRadius: 2 }}>
+        {examSchedule.length === 0 ? (
+          <Alert 
+            severity="info" 
+            sx={{ 
+              borderRadius: 2,
+              bgcolor: '#e3f2fd',
+              color: '#1565c0',
+            }}
+          >
+            <Box display="flex" alignItems="center" gap={1}>
+              <EventNoteIcon fontSize="small" />
               لا توجد امتحانات مسجلة حالياً
-            </Alert>
-          ) : (
-            <Table>
-              <TableHead>
-                <TableRow sx={{ bgcolor: '#f5f7fa' }}>
-                  <TableCell sx={{ fontWeight: 'bold' }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>المادة</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>التاريخ</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>الوقت</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>القاعة</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>الأستاذ</TableCell>
+            </Box>
+          </Alert>
+        ) : (
+          <Table sx={{ minWidth: 650 }}>
+            <TableHead>
+              <TableRow sx={{ 
+                backgroundColor: '#ed6c02',
+                '& .MuiTableCell-root': { 
+                  color: '#fff', 
+                  fontWeight: 'bold',
+                  fontSize: '0.9rem',
+                  border: 'none',
+                  py: 1.2,
+                }
+              }}>
+                <TableCell align="center">المادة</TableCell>
+                <TableCell align="center">التاريخ</TableCell>
+                <TableCell align="center">الوقت</TableCell>
+                <TableCell align="center">القاعة</TableCell>
+                <TableCell align="center">الأستاذ</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {examSchedule.map((exam, idx) => (
+                <TableRow 
+                  key={exam.id || idx} 
+                  hover
+                  sx={{
+                    '&:hover': { backgroundColor: '#fff8e1' },
+                  }}
+                >
+                  <TableCell align="center">
+                    <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+                      <Avatar sx={{ width: 28, height: 28, bgcolor: '#fff3e0' }}>
+                        <SchoolIcon sx={{ fontSize: 16, color: '#ed6c02' }} />
+                      </Avatar>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                        {exam.subject}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                      <CalendarTodayIcon sx={{ fontSize: 14, color: '#ed6c02' }} />
+                      <Typography variant="body2">{exam.date}</Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                      <AccessTimeIcon sx={{ fontSize: 14, color: '#ed6c02' }} />
+                      <Typography variant="body2">{exam.time}</Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                      <MeetingRoomIcon sx={{ fontSize: 14, color: '#9e9e9e' }} />
+                      <Typography variant="body2">{exam.room}</Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Chip 
+                      label={exam.teacher} 
+                      size="small" 
+                      sx={{ 
+                        bgcolor: '#fff3e0', 
+                        color: '#ed6c02', 
+                        fontWeight: 'bold',
+                        borderRadius: 1,
+                      }} 
+                    />
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {examSchedule.map((exam, index) => (
-                  <TableRow key={exam.id || index} hover>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={exam.subject}
-                        size="small"
-                        sx={{
-                          bgcolor: '#e3f2fd',
-                          color: '#1565c0',
-                          fontWeight: 'bold',
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <CalendarTodayIcon fontSize="small" color="action" />
-                        {exam.date}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <AccessTimeIcon fontSize="small" color="action" />
-                        {exam.time}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <MeetingRoomIcon fontSize="small" color="action" />
-                        {exam.room}
-                      </Box>
-                    </TableCell>
-                    <TableCell>{exam.teacher}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </Box>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </Paper>
 
       <Toast

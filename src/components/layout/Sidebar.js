@@ -68,7 +68,6 @@ const Sidebar = ({ role, drawerWidth = 260 }) => {
     {text: 'الدورات', path: 'register-courses', icon: <MenuBookIcon /> },
     { text: 'النماذج الامتحانية', path: 'exam-papers', icon: <GradeIcon /> },
     { text: 'استفساراتي', path: 'inquiries', icon: <HelpOutlineIcon /> },
-     { text: 'امتحاناتي ', path: 'exams', icon: <MenuBookIcon /> },
   ];
 
   const parentItems = [

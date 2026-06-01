@@ -3,7 +3,6 @@ import { Routes, Route } from 'react-router-dom';
 import StudentLayout from '../../components/layout/StudentLayout';
 import Dashboard from './Dashboard';
 import Schedule from './Schedule';
-import Exams from './Exams';
 import Grades from './Grades';
 import Points from './Points';
 import StudentNotifications from './StudentNotifications';
@@ -19,7 +18,6 @@ const StudentRoutes = () => {
         <Route index element={<Dashboard />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="schedule" element={<Schedule />} />
-        <Route path="exams" element={<Exams />} />
         <Route path="grades" element={<Grades />} />
         <Route path="points" element={<Points />} />
         <Route path="notifications" element={<StudentNotifications />} />

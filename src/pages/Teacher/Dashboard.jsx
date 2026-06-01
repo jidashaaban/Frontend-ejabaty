@@ -72,7 +72,6 @@ const Dashboard = () => {
               end_time: session.end_time,
               time: `${session.start_time?.substring(0, 5) || ''} - ${session.end_time?.substring(0, 5) || ''}`,
               room: session.hall?.name || 'غير محدد',
-              class: session.course?.code || '',
             }));
           }
           
@@ -207,87 +206,98 @@ const Dashboard = () => {
 
       <Paper
         sx={{
+          p: 3,
           borderRadius: 3,
           overflow: 'hidden',
-          border: '1px solid #1976d2',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
         }}
       >
-        <Box
-          sx={{
-            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-            p: 1.5,
-            px: 2,
-            color: '#fff',
+        <Alert 
+          severity="info" 
+          sx={{ 
+            mb: 3, 
+            borderRadius: 2,
+            bgcolor: '#e3f2fd',
+            color: '#1565c0',
           }}
         >
           <Box display="flex" alignItems="center" gap={1}>
-            <CalendarMonthIcon sx={{ fontSize: 20 }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-              برنامجي الأسبوعي
-            </Typography>
+            <SchoolIcon fontSize="small" />
+            هذا جدول دوامك الأسبوعي - يعرض الحصص التي تدرسها هذا الأسبوع
           </Box>
-        </Box>
+        </Alert>
 
-        <Box sx={{ p: 2 }}>
-          {sortedSchedule.length === 0 ? (
-            <Alert severity="info" sx={{ borderRadius: 2 }}>
-              لا توجد حصص في جدولك الأسبوعي حالياً. سيظهر هنا برنامج الدوام بعد توليده من قبل الإدارة.
-            </Alert>
-          ) : (
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: '#f5f7fa' }}>
-                  <TableCell sx={{ fontWeight: 'bold', fontSize: '0.8rem', borderBottom: '2px solid #1976d2' }}>اليوم</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', fontSize: '0.8rem', borderBottom: '2px solid #1976d2' }}>المادة</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', fontSize: '0.8rem', borderBottom: '2px solid #1976d2' }}>الوقت</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', fontSize: '0.8rem', borderBottom: '2px solid #1976d2' }}>القاعة</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', fontSize: '0.8rem', borderBottom: '2px solid #1976d2' }}>الصف</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {sortedSchedule.map((session, index) => (
-                  <TableRow 
-                    key={session.id} 
-                    hover 
-                    sx={{ 
-                      backgroundColor: index % 2 === 0 ? '#fff' : '#fafafa',
-                    }}
-                  >
-                    <TableCell sx={{ borderBottom: '1px solid #e0e0e0' }}>
-                      <Chip 
-                        label={session.day} 
-                        size="small" 
-                        sx={{ bgcolor: '#e3f2fd', color: '#1565c0', height: 22, fontSize: '0.7rem' }} 
-                      />
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid #e0e0e0' }}>
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <SchoolIcon sx={{ color: '#1976d2', fontSize: 16 }} />
+        {sortedSchedule.length === 0 ? (
+          <Box sx={{ py: 4, textAlign: 'center' }}>
+            <CalendarMonthIcon sx={{ fontSize: 48, color: '#ccc', mb: 1, opacity: 0.5 }} />
+            <Typography color="text.secondary">لا توجد حصص في جدولك الأسبوعي حالياً</Typography>
+          </Box>
+        ) : (
+          <Table sx={{ minWidth: 650 }}>
+            <TableHead>
+              <TableRow sx={{ 
+                backgroundColor: '#1565c0',
+                '& .MuiTableCell-root': { 
+                  color: '#fff', 
+                  fontWeight: 'bold',
+                  fontSize: '0.95rem',
+                  border: 'none',
+                }
+              }}>
+                <TableCell align="center">اليوم</TableCell>
+                <TableCell align="center">المادة</TableCell>
+                <TableCell align="center">الوقت</TableCell>
+                <TableCell align="center">القاعة</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {sortedSchedule.map((session, idx) => (
+                <TableRow 
+                  key={session.id} 
+                  hover
+                  sx={{
+                    '&:hover': { backgroundColor: '#e8f0fe' },
+                  }}
+                >
+                  <TableCell align="center">
+                    <Chip 
+                      label={session.day} 
+                      size="small" 
+                      sx={{ 
+                        bgcolor: '#e3f2fd', 
+                        color: '#1565c0', 
+                        fontWeight: 'bold',
+                        borderRadius: 1,
+                      }} 
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+                      <Avatar sx={{ width: 28, height: 28, bgcolor: '#e3f2fd' }}>
+                        <SchoolIcon sx={{ fontSize: 16, color: '#1565c0' }} />
+                      </Avatar>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                         {session.subject}
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid #e0e0e0' }}>
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <AccessTimeIcon sx={{ color: '#1976d2', fontSize: 14 }} />
-                        {session.time}
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid #e0e0e0' }}>
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <MeetingRoomIcon sx={{ color: '#1976d2', fontSize: 14 }} />
-                        {session.room}
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ borderBottom: '1px solid #e0e0e0' }}>
-                      {session.class}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </Box>
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                      <AccessTimeIcon sx={{ fontSize: 14, color: '#1565c0' }} />
+                      <Typography variant="body2">{session.time}</Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                      <MeetingRoomIcon sx={{ fontSize: 14, color: '#1565c0' }} />
+                      <Typography variant="body2">{session.room}</Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </Paper>
 
       <Toast
