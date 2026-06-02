@@ -16,12 +16,15 @@ import {
   Alert,
   CircularProgress,
   Tooltip,
+  Avatar,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
   AutoAwesome as AutoAwesomeIcon,
   CalendarMonth as CalendarMonthIcon,
   MeetingRoom as MeetingRoomIcon,
+  School as SchoolIcon,
+  AccessTime as AccessTimeIcon,
 } from '@mui/icons-material';
 import {
   getWeeklyProgram,
@@ -275,7 +278,22 @@ function WeeklyProgram() {
       </Tabs>
 
       {tab === 0 && (
-        <Paper sx={{ p: 3, borderRadius: 3 }}>
+        <Paper sx={{ p: 3, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+          <Alert 
+            severity="info" 
+            sx={{ 
+              mb: 3, 
+              borderRadius: 2,
+              bgcolor: '#e3f2fd',
+              color: '#1565c0',
+            }}
+          >
+            <Box display="flex" alignItems="center" gap={1}>
+              <SchoolIcon fontSize="small" />
+              جدول الدوام الأسبوعي لجميع المواد
+            </Box>
+          </Alert>
+
           <Box display="flex" justifyContent="flex-end" mb={3}>
             <Button
               variant="contained"
@@ -320,32 +338,47 @@ function WeeklyProgram() {
                       {day} ({sessions.length} مواد)
                     </Typography>
                     
-                    <Table sx={{ minWidth: 600 }}>
+                    <Table sx={{ minWidth: 650 }}>
                       <TableHead>
-                        <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                          <TableCell sx={{ fontWeight: 'bold' }}>الوقت</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>المادة</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>القاعات</TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 'bold' }}>إجراءات</TableCell>
+                        <TableRow sx={{ 
+                          backgroundColor: '#1565c0',
+                          '& .MuiTableCell-root': { 
+                            color: '#fff', 
+                            fontWeight: 'bold',
+                            fontSize: '0.95rem',
+                            border: 'none',
+                          }
+                        }}>
+                          <TableCell align="center">الوقت</TableCell>
+                          <TableCell align="center">المادة</TableCell>
+                          <TableCell align="center">القاعات</TableCell>
+                          <TableCell align="center">إجراءات</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {sessions.map((item) => (
                           <TableRow key={item.id} hover>
-                            <TableCell>
-                              {item.start_time?.substring(0, 5) || item.start_time} - {item.end_time?.substring(0, 5) || item.end_time}
+                            <TableCell align="center">
+                              <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                                <AccessTimeIcon sx={{ fontSize: 14, color: '#1565c0' }} />
+                                <Typography variant="body2">
+                                  {item.start_time?.substring(0, 5) || item.start_time} - {item.end_time?.substring(0, 5) || item.end_time}
+                                </Typography>
+                              </Box>
                             </TableCell>
-                            <TableCell>
-                              <Chip 
-                                label={item.course_name || 'غير محدد'} 
-                                size="small" 
-                                color="primary" 
-                                variant="outlined"
-                              />
+                            <TableCell align="center">
+                              <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+                                <Avatar sx={{ width: 28, height: 28, bgcolor: '#e3f2fd' }}>
+                                  <SchoolIcon sx={{ fontSize: 16, color: '#1565c0' }} />
+                                </Avatar>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                  {item.course_name || 'غير محدد'}
+                                </Typography>
+                              </Box>
                             </TableCell>
-                            <TableCell>
-                              <Box display="flex" alignItems="center" gap={0.5} flexWrap="wrap">
-                                <MeetingRoomIcon sx={{ fontSize: 14, color: '#666' }} />
+                            <TableCell align="center">
+                              <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                                <MeetingRoomIcon sx={{ fontSize: 14, color: '#1565c0' }} />
                                 <Typography variant="body2">
                                   {item.hall_name}
                                 </Typography>
@@ -373,7 +406,22 @@ function WeeklyProgram() {
       )}
 
       {tab === 1 && (
-        <Paper sx={{ p: 3, borderRadius: 3 }}>
+        <Paper sx={{ p: 3, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+          <Alert 
+            severity="warning" 
+            sx={{ 
+              mb: 3, 
+              borderRadius: 2,
+              bgcolor: '#fff3e0',
+              color: '#ed6c02',
+            }}
+          >
+            <Box display="flex" alignItems="center" gap={1}>
+              <SchoolIcon fontSize="small" />
+              جدول الامتحانات الأسبوعي لجميع المواد
+            </Box>
+          </Alert>
+
           <Box display="flex" justifyContent="flex-end" mb={3}>
             <Button
               variant="contained"
@@ -418,32 +466,47 @@ function WeeklyProgram() {
                       {day} ({exams.length} امتحانات)
                     </Typography>
                     
-                    <Table sx={{ minWidth: 600 }}>
+                    <Table sx={{ minWidth: 650 }}>
                       <TableHead>
-                        <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                          <TableCell sx={{ fontWeight: 'bold' }}>الوقت</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>المادة</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>القاعات</TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 'bold' }}>إجراءات</TableCell>
+                        <TableRow sx={{ 
+                          backgroundColor: '#ed6c02',
+                          '& .MuiTableCell-root': { 
+                            color: '#fff', 
+                            fontWeight: 'bold',
+                            fontSize: '0.95rem',
+                            border: 'none',
+                          }
+                        }}>
+                          <TableCell align="center">الوقت</TableCell>
+                          <TableCell align="center">المادة</TableCell>
+                          <TableCell align="center">القاعات</TableCell>
+                          <TableCell align="center">إجراءات</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {exams.map((item) => (
                           <TableRow key={item.id} hover>
-                            <TableCell>
-                              {item.start_time?.substring(0, 5) || item.start_time} - {item.end_time?.substring(0, 5) || item.end_time}
+                            <TableCell align="center">
+                              <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                                <AccessTimeIcon sx={{ fontSize: 14, color: '#ed6c02' }} />
+                                <Typography variant="body2">
+                                  {item.start_time?.substring(0, 5) || item.start_time} - {item.end_time?.substring(0, 5) || item.end_time}
+                                </Typography>
+                              </Box>
                             </TableCell>
-                            <TableCell>
-                              <Chip 
-                                label={item.course_name || 'غير محدد'} 
-                                size="small" 
-                                color="warning" 
-                                variant="outlined"
-                              />
+                            <TableCell align="center">
+                              <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+                                <Avatar sx={{ width: 28, height: 28, bgcolor: '#fff3e0' }}>
+                                  <SchoolIcon sx={{ fontSize: 16, color: '#ed6c02' }} />
+                                </Avatar>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                  {item.course_name || 'غير محدد'}
+                                </Typography>
+                              </Box>
                             </TableCell>
-                            <TableCell>
-                              <Box display="flex" alignItems="center" gap={0.5} flexWrap="wrap">
-                                <MeetingRoomIcon sx={{ fontSize: 14, color: '#666' }} />
+                            <TableCell align="center">
+                              <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                                <MeetingRoomIcon sx={{ fontSize: 14, color: '#ed6c02' }} />
                                 <Typography variant="body2">
                                   {item.hall_name}
                                 </Typography>

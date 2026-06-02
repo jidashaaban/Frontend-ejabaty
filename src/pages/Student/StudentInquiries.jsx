@@ -3,7 +3,7 @@ import {
   Box, Typography, Paper, TextField, Button, Chip, CircularProgress,
   Alert, Avatar, Divider, Dialog, DialogTitle, DialogContent,
   DialogActions, MenuItem, Select, FormControl, InputLabel,
-  IconButton, Collapse, Tooltip, Badge,
+  IconButton, Collapse, Tooltip,
 } from '@mui/material';
 import {
   QuestionAnswer as QuestionAnswerIcon,
@@ -13,24 +13,23 @@ import {
   CheckCircle as CheckCircleIcon,
   HourglassEmpty as PendingIcon,
   Add as AddIcon,
-  Edit as EditIcon,
   Delete as DeleteIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   School as SchoolIcon,
   Close as CloseIcon,
+  MenuBook as MenuBookIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
 import {
   getMyInquiries,
   sendInquiry,
-  updateInquiry,
   deleteInquiry,
   getActiveCourses,
 } from '../../services/studentService';
 
-function InquiryCard({ inquiry, onEdit, onDelete }) {
+function InquiryCard({ inquiry, onDelete }) {
   const [expanded, setExpanded] = useState(false);
   const answered = inquiry.status === 'Answered';
 
@@ -71,12 +70,14 @@ function InquiryCard({ inquiry, onEdit, onDelete }) {
 
         <Box flex={1} minWidth={0}>
           <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mb={0.3}>
-            <Chip
-              icon={<SchoolIcon sx={{ fontSize: '13px !important' }} />}
-              label={inquiry.course_name || '-'}
-              size="small"
-              sx={{ bgcolor: '#e3f2fd', color: '#1565c0', fontWeight: 700, fontSize: 11 }}
-            />
+            {inquiry.course_name && (
+              <Chip
+                icon={<SchoolIcon sx={{ fontSize: '13px !important' }} />}
+                label={inquiry.course_name}
+                size="small"
+                sx={{ bgcolor: '#e3f2fd', color: '#1565c0', fontWeight: 700, fontSize: 11 }}
+              />
+            )}
             <Chip
               icon={<PersonIcon sx={{ fontSize: '13px !important' }} />}
               label={`أ. ${inquiry.teacher_name || '-'}`}
@@ -101,28 +102,15 @@ function InquiryCard({ inquiry, onEdit, onDelete }) {
         </Box>
 
         <Box display="flex" alignItems="center" gap={0.5} flexShrink={0}>
-          {!answered && (
-            <>
-              <Tooltip title="تعديل">
-                <IconButton
-                  size="small"
-                  sx={{ color: '#1976d2' }}
-                  onClick={e => { e.stopPropagation(); onEdit(inquiry); }}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="حذف">
-                <IconButton
-                  size="small"
-                  sx={{ color: '#e53935' }}
-                  onClick={e => { e.stopPropagation(); onDelete(inquiry.id); }}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
+          <Tooltip title="حذف">
+            <IconButton
+              size="small"
+              sx={{ color: '#e53935' }}
+              onClick={e => { e.stopPropagation(); onDelete(inquiry.id); }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <IconButton size="small" sx={{ color: '#78909c' }}>
             {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           </IconButton>
@@ -168,15 +156,15 @@ function InquiryCard({ inquiry, onEdit, onDelete }) {
     </Paper>
   );
 }
+
 export default function StudentInquiries() {
   const [inquiries, setInquiries]   = useState([]);
   const [courses, setCourses]       = useState([]);
   const [loading, setLoading]       = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editItem, setEditItem]     = useState(null);  
-  const [form, setForm]             = useState({ course_id: '', question: '' });
+  const [form, setForm]             = useState({ course_id: '', teacher_id: '', teacher_name: '', question: '' });
   const [submitting, setSubmitting] = useState(false);
-  const [filter, setFilter]         = useState('all'); 
+  const [filter, setFilter]         = useState('all');
   const [toast, setToast]           = useState({ open: false, message: '', severity: 'success' });
 
   const showToast = (message, severity = 'success') =>
@@ -201,32 +189,36 @@ export default function StudentInquiries() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  const openNew  = () => { setEditItem(null); setForm({ course_id: '', question: '' }); setDialogOpen(true); };
-  const openEdit = (item) => {
-    setEditItem(item);
-    setForm({ course_id: item.course_id || '', question: item.question_text });
+  const openNew = () => {
+    setForm({ course_id: '', teacher_id: '', teacher_name: '', question: '' });
     setDialogOpen(true);
   };
-  const closeDialog = () => { setDialogOpen(false); setEditItem(null); };
+
+  const closeDialog = () => { setDialogOpen(false); };
+
+  const handleCourseChange = (courseId) => {
+    const selected = courses.find(c => c.id === courseId);
+    setForm(p => ({
+      ...p,
+      course_id:    courseId,
+      teacher_id:   selected?.teacher_id   || '',
+      teacher_name: selected?.teacher_name || '',
+    }));
+  };
 
   const handleSubmit = async () => {
-    if (!form.course_id) return showToast('اختر المادة أولاً', 'warning');
+    if (!form.course_id)       return showToast('اختر المادة أولاً', 'warning');
+    if (!form.teacher_id)      return showToast('لا يوجد أستاذ مرتبط بهذه المادة', 'warning');
     if (!form.question.trim()) return showToast('اكتب سؤالك أولاً', 'warning');
 
     setSubmitting(true);
     try {
-      const selectedCourse = courses.find(c => c.id === form.course_id);
-      if (editItem) {
-        await updateInquiry(editItem.id, form.question);
-        showToast('تم تعديل السؤال بنجاح');
-      } else {
-        await sendInquiry({
-          teacher_id:  selectedCourse.teacher_id,
-          course_name: selectedCourse.name,
-          question:    form.question,
-        });
-        showToast('تم إرسال سؤالك للأستاذ');
-      }
+      await sendInquiry({
+        teacher_id: form.teacher_id,
+        course_id:  form.course_id,
+        question:   form.question,
+      });
+      showToast('تم إرسال سؤالك للأستاذ');
       closeDialog();
       fetchAll();
     } catch (e) {
@@ -342,7 +334,6 @@ export default function StudentInquiries() {
           <InquiryCard
             key={inq.id}
             inquiry={inq}
-            onEdit={openEdit}
             onDelete={handleDelete}
           />
         ))
@@ -364,10 +355,10 @@ export default function StudentInquiries() {
         >
           <Box>
             <Typography variant="overline" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: 11 }}>
-              {editItem ? 'تعديل السؤال' : 'سؤال جديد'}
+              سؤال جديد
             </Typography>
             <Typography variant="h6" fontWeight={800} color="#fff">
-              {editItem ? 'تعديل استفساري' : 'أرسل سؤالاً للأستاذ'}
+              أرسل سؤالاً للأستاذ
             </Typography>
           </Box>
           <IconButton onClick={closeDialog} sx={{ color: 'rgba(255,255,255,0.7)' }}>
@@ -381,8 +372,7 @@ export default function StudentInquiries() {
             <Select
               value={form.course_id}
               label="اختر المادة"
-              onChange={e => setForm(p => ({ ...p, course_id: e.target.value }))}
-              disabled={!!editItem}
+              onChange={e => handleCourseChange(e.target.value)}
               sx={{ borderRadius: 2 }}
             >
               {courses.length === 0 ? (
@@ -390,11 +380,12 @@ export default function StudentInquiries() {
               ) : (
                 courses.map(c => (
                   <MenuItem key={c.id} value={c.id}>
-                    <Box>
-                      <Typography variant="body2" fontWeight={700}>{c.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {c.code} — أ. {c.teacher_name}
-                      </Typography>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <MenuBookIcon sx={{ color: '#1976d2', fontSize: 18 }} />
+                      <Box>
+                        <Typography variant="body2" fontWeight={700}>{c.name}</Typography>
+                        <Typography variant="caption" color="text.secondary">{c.code}</Typography>
+                      </Box>
                     </Box>
                   </MenuItem>
                 ))
@@ -402,18 +393,26 @@ export default function StudentInquiries() {
             </Select>
           </FormControl>
 
-          {form.course_id && !editItem && (() => {
-            const c = courses.find(x => x.id === form.course_id);
-            return c ? (
-              <Alert
-                severity="info"
-                icon={<PersonIcon />}
-                sx={{ mb: 2.5, borderRadius: 2 }}
-              >
-                سيُرسَل سؤالك إلى الأستاذ <strong>{c.teacher_name}</strong>
-              </Alert>
-            ) : null;
-          })()}
+          {form.course_id && (
+            <Paper
+              variant="outlined"
+              sx={{
+                mb: 2.5, p: 1.8, borderRadius: 2,
+                bgcolor: '#e8f5e9', borderColor: '#a5d6a7',
+                display: 'flex', alignItems: 'center', gap: 1.5,
+              }}
+            >
+              <Avatar sx={{ width: 36, height: 36, bgcolor: '#2e7d32' }}>
+                <PersonIcon fontSize="small" />
+              </Avatar>
+              <Box>
+                <Typography variant="caption" color="text.secondary">سيُرسَل سؤالك إلى</Typography>
+                <Typography variant="body2" fontWeight={700} color="#1b5e20">
+                  أ. {form.teacher_name || '—'}
+                </Typography>
+              </Box>
+            </Paper>
+          )}
 
           <TextField
             label="اكتب سؤالك هنا"
@@ -440,13 +439,17 @@ export default function StudentInquiries() {
               '&:hover': { background: 'linear-gradient(135deg,#0d47a1,#1976d2)' },
             }}
           >
-            {editItem ? 'حفظ التعديل' : 'إرسال السؤال'}
+            إرسال السؤال
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Toast open={toast.open} onClose={() => setToast(p => ({ ...p, open: false }))} message={toast.message} severity={toast.severity} />
+      <Toast
+        open={toast.open}
+        onClose={() => setToast(p => ({ ...p, open: false }))}
+        message={toast.message}
+        severity={toast.severity}
+      />
     </Box>
   );
 }
-

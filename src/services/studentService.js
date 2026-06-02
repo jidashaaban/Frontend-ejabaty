@@ -157,10 +157,10 @@ export const getMyInquiries = async () => {
   }
 };
 
-export const sendInquiry = async ({ teacher_id, course_name, question }) => {
+export const sendInquiry = async ({ teacher_id, course_id, question }) => {
   const response = await apiClient.post('/student/questions/ask', {
     teacher_id,
-    course_name,
+    course_id,
     question,
   });
   return response.data;
