@@ -489,18 +489,19 @@ const Login = () => {
             </form>
 
             <div className="demo-box">
-              <div className="demo-title">بيانات تجريبية</div>
               {[
-                { role: 'مدير', email: 'admin@school.com' },
-                { role: 'معلم', email: 'registrar@school.com' },
+                { role: 'مدير', email: 'admin@school.com', passwordHint: 'admin123' },
+                { role: 'معلم', email: 'sam@school.com', passwordHint: 'password123' },
+                { role: 'طالب', email: 'jida@school.com', passwordHint: 'password123' },
+                { role: 'ولي أمر', email: 'ahmad@parent.com', passwordHint: 'password123' },
               ].map((d, i) => (
                 <div
                   key={i}
                   className="demo-row"
-                  onClick={() => { setEmail(d.email); setPassword('admin123'); }}
+                  onClick={() => { setEmail(d.email); setPassword(d.passwordHint); }}
                 >
                   <span className="demo-role">{d.role}</span>
-                  <span className="demo-email">{d.email} · admin123</span>
+                  <span className="demo-email">{d.email} · {d.passwordHint}</span>
                 </div>
               ))}
             </div>
