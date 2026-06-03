@@ -37,7 +37,6 @@ import {
   PeopleAlt as ParentsIcon,
   ReportProblem as ReportProblemIcon,
   Save as SaveIcon,
-  Download as DownloadIcon,
   History as HistoryIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -46,7 +45,6 @@ import {
   getReportsByRole,
   saveReport,
   getReportsHistory,
-  getAllPollsFromAPI,
 } from '../../services/adminService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
@@ -126,6 +124,7 @@ function Reports() {
     setLoadingRoleReport(true);
     try {
       const response = await getReportsByRole(selectedRole);
+      console.log('📊 التقرير الكامل:', JSON.stringify(response, null, 2));
       setRoleReport(response);
       setToast({
         open: true,
@@ -167,25 +166,6 @@ function Reports() {
     }
   };
 
-  const exportReport = () => {
-    if (!roleReport) return;
-    
-    const dataStr = JSON.stringify(roleReport, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = `report_${selectedRole}_${new Date().toISOString()}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-    
-    setToast({
-      open: true,
-      message: 'تم تصدير التقرير بنجاح',
-      severity: 'success'
-    });
-  };
-
   const viewHistoryReport = (report) => {
     setSelectedHistoryReport(report);
     setOpenHistoryDialog(true);
@@ -202,7 +182,19 @@ function Reports() {
       );
     }
 
-    const { reports: reportData } = roleReport;
+    console.log('📊 بيانات التقرير الخام:', roleReport);
+
+    let reportData = roleReport.reports || roleReport.data || roleReport;
+    
+    if (!Array.isArray(reportData)) {
+      if (reportData?.data && Array.isArray(reportData.data)) {
+        reportData = reportData.data;
+      } else if (reportData?.reports && Array.isArray(reportData.reports)) {
+        reportData = reportData.reports;
+      } else {
+        reportData = [];
+      }
+    }
 
     if (selectedRole === 'student') {
       return (
@@ -210,32 +202,38 @@ function Reports() {
           <TableHead>
             <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
               <TableCell><strong>اسم الطالب</strong></TableCell>
-              <TableCell><strong>المواد</strong></TableCell>
+              <TableCell><strong>المواد المسجل فيها</strong></TableCell>
               <TableCell><strong>علامات الامتحانات</strong></TableCell>
               <TableCell><strong>نقاط الاختبارات</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {reportData?.map((student, idx) => (
-              <TableRow key={idx} hover>
-                <TableCell>{student.name}</TableCell>
-                <TableCell>
-                  {student.enrolled_courses?.map((c, i) => (
-                    <Chip key={i} label={c} size="small" sx={{ m: 0.3, bgcolor: '#e3f2fd' }} />
-                  ))}
-                </TableCell>
-                <TableCell>
-                  {student.exam_marks?.map((e, i) => (
-                    <div key={i}>{e.exam}: <strong>{e.mark}</strong></div>
-                  ))}
-                </TableCell>
-                <TableCell>
-                  {student.quiz_points?.map((q, i) => (
-                    <div key={i}>{q.course}: <strong>{q.points}</strong></div>
-                  ))}
-                </TableCell>
+            {reportData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} align="center">لا توجد بيانات</TableCell>
               </TableRow>
-            ))}
+            ) : (
+              reportData.map((student, idx) => (
+                <TableRow key={idx} hover>
+                  <TableCell>{student.name || '-'}</TableCell>
+                  <TableCell>
+                    {(student.enrolled_courses || []).map((c, i) => (
+                      <Chip key={i} label={c} size="small" sx={{ m: 0.3, bgcolor: '#e3f2fd' }} />
+                    ))}
+                  </TableCell>
+                  <TableCell>
+                    {(student.exam_marks || []).map((e, i) => (
+                      <div key={i}>{e.exam}: <strong>{e.mark}</strong></div>
+                    ))}
+                  </TableCell>
+                  <TableCell>
+                    {(student.quiz_points || []).map((q, i) => (
+                      <div key={i}>{q.course}: <strong>{q.points}</strong></div>
+                    ))}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       );
@@ -248,21 +246,25 @@ function Reports() {
             <TableRow sx={{ backgroundColor: '#e8f5e9' }}>
               <TableCell><strong>اسم المعلم</strong></TableCell>
               <TableCell><strong>المواد التي يدرسها</strong></TableCell>
-              <TableCell><strong>عدد الاختبارات</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {reportData?.map((teacher, idx) => (
-              <TableRow key={idx} hover>
-                <TableCell>{teacher.name}</TableCell>
-                <TableCell>
-                  {teacher.teaching_courses?.map((c, i) => (
-                    <Chip key={i} label={c} size="small" sx={{ m: 0.3, bgcolor: '#e8f5e9' }} />
-                  ))}
-                </TableCell>
-                <TableCell>{teacher.quizzes_announced || 0}</TableCell>
+            {reportData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={2} align="center">لا توجد بيانات</TableCell>
               </TableRow>
-            ))}
+            ) : (
+              reportData.map((teacher, idx) => (
+                <TableRow key={idx} hover>
+                  <TableCell>{teacher.name || '-'}</TableCell>
+                  <TableCell>
+                    {(teacher.teaching_courses || []).map((c, i) => (
+                      <Chip key={i} label={c} size="small" sx={{ m: 0.3, bgcolor: '#e8f5e9' }} />
+                    ))}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       );
@@ -275,25 +277,33 @@ function Reports() {
             <TableRow sx={{ backgroundColor: '#f3e5f5' }}>
               <TableCell><strong>اسم ولي الأمر</strong></TableCell>
               <TableCell><strong>الأبناء</strong></TableCell>
+              <TableCell><strong>عدد الشكاوى</strong></TableCell>
+              <TableCell><strong>حالة الشكاوى</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {reportData?.map((parent, idx) => (
-              <TableRow key={idx} hover>
-                <TableCell>{parent.name}</TableCell>
-                <TableCell>
-                  {parent.children?.map((c, i) => (
-                    <Chip key={i} label={c} size="small" sx={{ m: 0.3, bgcolor: '#f3e5f5' }} />
-                  ))}
-                </TableCell>
-                <TableCell>{parent.complaints_count || 0}</TableCell>
-                <TableCell>
-                  {parent.complaints_history?.map((ch, i) => (
-                    <Chip key={i} label={ch.status} size="small" color={ch.status === 'Resolved' ? 'success' : 'warning'} sx={{ m: 0.3 }} />
-                  ))}
-                </TableCell>
+            {reportData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} align="center">لا توجد بيانات</TableCell>
               </TableRow>
-            ))}
+            ) : (
+              reportData.map((parent, idx) => (
+                <TableRow key={idx} hover>
+                  <TableCell>{parent.name || '-'}</TableCell>
+                  <TableCell>
+                    {(parent.children || []).map((c, i) => (
+                      <Chip key={i} label={c} size="small" sx={{ m: 0.3, bgcolor: '#f3e5f5' }} />
+                    ))}
+                  </TableCell>
+                  <TableCell>{parent.complaints_count || 0}</TableCell>
+                  <TableCell>
+                    {(parent.complaints_history || []).map((ch, i) => (
+                      <Chip key={i} label={ch.status} size="small" color={ch.status === 'Resolved' ? 'success' : 'warning'} sx={{ m: 0.3 }} />
+                    ))}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       );
@@ -305,16 +315,28 @@ function Reports() {
           <TableHead>
             <TableRow sx={{ backgroundColor: '#fff3e0' }}>
               <TableCell><strong>اسم المدير</strong></TableCell>
-         </TableRow>
+              <TableCell><strong>الاستبيانات المنشأة</strong></TableCell>
+              <TableCell><strong>الجداول المُنشأة</strong></TableCell>
+            </TableRow>
           </TableHead>
           <TableBody>
-            {reportData?.map((admin, idx) => (
-              <TableRow key={idx} hover>
-                <TableCell>{admin.name}</TableCell>
-                <TableCell>{admin.total_polls_created || 0}</TableCell>
-                <TableCell>{admin.total_schedules_generated || 0}</TableCell>
+            {reportData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} align="center">لا توجد بيانات</TableCell>
               </TableRow>
-            ))}
+            ) : (
+              reportData.map((admin, idx) => (
+                <TableRow key={idx} hover>
+                  <TableCell>{admin.name || '-'}</TableCell>
+                  <TableCell>
+                    <Chip label={admin.total_polls_created || 0} size="small" color="info" />
+                  </TableCell>
+                  <TableCell>
+                    <Chip label={admin.total_schedules_generated || 0} size="small" color="warning" />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       );
@@ -544,17 +566,6 @@ function Reports() {
               >
                 {savingReport ? <CircularProgress size={24} /> : 'حفظ التقرير'}
               </Button>
-
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={exportReport}
-                disabled={!roleReport}
-                startIcon={<DownloadIcon />}
-                sx={{ mt: 1 }}
-              >
-                تصدير التقرير
-              </Button>
             </Grid>
 
             <Grid item xs={12} md={9}>
@@ -658,7 +669,7 @@ function Reports() {
                       <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
                         <TableCell><strong>#</strong></TableCell>
                         <TableCell><strong>اسم الطالب</strong></TableCell>
-                        <TableCell><strong>الدورات المسجل فيها</strong></TableCell>
+                        <TableCell><strong>المواد المسجل فيها</strong></TableCell>
                         <TableCell><strong>علامات الامتحانات</strong></TableCell>
                         <TableCell><strong>نقاط الاختبارات</strong></TableCell>
                       </TableRow>
@@ -669,12 +680,12 @@ function Reports() {
                           <TableCell>{idx + 1}</TableCell>
                           <TableCell>{student.name}</TableCell>
                           <TableCell>
-                            {student.enrolled_courses?.map((c, i) => (
+                            {(student.enrolled_courses || []).map((c, i) => (
                               <Chip key={i} label={c} size="small" sx={{ m: 0.3, bgcolor: '#e3f2fd' }} />
                             ))}
                           </TableCell>
                           <TableCell>
-                            {student.exam_marks?.map((e, i) => (
+                            {(student.exam_marks || []).map((e, i) => (
                               <Box key={i}>
                                 <Typography variant="body2">
                                   {e.exam}: <strong style={{ color: '#1976d2' }}>{e.mark}</strong>
@@ -683,7 +694,7 @@ function Reports() {
                             ))}
                           </TableCell>
                           <TableCell>
-                            {student.quiz_points?.map((q, i) => (
+                            {(student.quiz_points || []).map((q, i) => (
                               <Box key={i}>
                                 <Typography variant="body2">
                                   {q.course}: <strong style={{ color: '#2e7d32' }}>{q.points}</strong> نقطة
@@ -706,7 +717,6 @@ function Reports() {
                         <TableCell><strong>#</strong></TableCell>
                         <TableCell><strong>اسم المعلم</strong></TableCell>
                         <TableCell><strong>المواد التي يدرسها</strong></TableCell>
-                        <TableCell><strong>عدد الاختبارات المعلنة</strong></TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -715,12 +725,9 @@ function Reports() {
                           <TableCell>{idx + 1}</TableCell>
                           <TableCell>{teacher.name}</TableCell>
                           <TableCell>
-                            {teacher.teaching_courses?.map((c, i) => (
+                            {(teacher.teaching_courses || []).map((c, i) => (
                               <Chip key={i} label={c} size="small" sx={{ m: 0.3, bgcolor: '#e8f5e9' }} />
                             ))}
-                          </TableCell>
-                          <TableCell>
-                            <Chip label={teacher.quizzes_announced || 0} size="small" color="success" />
                           </TableCell>
                         </TableRow>
                       ))}
@@ -747,13 +754,13 @@ function Reports() {
                           <TableCell>{idx + 1}</TableCell>
                           <TableCell>{parent.name}</TableCell>
                           <TableCell>
-                            {parent.children?.map((c, i) => (
+                            {(parent.children || []).map((c, i) => (
                               <Chip key={i} label={c} size="small" sx={{ m: 0.3, bgcolor: '#f3e5f5' }} />
                             ))}
                           </TableCell>
                           <TableCell>{parent.complaints_count || 0}</TableCell>
                           <TableCell>
-                            {parent.complaints_history?.map((ch, i) => (
+                            {(parent.complaints_history || []).map((ch, i) => (
                               <Chip key={i} label={ch.status} size="small" color={ch.status === 'Resolved' ? 'success' : 'warning'} sx={{ m: 0.3 }} />
                             ))}
                           </TableCell>
