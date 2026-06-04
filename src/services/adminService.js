@@ -342,12 +342,22 @@ export const getExamProgram = async () => {
 
 export const generateWeeklySchedule = async () => {
   const response = await apiClient.post('/schedule/generate', { type: 'course' });
-  return response.data;
+  return {
+    success: response.data.success,
+    message: response.data.message,
+    admin_alerts: response.data.admin_alerts || [],
+    data: response.data.data || response.data
+  };
 };
 
 export const generateExamSchedule = async () => {
   const response = await apiClient.post('/schedule/generate', { type: 'exam' });
-  return response.data;
+  return {
+    success: response.data.success,
+    message: response.data.message,
+    admin_alerts: response.data.admin_alerts || [],
+    data: response.data.data || response.data
+  };
 };
 
 export const deleteSession = async (sessionId) => {

@@ -12,11 +12,15 @@ import {
   TableBody,
   Button,
   IconButton,
-  Chip,
   Alert,
   CircularProgress,
-  Tooltip,
   Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Fab,
+  Badge,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -26,6 +30,7 @@ import {
   School as SchoolIcon,
   AccessTime as AccessTimeIcon,
   Warning as WarningIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import {
   getWeeklyProgram,
@@ -36,7 +41,6 @@ import {
   deleteExamProgram,
   getCourses,
   getRooms,
-  getClasses,
 } from '../../services/adminService';
 import PageHeader from '../../components/common/PageHeader';
 import Toast from '../../components/common/Toast';
@@ -51,6 +55,8 @@ function WeeklyProgram() {
   const [generating, setGenerating] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
   const [capacityError, setCapacityError] = useState(null);
+  const [adminAlerts, setAdminAlerts] = useState([]);
+  const [showAlertsDialog, setShowAlertsDialog] = useState(false);
 
   const daysMap = {
     'Sunday': 'الأحد',
@@ -94,6 +100,38 @@ function WeeklyProgram() {
     return capacityIssues.length > 0 ? capacityIssues : null;
   };
 
+  const checkExamCapacity = (examData, roomsData, coursesData) => {
+    if (!examData || !examData.master_grid) return null;
+    
+    const masterGrid = examData.master_grid;
+    const capacityIssues = [];
+    
+    Object.keys(masterGrid).forEach(day => {
+      const timeSlots = masterGrid[day];
+      Object.keys(timeSlots).forEach(time => {
+        const slot = timeSlots[time];
+        if (slot.status === 'Occupied' && slot.course_id) {
+          const course = coursesData.find(c => c.id === slot.course_id);
+          const hallName = slot.halls && slot.halls.length > 0 ? slot.halls[0] : null;
+          const room = roomsData.find(r => r.name === hallName);
+          
+          if (course && room && course.capacity > room.capacity) {
+            capacityIssues.push({
+              day: daysMap[day] || day,
+              time: slot.start_time,
+              course_name: slot.course_name,
+              hall_name: hallName,
+              course_capacity: course.capacity,
+              hall_capacity: room.capacity,
+            });
+          }
+        }
+      });
+    });
+    
+    return capacityIssues.length > 0 ? capacityIssues : null;
+  };
+
   const fetchData = async () => {
     setLoading(true);
     setCapacityError(null);
@@ -104,9 +142,6 @@ function WeeklyProgram() {
         getCourses(),
         getRooms(),
       ]);
-      
-      console.log('جدول الدوام:', scheduleRes);
-      console.log('جدول الامتحانات:', examRes);
       
       setCourses(coursesRes);
       setRooms(roomsRes);
@@ -229,12 +264,61 @@ function WeeklyProgram() {
   const handleGenerateWeekly = async () => {
     setGenerating(true);
     setCapacityError(null);
+    setAdminAlerts([]);
+    
     try {
-      await generateWeeklySchedule();
-      setToast({ open: true, message: 'تم توليد برنامج الدوام بنجاح!', severity: 'success' });
+      const [roomsRes, coursesRes] = await Promise.all([
+        getRooms(),
+        getCourses(),
+      ]);
+      
+      const response = await generateWeeklySchedule();
+      const generatedSchedule = response.data;
+      
+      if (response.admin_alerts && response.admin_alerts.length > 0) {
+        setAdminAlerts(response.admin_alerts);
+        setShowAlertsDialog(true);
+      }
+      
+      const capacityIssues = checkCapacity(generatedSchedule, roomsRes);
+      
+      if (capacityIssues && capacityIssues.length > 0) {
+        setCapacityError(capacityIssues);
+        
+        const capacityAlerts = capacityIssues.map(issue => 
+          `⚠️ ${issue.day} - ${issue.time}: مادة "${issue.course_name}" في قاعة "${issue.hall_name}" (سعة القاعة: ${issue.hall_capacity}، عدد الطلاب: ${issue.course_capacity})`
+        );
+        setAdminAlerts(prev => [...prev, ...capacityAlerts]);
+        setShowAlertsDialog(true);
+        setToast({ 
+          open: true, 
+          message: `⚠️ تم توليد الجدول ولكن مع ${capacityIssues.length} مشكلة في سعة القاعات`, 
+          severity: 'warning' 
+        });
+        await fetchData();
+        setGenerating(false);
+        return;
+      }
+      
+      setToast({ 
+        open: true, 
+        message: response.message || '✅ تم توليد برنامج الدوام بنجاح!', 
+        severity: 'success' 
+      });
       await fetchData();
+      
     } catch (error) {
-      setToast({ open: true, message: error.response?.data?.message || 'فشل في التوليد', severity: 'error' });
+      const errorAlerts = error.response?.data?.admin_alerts || [];
+      if (errorAlerts.length > 0) {
+        setAdminAlerts(errorAlerts);
+        setShowAlertsDialog(true);
+      }
+      
+      setToast({ 
+        open: true, 
+        message: error.response?.data?.message || '❌ فشل في التوليد', 
+        severity: 'error' 
+      });
     } finally {
       setGenerating(false);
     }
@@ -243,12 +327,61 @@ function WeeklyProgram() {
   const handleGenerateExam = async () => {
     setGenerating(true);
     setCapacityError(null);
+    setAdminAlerts([]);
+    
     try {
-      await generateExamSchedule();
-      setToast({ open: true, message: 'تم توليد برنامج الامتحانات بنجاح!', severity: 'success' });
+      const [roomsRes, coursesRes] = await Promise.all([
+        getRooms(),
+        getCourses(),
+      ]);
+      
+      const response = await generateExamSchedule();
+      const generatedExam = response.data;
+      
+      if (response.admin_alerts && response.admin_alerts.length > 0) {
+        setAdminAlerts(response.admin_alerts);
+        setShowAlertsDialog(true);
+      }
+      
+      const capacityIssues = checkExamCapacity(generatedExam, roomsRes, coursesRes);
+      
+      if (capacityIssues && capacityIssues.length > 0) {
+        setCapacityError(capacityIssues);
+        
+        const capacityAlerts = capacityIssues.map(issue => 
+          `⚠️ ${issue.day} - ${issue.time}: مادة "${issue.course_name}" في قاعة "${issue.hall_name}" (سعة القاعة: ${issue.hall_capacity}، عدد الطلاب: ${issue.course_capacity})`
+        );
+        setAdminAlerts(prev => [...prev, ...capacityAlerts]);
+        setShowAlertsDialog(true);
+        setToast({ 
+          open: true, 
+          message: `⚠️ تم توليد جدول الامتحانات مع ${capacityIssues.length} مشكلة في سعة القاعات`, 
+          severity: 'warning' 
+        });
+        await fetchData();
+        setGenerating(false);
+        return;
+      }
+      
+      setToast({ 
+        open: true, 
+        message: response.message || '✅ تم توليد برنامج الامتحانات بنجاح!', 
+        severity: 'success' 
+      });
       await fetchData();
+      
     } catch (error) {
-      setToast({ open: true, message: error.response?.data?.message || 'فشل في التوليد', severity: 'error' });
+      const errorAlerts = error.response?.data?.admin_alerts || [];
+      if (errorAlerts.length > 0) {
+        setAdminAlerts(errorAlerts);
+        setShowAlertsDialog(true);
+      }
+      
+      setToast({ 
+        open: true, 
+        message: error.response?.data?.message || '❌ فشل في التوليد', 
+        severity: 'error' 
+      });
     } finally {
       setGenerating(false);
     }
@@ -312,7 +445,7 @@ function WeeklyProgram() {
       />
 
       <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-        ملاحظة: عند الضغط على زر التوليد، سيتم إنشاء جدول تلقائي مع تجنب التعارضات.
+        ملاحظة: عند الضغط على زر التوليد، سيتم إنشاء جدول تلقائي مع تجنب التعارضات والتحقق من سعة القاعات.
       </Alert>
 
       {capacityError && (
@@ -368,9 +501,17 @@ function WeeklyProgram() {
                 py: 0.8,
                 bgcolor: '#1976d2',
                 '&:hover': { bgcolor: '#1565c0' },
+                position: 'relative',
               }}
             >
               {generating ? 'جاري التوليد...' : 'توليد برنامج تلقائي'}
+              {adminAlerts.length > 0 && !generating && (
+                <Badge 
+                  badgeContent={adminAlerts.length} 
+                  color="error"
+                  sx={{ position: 'absolute', top: -8, right: -8 }}
+                />
+              )}
             </Button>
           </Box>
 
@@ -496,9 +637,17 @@ function WeeklyProgram() {
                 py: 0.8,
                 bgcolor: '#1976d2',
                 '&:hover': { bgcolor: '#1565c0' },
+                position: 'relative',
               }}
             >
               {generating ? 'جاري التوليد...' : 'توليد امتحانات تلقائي'}
+              {adminAlerts.length > 0 && !generating && (
+                <Badge 
+                  badgeContent={adminAlerts.length} 
+                  color="error"
+                  sx={{ position: 'absolute', top: -8, right: -8 }}
+                />
+              )}
             </Button>
           </Box>
 
@@ -594,6 +743,83 @@ function WeeklyProgram() {
           )}
         </Paper>
       )}
+
+      <Dialog 
+        open={showAlertsDialog} 
+        onClose={() => setShowAlertsDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ 
+          bgcolor: '#ff9800', 
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <WarningIcon />
+          <Typography variant="h6">تنبيهات المدير</Typography>
+          <IconButton 
+            onClick={() => setShowAlertsDialog(false)} 
+            sx={{ color: 'white', position: 'absolute', left: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        
+        <DialogContent dividers>
+          {adminAlerts.map((alert, index) => (
+            <Alert 
+              key={index} 
+              severity={
+                alert.includes('✅') ? 'success' : 
+                alert.includes('⚠️') ? 'warning' : 
+                alert.includes('❌') ? 'error' : 'info'
+              }
+              sx={{ mb: 1.5, borderRadius: 1 }}
+            >
+              {alert}
+            </Alert>
+          ))}
+          
+          {adminAlerts.length === 0 && (
+            <Alert severity="info">
+              لا توجد تنبيهات. جميع العمليات تمت بنجاح!
+            </Alert>
+          )}
+        </DialogContent>
+        
+        <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
+          <Typography variant="caption" color="text.secondary">
+            عدد التنبيهات: {adminAlerts.length}
+          </Typography>
+          <Button 
+            onClick={() => setShowAlertsDialog(false)} 
+            variant="contained"
+            color="primary"
+          >
+            إغلاق
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Fab 
+        color="warning" 
+        size="medium"
+        sx={{ position: 'fixed', bottom: 20, left: 20 }}
+        onClick={() => setShowAlertsDialog(true)}
+      >
+        <Badge 
+          badgeContent={adminAlerts.length} 
+          color="error"
+          anchorOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+        >
+          <WarningIcon />
+        </Badge>
+      </Fab>
 
       <Toast
         open={toast.open}
