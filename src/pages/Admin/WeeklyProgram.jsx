@@ -25,6 +25,7 @@ import {
   MeetingRoom as MeetingRoomIcon,
   School as SchoolIcon,
   AccessTime as AccessTimeIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import {
   getWeeklyProgram,
@@ -49,6 +50,7 @@ function WeeklyProgram() {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+  const [capacityError, setCapacityError] = useState(null);
 
   const daysMap = {
     'Sunday': 'الأحد',
@@ -60,8 +62,41 @@ function WeeklyProgram() {
 
   const dayOrder = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
 
+  const checkCapacity = (scheduleData, roomsData) => {
+    if (!scheduleData || !scheduleData.master_grid) return null;
+    
+    const masterGrid = scheduleData.master_grid;
+    const capacityIssues = [];
+    
+    Object.keys(masterGrid).forEach(day => {
+      const timeSlots = masterGrid[day];
+      Object.keys(timeSlots).forEach(time => {
+        const slot = timeSlots[time];
+        if (slot.status === 'Occupied' && slot.course_id) {
+          const course = courses.find(c => c.id === slot.course_id);
+          const hallName = slot.halls && slot.halls.length > 0 ? slot.halls[0] : null;
+          const room = roomsData.find(r => r.name === hallName);
+          
+          if (course && room && course.capacity > room.capacity) {
+            capacityIssues.push({
+              day: daysMap[day] || day,
+              time: slot.start_time,
+              course_name: slot.course_name,
+              hall_name: hallName,
+              course_capacity: course.capacity,
+              hall_capacity: room.capacity,
+            });
+          }
+        }
+      });
+    });
+    
+    return capacityIssues.length > 0 ? capacityIssues : null;
+  };
+
   const fetchData = async () => {
     setLoading(true);
+    setCapacityError(null);
     try {
       const [scheduleRes, examRes, coursesRes, roomsRes] = await Promise.all([
         getWeeklyProgram(),
@@ -72,6 +107,14 @@ function WeeklyProgram() {
       
       console.log('جدول الدوام:', scheduleRes);
       console.log('جدول الامتحانات:', examRes);
+      
+      setCourses(coursesRes);
+      setRooms(roomsRes);
+      
+      const capacityIssues = checkCapacity(scheduleRes, roomsRes);
+      if (capacityIssues && capacityIssues.length > 0) {
+        setCapacityError(capacityIssues);
+      }
       
       let formattedSchedule = [];
       if (scheduleRes && scheduleRes.master_grid) {
@@ -170,8 +213,6 @@ function WeeklyProgram() {
       
       setScheduleList(sortByTime(sortByDay(formattedSchedule)));
       setExamList(sortByTime(sortByDay(formattedExams)));
-      setCourses(coursesRes);
-      setRooms(roomsRes);
       
     } catch (error) {
       console.error('خطأ في جلب البيانات:', error);
@@ -187,6 +228,7 @@ function WeeklyProgram() {
 
   const handleGenerateWeekly = async () => {
     setGenerating(true);
+    setCapacityError(null);
     try {
       await generateWeeklySchedule();
       setToast({ open: true, message: 'تم توليد برنامج الدوام بنجاح!', severity: 'success' });
@@ -200,6 +242,7 @@ function WeeklyProgram() {
 
   const handleGenerateExam = async () => {
     setGenerating(true);
+    setCapacityError(null);
     try {
       await generateExamSchedule();
       setToast({ open: true, message: 'تم توليد برنامج الامتحانات بنجاح!', severity: 'success' });
@@ -271,6 +314,25 @@ function WeeklyProgram() {
       <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
         ملاحظة: عند الضغط على زر التوليد، سيتم إنشاء جدول تلقائي مع تجنب التعارضات.
       </Alert>
+
+      {capacityError && (
+        <Alert 
+          severity="error" 
+          sx={{ mb: 3, borderRadius: 2 }}
+          icon={<WarningIcon />}
+        >
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            ⚠️ تحذير: عدد الطلاب أكبر من سعة القاعة
+          </Typography>
+          {capacityError.map((issue, idx) => (
+            <Box key={idx} sx={{ mb: 1, fontSize: '0.9rem' }}>
+              • {issue.day} - {issue.time?.substring(0, 5)} : 
+              مادة <strong>{issue.course_name}</strong> في قاعة <strong>{issue.hall_name}</strong> 
+              (سعة القاعة: {issue.hall_capacity} طالب، عدد الطلاب المسجلين: {issue.course_capacity} طالب)
+            </Box>
+          ))}
+        </Alert>
+      )}
 
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }} centered>
         <Tab label="جدول الدوام" />
